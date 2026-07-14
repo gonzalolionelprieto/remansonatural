@@ -1,0 +1,9 @@
+# Configuración de deploy para Netlify.
+# El adaptador @astrojs/netlify genera la función SSR y los redirects;
+# acá sólo fijamos el comando de build y la versión de Node.
+
+[build]
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "22"
