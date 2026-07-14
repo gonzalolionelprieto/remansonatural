@@ -231,6 +231,13 @@
             <h2 style="margin:0;">Productos</h2>
             <button class="btn sm" id="nuevo">+ Nuevo</button>
           </div>
+          <!-- Selector de plantilla -->
+          <div class="card hidden" id="plantillas" style="margin-bottom:14px;">
+            <h2>¿Qué vas a cargar?</h2>
+            <p class="muted">Elegí una plantilla: te precarga los campos propios de ese tipo de producto.</p>
+            <div class="chips" id="plantillasList" style="margin-top:12px;"></div>
+          </div>
+
           <div class="list" id="lista"></div>
 
           <div class="card hidden" id="editorP" style="margin-top:14px;">
@@ -338,6 +345,66 @@
       let home = { hero: {}, bento: [{}, {}, {}, {}], estrella: {} };
       const BENTO_LABELS = ['Bloque 1 (grande, izquierda)', 'Bloque 2 (arriba)', 'Bloque 3', 'Bloque 4'];
 
+      // Plantillas por tipo de producto: precargan los campos propios de cada uno.
+      const PLANTILLAS = [
+        {
+          label: '🍄 Extracto de hongo',
+          d: {
+            tipo: 'extracto', linea: 'alquimia', volumen: '50 ml', graduacion: '~25% Alc./Vol.',
+            objetivos: ['calma'],
+            descripcion_corta: 'Para tus momentos de calma',
+            para_que_momento: 'Para esos días en que la mente no baja un cambio. Unas gotas en tu infusión, como un pequeño ritual.',
+            ingredientes: 'Hongo entero deshidratado, alcohol de cereal, agua pura. Sin azúcares, sin conservantes.',
+            modo_de_uso: '1 a 2 goteros (aprox. 1 ml) al día, solo o en tu infusión preferida. Agitá antes de usar.',
+            nuestro_proceso: 'Doble extracción real: fase en alcohol con calor controlado y decocción lenta en agua. Unimos ambas fases y rotulamos cada lote.',
+            envio_y_cuidado: 'Enviamos a todo el país en 24–72 h hábiles. Conservá en lugar fresco y seco, lejos de la luz directa.',
+            advertencias: 'Producto de bienestar. No es un medicamento. Ante embarazo, lactancia o medicación, consultá a un profesional de la salud.',
+          },
+        },
+        {
+          label: '🌀 Blend de hongos',
+          d: {
+            tipo: 'extracto', linea: 'alquimia', volumen: '50 ml', graduacion: '~25% Alc./Vol.',
+            objetivos: ['calma', 'enfoque'],
+            descripcion_corta: 'Mezcla de hongos para el equilibrio',
+            para_que_momento: 'Cuando querés lo mejor de varios hongos en un solo gesto. Un blend pensado para acompañar tu día.',
+            ingredientes: 'Blend de hongos enteros deshidratados, alcohol de cereal, agua pura. Proporciones equilibradas.',
+            modo_de_uso: '1 a 2 goteros (aprox. 1 ml) al día. Agitá antes de usar. Empezá con poco y encontrá tu dosis.',
+            nuestro_proceso: 'Cada hongo se extrae por separado (alcohol + agua) y recién después se combinan en la proporción justa. Cada lote rotulado.',
+            envio_y_cuidado: 'Enviamos a todo el país en 24–72 h hábiles. Conservá en lugar fresco y seco, lejos de la luz directa.',
+            advertencias: 'Producto de bienestar. No es un medicamento. Ante embarazo, lactancia o medicación, consultá a un profesional de la salud.',
+          },
+        },
+        {
+          label: '🌸 Esencia floral (Bach)',
+          d: {
+            tipo: 'esencia', linea: 'bach', volumen: '30 ml', graduacion: '',
+            objetivos: ['calma'],
+            descripcion_corta: 'Flores de Bach para el día a día',
+            para_que_momento: 'Para los momentos de tensión del día: antes de una reunión, en un viaje, o cuando necesitás un respiro.',
+            ingredientes: 'Preparado de esencias florales (sistema del Dr. Bach), agua de manantial y brandy como conservante natural.',
+            modo_de_uso: '4 gotas bajo la lengua o en un vaso de agua, hasta 4 veces al día. Podés repetir cuando lo sientas necesario.',
+            nuestro_proceso: 'Preparada de forma artesanal siguiendo el método tradicional de las esencias florales, rotulada por lote.',
+            envio_y_cuidado: 'Enviamos a todo el país en 24–72 h hábiles. Conservá lejos del calor y de la luz directa.',
+            advertencias: 'Producto de bienestar. No es un medicamento. Contiene una pequeña proporción de brandy. Ante embarazo, lactancia o medicación, consultá a un profesional.',
+          },
+        },
+        {
+          label: '🔥 Sahumerio / Humos',
+          d: {
+            tipo: 'sahumerio', linea: 'humos', volumen: '', graduacion: '',
+            objetivos: ['ritual'],
+            descripcion_corta: 'Para tu ritual y tu espacio',
+            para_que_momento: 'Para preparar tu rincón de calma. Encendelo, bajá las luces y date el permiso de una pausa.',
+            ingredientes: 'Hierbas y resinas naturales seleccionadas, ligadas a mano. Sin fragancias sintéticas.',
+            modo_de_uso: 'Encendé la punta, dejá que prenda unos segundos y apagá la llama. Colocalo en un soporte resistente al calor.',
+            nuestro_proceso: 'Armado a mano en pequeños lotes, con materia prima seleccionada y secado natural.',
+            envio_y_cuidado: 'Enviamos a todo el país en 24–72 h hábiles. Conservá en lugar seco.',
+            advertencias: 'Producto de bienestar. No es un medicamento. Nunca dejes un sahumerio encendido sin supervisión. Mantener fuera del alcance de niños.',
+          },
+        },
+      ];
+
       const toast = (m) => { const t = $('#toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); };
       const api = async (payload) => { const r = await fetch('/api/panel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pass, ...payload }) }); return { ok: r.ok, data: await r.json() }; };
       const reloadPreview = () => { const f = $('#pv'); try { f.contentWindow.location.reload(); } catch { f.src = '/?t=' + Date.now(); } };
@@ -397,15 +464,16 @@
           ghost: 'display:inline-flex;align-items:center;background:transparent;color:#eef2ec;border:1.5px solid #3a4c40;border-radius:7px;padding:6px 12px;font-size:12.5px;font-family:inherit;cursor:pointer;',
           danger: 'display:inline-flex;align-items:center;background:transparent;color:#c65b4e;border:1.5px solid #c65b4e;border-radius:7px;padding:6px 12px;font-size:12.5px;font-family:inherit;cursor:pointer;',
         };
-        lista.innerHTML = ps.map((p) => `<div class="item">${p.imagenes && p.imagenes[0] ? `<img class="thumb" src="${p.imagenes[0]}">` : '<div class="thumb"></div>'}<div class="info"><div class="name">${p.nombre}</div><div class="muted">$${Number(p.precio).toLocaleString('es-AR')} · stock ${p.stock}</div></div><button style="${S.ghost}" data-edit="${p.slug}">Editar</button><button style="${S.danger}" data-del="${p.slug}">✕</button></div>`).join('');
+        lista.innerHTML = ps.map((p) => `<div class="item">${p.imagenes && p.imagenes[0] ? `<img class="thumb" src="${p.imagenes[0]}">` : '<div class="thumb"></div>'}<div class="info"><div class="name">${p.nombre}</div><div class="muted">$${Number(p.precio).toLocaleString('es-AR')} · stock ${p.stock}</div></div><button style="${S.ghost}" data-edit="${p.slug}">Editar</button><button style="${S.ghost}" data-dup="${p.slug}" title="Duplicar">⧉</button><button style="${S.danger}" data-del="${p.slug}">✕</button></div>`).join('');
         lista.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => openP(ps.find((x) => x.slug === b.dataset.edit))));
+        lista.querySelectorAll('[data-dup]').forEach((b) => b.addEventListener('click', () => dupP(ps.find((x) => x.slug === b.dataset.dup))));
         lista.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => delP(b.dataset.del)));
 
       }
       function setObj() { document.querySelectorAll('#f-objetivos .chip').forEach((c) => c.classList.toggle('on', objSel.has(c.dataset.obj))); }
-      function openP(p) {
+      function openP(p, isDup) {
         p = p || {}; editSlugOriginal = p.slug || null;
-        $('#editorTitle').textContent = p.slug ? 'Editar producto' : 'Nuevo producto';
+        $('#editorTitle').textContent = isDup ? 'Duplicar producto' : (p.slug ? 'Editar producto' : 'Nuevo producto');
         $('#f-nombre').value = p.nombre || ''; $('#f-slug').value = p.slug || '';
         $('#f-linea').value = p.linea || 'alquimia'; $('#f-tipo').value = p.tipo || 'extracto';
         $('#f-precio').value = p.precio ?? ''; $('#f-stock').value = p.stock ?? 0;
@@ -420,8 +488,25 @@
         objSel.clear(); (p.objetivos || []).forEach((o) => objSel.add(o)); setObj();
         $('#editorErr').textContent = ''; $('#editorP').classList.remove('hidden'); $('#editorP').scrollIntoView({ behavior: 'smooth' });
       }
-      $('#nuevo').addEventListener('click', () => openP(null));
+      // "+ Nuevo" abre el selector de plantillas
+      $('#nuevo').addEventListener('click', () => {
+        $('#editorP').classList.add('hidden');
+        const cont = $('#plantillasList');
+        cont.innerHTML = PLANTILLAS.map((p, i) => `<span class="chip" data-pl="${i}">${p.label}</span>`).join('') + '<span class="chip" data-pl="-1">⚪ En blanco</span>';
+        cont.querySelectorAll('[data-pl]').forEach((c) => c.addEventListener('click', () => {
+          const i = +c.dataset.pl;
+          $('#plantillas').classList.add('hidden');
+          openP(i >= 0 ? { ...PLANTILLAS[i].d } : null);
+        }));
+        $('#plantillas').classList.remove('hidden');
+        $('#plantillas').scrollIntoView({ behavior: 'smooth' });
+      });
       $('#cancelar').addEventListener('click', () => $('#editorP').classList.add('hidden'));
+
+      // Duplicar: copia todo, cambia slug y nombre para que sea un producto nuevo.
+      function dupP(p) {
+        openP({ ...p, slug: (p.slug || '') + '-copia', nombre: (p.nombre || '') + ' (copia)' }, true);
+      }
       $('#f-nombre').addEventListener('input', (e) => { if (!editSlugOriginal) $('#f-slug').value = e.target.value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); });
       document.querySelectorAll('#f-objetivos .chip').forEach((c) => c.addEventListener('click', () => { const o = c.dataset.obj; objSel.has(o) ? objSel.delete(o) : objSel.add(o); setObj(); }));
       $('#guardar').addEventListener('click', async () => {
