@@ -59,17 +59,49 @@ export const POST: APIRoute = async ({ request, url }) => {
     return json({ error: 'Cuerpo inválido' }, 400);
   }
 
-  const items = Array.isArray(body.items) ? body.items : [];
-  if (items.length === 0) return json({ error: 'El carrito está vacío' }, 400);
+  const pedido = Array.isArray(body.items) ? body.items : [];
+  if (pedido.length === 0) return json({ error: 'El carrito está vacío' }, 400);
 
   const cliente = body.cliente;
   if (!cliente || !cliente.nombre || !cliente.email || !cliente.whatsapp || !cliente.direccion || !cliente.localidad) {
     return json({ error: 'Faltan datos de envío o de contacto' }, 400);
   }
 
-  // Calcular subtotal, envío y total en el servidor por seguridad.
-  const subtotal = items.reduce((sum, i) => sum + Number(i.precio) * Math.max(1, Math.floor(Number(i.qty))), 0);
-  
+  const admin = supabaseAdmin();
+  if (!admin) return json({ error: 'Servidor no configurado.' }, 503);
+
+  // SEGURIDAD: nunca confiar en el precio que manda el navegador.
+  // Sólo tomamos slug + cantidad; el precio y el nombre salen de la base.
+  const { data: dbProductos, error: dbError } = await admin
+    .from('productos')
+    .select('slug, nombre, precio, activo')
+    .in('slug', pedido.map((i) => String(i.slug)));
+
+  if (dbError) {
+    console.error('[checkout] Error leyendo productos:', dbError);
+    return json({ error: 'No se pudo validar el carrito.' }, 502);
+  }
+
+  const items = pedido
+    .map((i) => {
+      const p = (dbProductos ?? []).find((d) => d.slug === String(i.slug));
+      if (!p || !p.activo) return null;
+      return {
+        slug: p.slug,
+        nombre: p.nombre,
+        precio: Number(p.precio),
+        qty: Math.min(99, Math.max(1, Math.floor(Number(i.qty)) || 1)),
+      };
+    })
+    .filter((i): i is { slug: string; nombre: string; precio: number; qty: number } => i !== null);
+
+  if (items.length === 0) {
+    return json({ error: 'Los productos del carrito ya no están disponibles.' }, 400);
+  }
+
+  // Subtotal calculado con los precios REALES de la base.
+  const subtotal = items.reduce((sum, i) => sum + i.precio * i.qty, 0);
+
   // Umbral de envío gratis: 80000
   const shippingCost = (subtotal >= 80000 || cliente.metodoEnvio === 'retiro') 
     ? 0 
@@ -85,8 +117,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   const externalReference = `rn-${Date.now()}`;
 
   // Registrar orden pendiente en Supabase
-  const admin = supabaseAdmin();
-  if (admin) {
+  {
     const { error } = await admin
       .from('ordenes')
       .insert({

@@ -8,6 +8,10 @@ interface Props {
     destacada?: string;
     lead?: string;
     imagen?: string;
+    /** Velo sobre la foto: 0 = foto nítida, 100 = tapada. */
+    overlay?: number;
+    /** Desenfoque de la foto, en px. */
+    blur?: number;
   };
 }
 const c = Astro.props.config ?? {};
@@ -18,6 +22,9 @@ const lead =
   c.lead ||
   'Extractos dobles de hongos adaptógenos, flores de Bach y rituales naturales para acompañar tus momentos de calma.';
 const imagen = c.imagen || '';
+// Velo + desenfoque configurables desde el panel (valores suaves por defecto).
+const overlay = Math.min(100, Math.max(0, Number(c.overlay ?? 60))) / 100;
+const blur = Math.min(30, Math.max(0, Number(c.blur ?? 3)));
 ---
 
 <section class="hero">
@@ -52,7 +59,18 @@ const imagen = c.imagen || '';
     </g>
   </svg>
 
-  {imagen && <img class="hero-photo" src={imagen} alt="" aria-hidden="true" />}
+  {imagen && (
+    <>
+      <img
+        class="hero-photo"
+        src={imagen}
+        alt=""
+        aria-hidden="true"
+        style={`filter: blur(${blur}px);`}
+      />
+      <span class="hero-veil" aria-hidden="true" style={`opacity:${overlay};`}></span>
+    </>
+  )}
 
   <div class="wrap hero-inner">
     <span class="eyebrow" data-enter style="--enter-delay:80ms">{eyebrow}</span>
@@ -104,15 +122,29 @@ const imagen = c.imagen || '';
     animation: rn-breathe 8s var(--ease-in-out) infinite reverse;
   }
 
+  /* La foto va a tamaño completo; el "velo" de arriba controla cuánto se ve.
+     El inset negativo evita los bordes translúcidos que deja el blur. */
   .hero-photo {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    inset: -30px;
+    width: calc(100% + 60px);
+    height: calc(100% + 60px);
     object-fit: cover;
-    opacity: 0.22;
     z-index: 0;
-    mask-image: radial-gradient(120% 100% at 50% 50%, #000 40%, transparent 85%);
+  }
+  /* Velo crema difuminado: más denso en el centro (donde va el texto) y más
+     abierto en los bordes. La opacidad se setea desde el panel. */
+  .hero-veil {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      circle at 50% 45%,
+      var(--crema) 0%,
+      var(--crema) 42%,
+      color-mix(in srgb, var(--crema) 55%, transparent) 100%
+    );
   }
   .hero-inner {
     position: relative;

@@ -278,6 +278,17 @@
             <label>Palabra destacada</label><input id="h-destacada" />
             <label>Descripción</label><textarea id="h-lead"></textarea>
             <label>Foto de fondo (opcional)</label><div class="imgw" id="w-hero"></div>
+            <div class="grid2">
+              <div>
+                <label>Velo sobre la foto (0–100)</label>
+                <input id="h-overlay" type="number" min="0" max="100" placeholder="60" />
+              </div>
+              <div>
+                <label>Desenfoque (px)</label>
+                <input id="h-blur" type="number" min="0" max="30" placeholder="3" />
+              </div>
+            </div>
+            <p class="muted" style="margin-top:6px;">Más velo = foto más suave detrás del texto. Recomendado: velo 60, desenfoque 3.</p>
           </div>
 
           <div class="card">
@@ -439,6 +450,7 @@
         while (home.bento.length < 4) home.bento.push({});
         $('#h-eyebrow').value = home.hero.eyebrow || ''; $('#h-titulo').value = home.hero.titulo || '';
         $('#h-destacada').value = home.hero.destacada || ''; $('#h-lead').value = home.hero.lead || '';
+        $('#h-overlay').value = home.hero.overlay ?? ''; $('#h-blur').value = home.hero.blur ?? '';
         imgWidget($('#w-hero'), () => (home.hero.imagen ? [home.hero.imagen] : []), (a) => (home.hero.imagen = a[0] || ''), false);
         $('#e-eyebrow').value = home.estrella.eyebrow || ''; $('#e-titulo').value = home.estrella.titulo || ''; $('#e-desc').value = home.estrella.desc || '';
         imgWidget($('#w-estrella'), () => (home.estrella.imagen ? [home.estrella.imagen] : []), (a) => (home.estrella.imagen = a[0] || ''), false);
@@ -462,6 +474,8 @@
       $('#guardarSitio').addEventListener('click', async () => {
         home.hero.eyebrow = $('#h-eyebrow').value; home.hero.titulo = $('#h-titulo').value;
         home.hero.destacada = $('#h-destacada').value; home.hero.lead = $('#h-lead').value;
+        home.hero.overlay = $('#h-overlay').value === '' ? undefined : Number($('#h-overlay').value);
+        home.hero.blur = $('#h-blur').value === '' ? undefined : Number($('#h-blur').value);
         home.estrella.eyebrow = $('#e-eyebrow').value; home.estrella.titulo = $('#e-titulo').value; home.estrella.desc = $('#e-desc').value;
         const { ok, data } = await api({ action: 'saveHome', data: home });
         if (ok) { toast('Sitio guardado'); reloadPreview(); } else $('#sitioErr').textContent = data.error || 'Error';
