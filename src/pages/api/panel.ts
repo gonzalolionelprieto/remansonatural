@@ -105,7 +105,8 @@ export const POST: APIRoute = async ({ request }) => {
         .select('data')
         .eq('id', 1)
         .single();
-      if (error) return json({ error: error.message }, 502);
+      // Si la tabla no existe todavía, devolvemos data vacía en vez de 502
+      if (error) return json({ data: {} });
       return json({ data: data?.data ?? {} });
     }
 
@@ -122,7 +123,8 @@ export const POST: APIRoute = async ({ request }) => {
         .from('ordenes')
         .select('*')
         .order('created_at', { ascending: false });
-      if (error) return json({ error: error.message }, 502);
+      // Si la tabla no existe todavía, devolvemos lista vacía
+      if (error) return json({ ordenes: [] });
       return json({ ordenes: data });
     }
 

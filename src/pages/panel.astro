@@ -3,7 +3,7 @@
 ---
 
 <!doctype html>
-<html lang="es-AR">
+<html lang="es-AR" style="color-scheme:dark;">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -36,9 +36,9 @@
         width: 100%;
         appearance: none;
         -webkit-appearance: none;
-        background: #141f19;
-        border: 1.5px solid #3a4c40;
-        color: #eef2ec;
+        background: #141f19 !important;
+        border: 1.5px solid #3a4c40 !important;
+        color: #eef2ec !important;
         border-radius: 8px;
         padding: 10px 13px;
         font-family: 'Inter', system-ui, sans-serif;
@@ -47,14 +47,24 @@
         margin-top: 5px;
         transition: border-color 0.2s, box-shadow 0.2s;
       }
+      /* Anula autofill de Chrome/Edge que pone fondo amarillo/blanco */
+      input:-webkit-autofill,
+      input:-webkit-autofill:hover,
+      input:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0 1000px #141f19 inset !important;
+        -webkit-text-fill-color: #eef2ec !important;
+        caret-color: #eef2ec;
+      }
       input[type="checkbox"] {
         display: inline-block;
         width: auto;
         accent-color: #6b8469;
+        background: transparent !important;
+        border: none !important;
       }
       input:focus, select:focus, textarea:focus {
         outline: none;
-        border-color: #6b8469;
+        border-color: #6b8469 !important;
         box-shadow: 0 0 0 3px rgba(107,132,105,.2);
       }
       textarea { min-height: 72px; resize: vertical; }
