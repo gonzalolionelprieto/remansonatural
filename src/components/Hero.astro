@@ -1,0 +1,157 @@
+---
+/** Hero de la Home: patrón botánico animado + sello + titular emocional.
+ *  Textos y foto editables desde el panel (config), con fallback. */
+interface Props {
+  config?: {
+    eyebrow?: string;
+    titulo?: string;
+    destacada?: string;
+    lead?: string;
+    imagen?: string;
+  };
+}
+const c = Astro.props.config ?? {};
+const eyebrow = c.eyebrow || 'Botica holística artesanal';
+const titulo = c.titulo || 'Volvé a tu';
+const destacada = c.destacada || 'remanso';
+const lead =
+  c.lead ||
+  'Extractos dobles de hongos adaptógenos, flores de Bach y rituales naturales para acompañar tus momentos de calma.';
+const imagen = c.imagen || '';
+---
+
+<section class="hero">
+  <!-- Patrón botánico de línea fina, con deriva lenta -->
+  <svg class="hero-pattern" viewBox="0 0 900 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <g id="h-reishi"><path d="M-18,0 Q-21,-15 0,-17 Q21,-15 18,0 Q0,7 -18,0 Z" fill="none" stroke-width="1.4"></path><path d="M-3,0 L-4,11 Q0,13 4,11 L3,0" fill="none" stroke-width="1.4"></path></g>
+      <g id="h-leaf"><path d="M0,16 C0,4 0,-8 0,-18" fill="none" stroke-width="1.2"></path><path d="M0,6 Q9,3 12,-6 Q3,-4 0,4 Z" fill="none" stroke-width="1.1"></path><path d="M0,-2 Q-9,-5 -12,-14 Q-3,-12 0,-4 Z" fill="none" stroke-width="1.1"></path></g>
+      <g id="h-rip"><path d="M-17,2 Q0,-10 17,2" fill="none" stroke-width="1.2"></path><path d="M-11,4 Q0,-4 11,4" fill="none" stroke-width="1.2"></path></g>
+      <pattern id="h-pat" width="200" height="200" patternUnits="userSpaceOnUse">
+        <use href="#h-reishi" x="56" y="54" stroke="#A87C5A"></use>
+        <use href="#h-leaf" x="150" y="48" stroke="#6B8469"></use>
+        <use href="#h-rip" x="46" y="150" stroke="#A87C5A"></use>
+        <use href="#h-leaf" x="150" y="150" stroke="#6B8469"></use>
+      </pattern>
+    </defs>
+    <rect x="-40" y="-40" width="980" height="580" fill="url(#h-pat)"></rect>
+  </svg>
+
+  <!-- Sello circular -->
+  <svg class="hero-seal" viewBox="0 0 200 200" aria-hidden="true">
+    <circle cx="100" cy="100" r="94" fill="none" stroke="#2F4A3A" stroke-width="1.4"></circle>
+    <circle cx="100" cy="100" r="86" fill="none" stroke="#A87C5A" stroke-width="0.7"></circle>
+    <path id="arcTop" d="M42,100 A58,58 0 0 1 158,100" fill="none"></path>
+    <path id="arcBot" d="M48,108 A52,52 0 0 0 152,108" fill="none"></path>
+    <text font-family="Inter Variable, sans-serif" font-size="12" letter-spacing="4" fill="#2F4A3A"><textPath href="#arcTop" startOffset="50%" text-anchor="middle">REMANSO NATURAL</textPath></text>
+    <text font-family="Inter Variable, sans-serif" font-size="7.5" letter-spacing="3" fill="#A87C5A"><textPath href="#arcBot" startOffset="50%" text-anchor="middle">HECHO A MANO · 2026</textPath></text>
+    <g transform="translate(100,96)" class="hero-seal-mark">
+      <path d="M0,-24 C8,-8 8,2 0,9 C-8,2 -8,-8 0,-24 Z" fill="none" stroke="#2F4A3A" stroke-width="1.8" stroke-linejoin="round"></path>
+      <path d="M-24,20 Q0,6 24,20" fill="none" stroke="#2F4A3A" stroke-width="1.8" stroke-linecap="round"></path>
+      <path d="M-16,28 Q0,17 16,28" fill="none" stroke="#A87C5A" stroke-width="1.8" stroke-linecap="round"></path>
+    </g>
+  </svg>
+
+  {imagen && <img class="hero-photo" src={imagen} alt="" aria-hidden="true" />}
+
+  <div class="wrap hero-inner">
+    <span class="eyebrow" data-enter style="--enter-delay:80ms">{eyebrow}</span>
+    <h1 data-enter style="--enter-delay:200ms">{titulo} <em>{destacada}</em></h1>
+    <p class="hero-lead" data-enter style="--enter-delay:340ms">{lead}</p>
+    <div class="hero-ctas" data-enter style="--enter-delay:480ms">
+      <a class="btn btn-solid" href="#destacados">Ver la colección</a>
+      <a class="btn btn-ghost" href="/metodo">Conocé nuestro método</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    padding-block: clamp(4rem, 3rem + 6vw, 7rem) clamp(4.5rem, 3rem + 6vw, 7.25rem);
+    background:
+      radial-gradient(120% 90% at 50% -10%, color-mix(in srgb, var(--salvia) 12%, transparent), transparent 55%),
+      var(--crema);
+  }
+
+  .hero-pattern {
+    position: absolute;
+    inset: -6% -6% -6% -6%;
+    width: 112%;
+    height: 112%;
+    opacity: 0.4;
+    z-index: 0;
+    animation: rn-drift 40s var(--ease-in-out) infinite alternate;
+  }
+
+  .hero-seal {
+    position: absolute;
+    top: 2rem;
+    right: 6%;
+    width: 116px;
+    height: 116px;
+    z-index: 2;
+    opacity: 0;
+    /* Fade-in de entrada + respiración continua (dos animaciones) */
+    animation:
+      rn-fade 0.8s var(--ease-out) 0.6s forwards,
+      rn-breathe 8s var(--ease-in-out) 1.4s infinite;
+  }
+  .hero-seal-mark {
+    transform-origin: center;
+    animation: rn-breathe 8s var(--ease-in-out) infinite reverse;
+  }
+
+  .hero-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.22;
+    z-index: 0;
+    mask-image: radial-gradient(120% 100% at 50% 50%, #000 40%, transparent 85%);
+  }
+  .hero-inner {
+    position: relative;
+    z-index: 1;
+  }
+  h1 {
+    margin-top: 0.6rem;
+  }
+  h1 em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--salvia);
+  }
+  .hero-lead {
+    max-width: 52ch;
+    margin: 1.3rem auto 2.1rem;
+    font-size: var(--fs-lead);
+    color: var(--text-soft);
+  }
+  .hero-ctas {
+    display: flex;
+    gap: 0.85rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 980px) {
+    .hero-seal {
+      display: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-pattern,
+    .hero-seal,
+    .hero-seal-mark {
+      animation: none;
+    }
+    .hero-seal {
+      opacity: 1;
+    }
+  }
+</style>

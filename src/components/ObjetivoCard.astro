@@ -1,0 +1,111 @@
+---
+/** Tarjeta "comprá por objetivo". Icono de línea fina por slug. */
+interface Props {
+  slug: 'calma' | 'sueno' | 'enfoque' | 'ritual';
+  label: string;
+  desc: string;
+}
+const { slug, label, desc } = Astro.props;
+const href = `/tienda?objetivo=${slug}`;
+---
+
+<a class="obj" href={href} data-reveal="rise">
+  <span class="obj-ic" aria-hidden="true">
+    {slug === 'calma' && (
+      <svg viewBox="-24 -24 48 52" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M-16,8 Q0,13 16,8"></path><path d="M0,8 C-4,-3 -2,-11 0,-14 C2,-11 4,-3 0,8 Z"></path><path d="M0,8 C-9,0 -12,-5 -12,-9 C-6,-8 -3,-2 0,8 Z"></path><path d="M0,8 C9,0 12,-5 12,-9 C6,-8 3,-2 0,8 Z"></path></svg>
+    )}
+    {slug === 'sueno' && (
+      <svg viewBox="-24 -24 48 52" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6,-13 A13,13 0 1 0 6,13 A10,10 0 1 1 6,-13 Z"></path><path d="M12,-7 l1.5,3 l3,1.5 l-3,1.5 l-1.5,3 l-1.5,-3 l-3,-1.5 l3,-1.5 Z"></path></svg>
+    )}
+    {slug === 'enfoque' && (
+      <svg viewBox="-24 -24 48 52" fill="none" stroke="currentColor" stroke-width="1.9"><circle r="13"></circle><circle r="6.5"></circle><circle r="1.6" fill="currentColor"></circle></svg>
+    )}
+    {slug === 'ritual' && (
+      <svg viewBox="-24 -24 48 52" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M-6,14 L6,14"></path><path d="M0,14 L0,-2"></path><path d="M0,-2 C-5,-6 5,-10 0,-15 C-4,-18 4,-21 0,-25"></path></svg>
+    )}
+  </span>
+  <h3>{label}</h3>
+  <p>{desc}</p>
+  <span class="obj-arrow" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+  </span>
+</a>
+
+<style>
+  .obj {
+    position: relative;
+    display: block;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 2rem 1.4rem 2.1rem;
+    text-align: center;
+    transition: transform var(--dur) var(--ease-out),
+      box-shadow var(--dur) var(--ease-out),
+      border-color var(--dur) var(--ease-out);
+  }
+  .obj:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+  }
+
+  .obj-ic {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 1rem;
+    border-radius: var(--r-full);
+    border: 1px solid var(--border-strong);
+    color: var(--verde);
+    transition: background var(--dur) var(--ease-out),
+      color var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+  }
+  .obj-ic svg {
+    width: 30px;
+    height: 30px;
+    overflow: visible;
+  }
+  .obj:hover .obj-ic {
+    background: var(--verde);
+    color: var(--crema);
+    transform: scale(1.06) rotate(-3deg);
+  }
+
+  .obj h3 {
+    font-size: var(--fs-h3);
+    font-weight: 500;
+  }
+  .obj p {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    margin-top: 0.3rem;
+  }
+
+  .obj-arrow {
+    display: inline-grid;
+    place-items: center;
+    margin-top: 0.9rem;
+    color: var(--tierra);
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity var(--dur) var(--ease-out),
+      transform var(--dur) var(--ease-out);
+  }
+  .obj-arrow svg {
+    width: 20px;
+    height: 20px;
+  }
+  .obj:hover .obj-arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .obj-arrow {
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>

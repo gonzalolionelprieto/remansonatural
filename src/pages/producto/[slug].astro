@@ -1,0 +1,798 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Accordion from '../../components/Accordion.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import AddToCartButton from '../../components/AddToCartButton.astro';
+import EnvioCalculator from '../../components/EnvioCalculator.astro';
+import Stars from '../../components/Stars.astro';
+import Logo from '../../components/Logo.astro';
+import DosageCalculator from '../../components/DosageCalculator.astro';
+import {
+  toProduct,
+  getProductsBySlugs,
+  objetivoLabels,
+  lineaLabels,
+} from '../../lib/products';
+import { lineaColor } from '../../lib/types';
+import { formatPrice, precioTransferencia, cuota } from '../../lib/format';
+import { site, disclaimer } from '../../lib/site';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('productos');
+  return entries.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const product = toProduct(entry);
+const { Content } = await render(entry);
+
+const {
+  nombre,
+  linea,
+  precio,
+  volumen,
+  graduacion,
+  objetivos,
+  paraQueMomento,
+  modoDeUso,
+  ingredientes,
+  nuestroProceso,
+  envioYCuidado,
+  advertencias,
+  imagenes = [],
+  stock = 0,
+  combinaCon = [],
+  reseñas = [],
+} = product;
+
+const cross = await getProductsBySlugs(combinaCon);
+
+const envioGratis = precio >= 85000;
+const sinStock = stock <= 0;
+const transferencia = precioTransferencia(precio);
+const avgRating =
+  reseñas.length > 0
+    ? reseñas.reduce((s, r) => s + r.estrellas, 0) / reseñas.length
+    : 0;
+
+const acordeones = [
+  { title: 'Modo de uso y dosis', body: modoDeUso },
+  { title: 'Ingredientes y graduación', body: ingredientes },
+  { title: 'Nuestro proceso', body: nuestroProceso },
+  { title: 'Envío y cuidado', body: envioYCuidado },
+  { title: 'Advertencias', body: advertencias },
+].filter((a) => a.body);
+
+const waHref = `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(
+  `Hola 🌿 Quería consultar por ${nombre}`
+)}`;
+
+// Datos estructurados schema.org/Product
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: nombre,
+  description: paraQueMomento,
+  brand: { '@type': 'Brand', name: site.name },
+  category: lineaLabels[linea],
+  offers: {
+    '@type': 'Offer',
+    priceCurrency: 'ARS',
+    price: precio,
+    availability: sinStock
+      ? 'https://schema.org/OutOfStock'
+      : 'https://schema.org/InStock',
+    url: new URL(`/producto/${product.slug}`, site.url).href,
+  },
+  ...(reseñas.length > 0 && {
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: avgRating.toFixed(1),
+      reviewCount: reseñas.length,
+    },
+  }),
+};
+---
+
+<BaseLayout title={nombre} description={paraQueMomento}>
+  <Fragment slot="head">
+    <meta property="og:type" content="product" />
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+  </Fragment>
+
+  <nav class="breadcrumb" aria-label="Migas de pan">
+    <div class="wrap">
+      <a href="/">Inicio</a><span aria-hidden="true">/</span>
+      <a href="/tienda">Tienda</a><span aria-hidden="true">/</span>
+      <span aria-current="page">{nombre}</span>
+    </div>
+  </nav>
+
+  <section class="section pdp">
+    <div class="wrap pdp-grid">
+      <!-- Galería -->
+      <div class="gallery" data-enter style="--enter-delay:40ms">
+        <div class="gallery-main" data-gallery-main>
+          {imagenes.length > 0 ? (
+            <img src={imagenes[0]} alt={nombre} width="800" height="800" fetchpriority="high" />
+          ) : (
+            <span class="gallery-ph" aria-hidden="true">
+              <Logo size={110} stroke="var(--salvia)" accent="var(--tierra)" />
+              <em>Fotos en camino</em>
+            </span>
+          )}
+          {envioGratis && !sinStock && <span class="g-badge">Envío gratis</span>}
+          {sinStock && <span class="g-badge g-badge-out">Agotado</span>}
+        </div>
+        {imagenes.length > 1 && (
+          <div class="gallery-thumbs" role="list">
+            {imagenes.map((src, i) => (
+              <button
+                class:list={['thumb', { 'is-active': i === 0 }]}
+                type="button"
+                data-thumb={src}
+                aria-label={`Ver imagen ${i + 1}`}
+              >
+                <img src={src} alt="" width="120" height="120" loading="lazy" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <!-- Info -->
+      <div class="info" data-enter style="--enter-delay:160ms">
+        <div class="info-head">
+          <span class="eyebrow" style={`color:${lineaColor[linea]}`}>{lineaLabels[linea]}</span>
+          <h1>{nombre}</h1>
+          {reseñas.length > 0 && (
+            <a href="#resenas" class="rating-link">
+              <Stars value={avgRating} />
+              <span>{reseñas.length} {reseñas.length === 1 ? 'reseña' : 'reseñas'}</span>
+            </a>
+          )}
+        </div>
+
+        <!-- Para qué momento (lenguaje seguro) -->
+        <p class="para-momento">{paraQueMomento}</p>
+
+        <!-- Objetivos -->
+        <ul class="obj-tags" role="list">
+          {objetivos.map((o) => (
+            <li><a href={`/tienda?objetivo=${o}`}>{objetivoLabels[o]}</a></li>
+          ))}
+        </ul>
+
+        <!-- Precio -->
+        <div class="price-block">
+          <div class="price-main">
+            <span class="price">{formatPrice(precio)}</span>
+            {(volumen || graduacion) && (
+              <span class="price-meta">{[volumen, graduacion].filter(Boolean).join(' · ')}</span>
+            )}
+          </div>
+          <ul class="price-notes" role="list">
+            <li><b>{formatPrice(transferencia)}</b> pagando por transferencia (10% off)</li>
+            <li>3 cuotas sin interés de {cuota(precio, 3)}</li>
+            {envioGratis
+              ? <li class="ok">Envío gratis a todo el país</li>
+              : <li>Sumá {formatPrice(85000 - precio)} más y tenés envío gratis</li>}
+          </ul>
+        </div>
+
+        <!-- Comprar -->
+        {sinStock ? (
+          <div class="buy">
+            <p class="out-note">Por ahora está agotado. Escribinos y te avisamos cuando vuelva.</p>
+            <a class="btn btn-ghost" href={waHref} target="_blank" rel="noopener noreferrer">Avisame por WhatsApp</a>
+          </div>
+        ) : (
+          <div class="buy">
+            <div class="qty" role="group" aria-label="Cantidad">
+              <button type="button" class="qty-btn" data-qty-dec aria-label="Quitar uno">−</button>
+              <input class="qty-input" type="text" inputmode="numeric" value="1" data-qty aria-label="Cantidad" readonly />
+              <button type="button" class="qty-btn" data-qty-inc aria-label="Agregar uno">+</button>
+            </div>
+            <div class="buy-add">
+              <AddToCartButton product={product} variant="solid" label="Agregar al carrito" block />
+            </div>
+          </div>
+        )}
+        {stock > 0 && stock <= 6 && (
+          <p class="stock-hint">Quedan pocas unidades — lote actual: {stock}</p>
+        )}
+
+        <!-- Calculadora de envío -->
+        <EnvioCalculator />
+
+        <!-- Calculadora de dosis (solo para extractos de hongos y esencias florales) -->
+        {(tipo === 'extracto' || tipo === 'esencia') && (
+          <DosageCalculator tipo={tipo} nombre={nombre} />
+        )}
+
+        <!-- Medios de pago -->
+        <div class="medios">
+          <span class="medios-label">Pagá con</span>
+          <ul role="list">
+            <li>Mercado Pago</li>
+            <li>Visa</li>
+            <li>Mastercard</li>
+            <li>Transferencia</li>
+          </ul>
+        </div>
+
+        <!-- Microconfianza -->
+        <ul class="microtrust" role="list">
+          <li>Hecho a mano en pequeños lotes</li>
+          <li>Envío protegido en 24–72 h</li>
+          <li>Atención humana por WhatsApp</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Descripción + acordeones -->
+  <section class="section pdp-detail">
+    <div class="wrap pdp-detail-grid">
+      <div class="descripcion" data-reveal="rise">
+        <h2>Sobre este ritual</h2>
+        <div class="prose-body"><Content /></div>
+      </div>
+      <div class="acordeones" data-reveal="rise">
+        {acordeones.map((a, i) => (
+          <Accordion title={a.title} open={i === 0}>
+            <p>{a.body}</p>
+          </Accordion>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Disclaimer ANMAT -->
+  <section class="wrap">
+    <p class="disclaimer-box" data-reveal="fade">{disclaimer}</p>
+  </section>
+
+  <!-- Cross-sell -->
+  {cross.length > 0 && (
+    <section class="section cross">
+      <div class="wrap">
+        <div class="section-head is-center">
+          <span class="eyebrow">Combiná con…</span>
+          <h2>Completá tu ritual</h2>
+        </div>
+        <div class="cross-grid" data-reveal-group data-reveal-step="90">
+          {cross.map((p) => <ProductCard product={p} />)}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Reseñas -->
+  {reseñas.length > 0 && (
+    <section class="section resenas" id="resenas">
+      <div class="wrap">
+        <div class="resenas-top" data-reveal="rise">
+          <div class="resenas-avg">
+            <span class="avg-num">{avgRating.toFixed(1)}</span>
+            <div>
+              <Stars value={avgRating} size={18} />
+              <p>{reseñas.length} {reseñas.length === 1 ? 'reseña' : 'reseñas'} de compras verificadas</p>
+            </div>
+          </div>
+          <span class="eyebrow">Lo que dicen</span>
+        </div>
+        <div class="resenas-grid" data-reveal-group data-reveal-step="90">
+          {reseñas.map((r) => (
+            <figure class="resena" data-reveal="rise">
+              <div class="resena-top">
+                <Stars value={r.estrellas} />
+                {r.verificada && (
+                  <span class="verificada">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 6"></path></svg>
+                    Compra verificada
+                  </span>
+                )}
+              </div>
+              <blockquote>“{r.texto}”</blockquote>
+              <figcaption>
+                <b>{r.autor}</b>{r.fecha && <span> · {r.fecha}</span>}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+</BaseLayout>
+
+<style>
+  .breadcrumb {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding-block: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .breadcrumb .wrap {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .breadcrumb a:hover {
+    color: var(--tierra);
+  }
+  .breadcrumb [aria-current] {
+    color: var(--text);
+  }
+
+  .pdp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(1.75rem, 5vw, 3.5rem);
+    align-items: start;
+  }
+
+  /* ---- Galería ---- */
+  .gallery {
+    position: sticky;
+    top: 96px;
+    display: grid;
+    gap: 0.75rem;
+  }
+  .gallery-main {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    background:
+      radial-gradient(80% 80% at 50% 35%, color-mix(in srgb, var(--salvia) 10%, transparent), transparent),
+      var(--crema-2);
+    border: 1px solid var(--border);
+    display: grid;
+    place-items: center;
+  }
+  .gallery-main img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .gallery-ph {
+    display: grid;
+    justify-items: center;
+    gap: 0.75rem;
+    opacity: 0.6;
+  }
+  .gallery-ph em {
+    font-style: normal;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+  .g-badge {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: var(--verde);
+    color: var(--crema);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--r-pill);
+  }
+  .g-badge-out {
+    background: var(--carbon);
+  }
+  .gallery-thumbs {
+    display: flex;
+    gap: 0.6rem;
+  }
+  .thumb {
+    width: 72px;
+    height: 72px;
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--crema-2);
+    cursor: pointer;
+    padding: 0;
+    transition: border-color var(--dur) var(--ease-out);
+  }
+  .thumb.is-active {
+    border-color: var(--verde);
+  }
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* ---- Info ---- */
+  .info-head h1 {
+    margin: 0.4rem 0 0.5rem;
+  }
+  .rating-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .rating-link:hover {
+    color: var(--tierra);
+  }
+
+  .para-momento {
+    font-size: var(--fs-lead);
+    color: var(--text-soft);
+    margin: 1rem 0 1.25rem;
+    max-width: 46ch;
+  }
+
+  .obj-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .obj-tags a {
+    display: inline-block;
+    font-size: 0.78rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-pill);
+    padding: 0.35rem 0.8rem;
+    color: var(--text);
+    transition: background var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+  }
+  .obj-tags a:hover {
+    background: var(--verde);
+    color: var(--crema);
+    border-color: var(--verde);
+  }
+
+  .price-block {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 1.25rem 1.35rem;
+    margin-bottom: 1.5rem;
+  }
+  .price-main {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.85rem;
+  }
+  .price {
+    font-family: var(--font-serif);
+    font-size: 2rem;
+    font-weight: 500;
+    color: var(--verde);
+    font-variation-settings: 'opsz' 40;
+  }
+  .price-meta {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .price-notes {
+    display: grid;
+    gap: 0.4rem;
+    font-size: 0.88rem;
+    color: var(--text-soft);
+  }
+  .price-notes li {
+    position: relative;
+    padding-left: 1.2rem;
+  }
+  .price-notes li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.5em;
+    width: 6px;
+    height: 6px;
+    border-radius: var(--r-full);
+    background: var(--tierra);
+  }
+  .price-notes b {
+    color: var(--verde);
+    font-weight: 600;
+  }
+  .price-notes .ok {
+    color: var(--salvia);
+    font-weight: 500;
+  }
+
+  .buy {
+    display: flex;
+    gap: 0.75rem;
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+  .qty {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-btn);
+    overflow: hidden;
+  }
+  .qty-btn {
+    width: 44px;
+    height: 100%;
+    min-height: 56px;
+    border: none;
+    background: transparent;
+    font-size: 1.2rem;
+    color: var(--verde);
+    cursor: pointer;
+    transition: background var(--dur) var(--ease-out);
+  }
+  .qty-btn:hover {
+    background: rgba(47, 74, 58, 0.08);
+  }
+  .qty-input {
+    width: 36px;
+    text-align: center;
+    border: none;
+    background: transparent;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .qty-input:focus {
+    outline: none;
+  }
+  .buy-add {
+    flex: 1;
+    min-width: 200px;
+  }
+  .out-note {
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    margin-bottom: 0.75rem;
+    width: 100%;
+  }
+  .stock-hint {
+    font-size: 0.82rem;
+    color: var(--tierra);
+    margin-top: 0.85rem;
+  }
+
+  .medios {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1.25rem;
+  }
+  .medios-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .medios ul {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    list-style: none;
+  }
+  .medios li {
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    padding: 0.25rem 0.6rem;
+    font-size: 0.72rem;
+    color: var(--text-soft);
+  }
+
+  .microtrust {
+    display: grid;
+    gap: 0.45rem;
+    margin-top: 1.6rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid var(--border);
+  }
+  .microtrust li {
+    position: relative;
+    padding-left: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--text-soft);
+  }
+  .microtrust li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.35em;
+    width: 12px;
+    height: 12px;
+    border-radius: var(--r-full);
+    border: 1.5px solid var(--salvia);
+  }
+
+  /* ---- Detalle: descripción + acordeones ---- */
+  .pdp-detail {
+    background: var(--bg-alt);
+  }
+  .pdp-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(2rem, 5vw, 3.5rem);
+    align-items: start;
+  }
+  .descripcion h2,
+  .cross .section-head h2,
+  .resenas .section-head h2 {
+    margin-top: 0.4rem;
+  }
+  .prose-body :global(p) {
+    color: var(--text-soft);
+    margin-bottom: 1rem;
+    max-width: 60ch;
+  }
+  .prose-body :global(strong) {
+    color: var(--verde);
+    font-weight: 600;
+  }
+
+  /* ---- Disclaimer ---- */
+  .disclaimer-box {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--tierra);
+    border-radius: var(--r-sm);
+    background: var(--crema);
+    padding: 1rem 1.25rem;
+    margin-block: clamp(2rem, 5vw, 3rem);
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* ---- Cross-sell + reseñas ---- */
+  .section-head.is-center {
+    text-align: center;
+    margin-bottom: clamp(2rem, 4vw, 2.75rem);
+  }
+  .cross-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.15rem;
+    max-width: 860px;
+    margin-inline: auto;
+  }
+  .resenas {
+    background: var(--bg-alt);
+  }
+  .resenas-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: clamp(1.5rem, 3vw, 2rem);
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .resenas-avg {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  .avg-num {
+    font-family: var(--font-serif);
+    font-size: 3rem;
+    font-weight: 600;
+    color: var(--verde);
+    line-height: 1;
+  }
+  .resenas-avg p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+  .resenas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.15rem;
+  }
+  .resena {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 1.5rem;
+  }
+  .resena-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .verificada {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.72rem;
+    color: var(--salvia);
+    font-weight: 500;
+  }
+  .verificada svg {
+    width: 13px;
+    height: 13px;
+  }
+  .resena blockquote {
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    color: var(--verde);
+    line-height: 1.5;
+    margin: 0.75rem 0 0.85rem;
+  }
+  .resena figcaption {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .resena figcaption b {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  @media (max-width: 860px) {
+    .pdp-grid,
+    .pdp-detail-grid {
+      grid-template-columns: 1fr;
+    }
+    .gallery {
+      position: static;
+    }
+    .cross-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media (max-width: 480px) {
+    .cross-grid {
+      grid-template-columns: 1fr;
+    }
+    .buy-add {
+      min-width: 0;
+    }
+  }
+</style>
+
+<script>
+  // Galería: cambiar imagen principal al tocar un thumb
+  function initGallery() {
+    document.querySelectorAll<HTMLElement>('[data-gallery-main]').forEach((main) => {
+      const img = main.querySelector('img');
+      const thumbs = document.querySelectorAll<HTMLButtonElement>('[data-thumb]');
+      thumbs.forEach((t) => {
+        t.addEventListener('click', () => {
+          if (img) img.src = t.dataset.thumb!;
+          thumbs.forEach((x) => x.classList.remove('is-active'));
+          t.classList.add('is-active');
+        });
+      });
+    });
+  }
+
+  // Selector de cantidad (la cantidad se usará en el carrito, paso 5)
+  function initQty() {
+    document.querySelectorAll<HTMLElement>('.qty').forEach((box) => {
+      const input = box.querySelector<HTMLInputElement>('[data-qty]');
+      const dec = box.querySelector<HTMLButtonElement>('[data-qty-dec]');
+      const inc = box.querySelector<HTMLButtonElement>('[data-qty-inc]');
+      const set = (n: number) => {
+        if (input) input.value = String(Math.max(1, Math.min(99, n)));
+      };
+      dec?.addEventListener('click', () => set(Number(input?.value ?? 1) - 1));
+      inc?.addEventListener('click', () => set(Number(input?.value ?? 1) + 1));
+    });
+  }
+
+  // Con ClientRouter (View Transitions) astro:page-load también corre en la
+  // carga inicial, así que NO llamamos init directo (evita doble binding).
+  document.addEventListener('astro:page-load', () => {
+    initGallery();
+    initQty();
+  });
+</script>

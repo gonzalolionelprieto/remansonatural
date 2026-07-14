@@ -1,0 +1,114 @@
+/* ============================================================
+   Remanso Natural · Design Tokens
+   Fuente única de verdad para color, tipografía, espacio y ritmo.
+   ============================================================ */
+
+:root {
+  /* ---- Marca · Colores base (EXACTOS) ---- */
+  --verde: #2f4a3a;      /* Verde bosque · primario */
+  --verde-900: #24382d;  /* hover / oscuro */
+  --verde-700: #35543f;
+  --salvia: #6b8469;     /* Salvia · secundario */
+  --tierra: #a87c5a;     /* Tierra / caramelo · acento */
+  --crema: #f4f1ea;      /* Crema · fondo */
+  --crema-2: #e9e3d5;    /* Crema oscurecido · superficies alternas */
+  --crema-3: #efe9dc;    /* Crema para placeholders / thumbs */
+  --carbon: #1e1e1e;     /* Negro cálido · texto */
+
+  /* ---- Acentos por línea de producto ---- */
+  --linea-alquimia: #2f4a3a;
+  --linea-bach: #9a86a6;
+  --linea-humos: #a87c5a;
+  --linea-cristales: #789b8c;
+
+  /* ---- Roles semánticos ---- */
+  --bg: var(--crema);
+  --bg-alt: var(--crema-2);
+  --surface: var(--crema);
+  --text: var(--carbon);
+  --text-soft: #40453d;         /* párrafos sobre crema */
+  --text-muted: var(--salvia);  /* metadatos, subtítulos */
+  --heading: var(--verde);
+  --accent: var(--tierra);
+  --border: rgba(168, 124, 90, 0.28);   /* borde tierra sutil */
+  --border-strong: rgba(168, 124, 90, 0.45);
+  --on-dark: var(--crema);
+  --on-dark-soft: #c4cfbf;
+
+  /* ---- Tipografía ---- */
+  --font-serif: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Escala tipográfica fluida (clamp: mobile → desktop) */
+  --fs-eyebrow: 0.75rem;                              /* 12px */
+  --fs-sm: 0.8125rem;                                 /* 13px */
+  --fs-body: 1rem;                                    /* 16px */
+  --fs-lead: clamp(1rem, 0.95rem + 0.4vw, 1.125rem);  /* 16 → 18 */
+  --fs-h3: clamp(1.125rem, 1rem + 0.6vw, 1.25rem);    /* 18 → 20 */
+  --fs-h2: clamp(1.75rem, 1.3rem + 2.2vw, 2.5rem);    /* 28 → 40 */
+  --fs-h1: clamp(2.5rem, 1.6rem + 4.4vw, 4.125rem);   /* 40 → 66 */
+
+  --lh-tight: 1.08;
+  --lh-snug: 1.25;
+  --lh-body: 1.7;
+
+  --tracking-wide: 0.02em;
+  --tracking-eyebrow: 0.3em;
+  --tracking-caps: 0.14em;
+
+  /* Optical sizing para Fraunces variable (título vs. texto) */
+  --opsz-display: 120;
+  --opsz-text: 30;
+
+  /* ---- Espacio (escala 4px) ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 2.75rem;
+  --space-8: 3.5rem;
+  --space-9: 5rem;
+  --space-10: 7rem;
+
+  /* Ritmo vertical de secciones (fluido) */
+  --section-y: clamp(3.5rem, 2.5rem + 4vw, 5.25rem);
+
+  /* ---- Layout ---- */
+  --maxw: 1200px;
+  --maxw-prose: 68ch;
+  --gutter: clamp(1.25rem, 0.8rem + 2vw, 1.75rem);
+
+  /* ---- Radios ----
+     La marca evita "pastilla en todo": los CTAs usan un rectángulo de
+     esquinas suaves (--r-btn: 10px). La pastilla queda para badges y chips. */
+  --r-sm: 8px;
+  --r-btn: 10px;
+  --r-md: 16px;
+  --r-lg: 20px;
+  --r-pill: 40px;
+  --r-full: 999px;
+
+  /* ---- Sombras (verdes, cálidas, nunca gris azulado) ---- */
+  --shadow-sm: 0 2px 8px rgba(47, 74, 58, 0.06);
+  --shadow-md: 0 16px 34px rgba(47, 74, 58, 0.1);
+  --shadow-lg: 0 28px 60px rgba(47, 74, 58, 0.14);
+
+  /* ---- Movimiento ---- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);       /* salida suave */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 0.18s;
+  --dur: 0.35s;
+  --dur-slow: 0.6s;
+  --dur-reveal: 0.8s;
+
+  /* ---- Capas (z-index) ---- */
+  --z-header: 50;
+  --z-drawer: 80;
+  --z-overlay: 70;
+  --z-fab: 60;
+
+  color-scheme: light;
+}

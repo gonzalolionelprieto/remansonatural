@@ -1,0 +1,186 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Accordion from '../components/Accordion.astro';
+import { site } from '../lib/site';
+
+const waHref = `https://wa.me/${site.whatsapp}?text=${encodeURIComponent('Hola Remanso Natural 🌿 tengo una consulta')}`;
+
+const faqs = [
+  { q: '¿Cómo conservo los productos?', a: 'En lugar fresco y seco, lejos de la luz directa y de fuentes de calor. Los goteros conviene agitarlos antes de usar.' },
+  { q: '¿Los extractos tienen alcohol?', a: 'Sí, nuestros dobles extractos usan alcohol de cereal como parte de la extracción (aprox. 25% Alc./Vol.). Podés diluir las gotas en una infusión o agua.' },
+  { q: 'Estoy embarazada / tomo medicación, ¿puedo usarlos?', a: 'Son productos de bienestar, no medicamentos. Ante embarazo, lactancia o medicación, consultá siempre a un profesional de la salud antes de usarlos.' },
+  { q: '¿En cuánto tiempo llega mi pedido?', a: 'Despachamos en 24–72 h hábiles. Los tiempos de entrega dependen del correo y la zona; en AMBA suele ser más rápido.' },
+  { q: '¿Puedo pagar en cuotas o por transferencia?', a: 'Sí: 3 cuotas sin interés con tarjeta, o 10% off pagando por transferencia. Todo a través de Mercado Pago.' },
+];
+
+const secciones = [
+  { id: 'como-usar', t: 'Cómo usar', items: [
+    'Empezá con poco y encontrá tu dosis con el tiempo.',
+    'Agitá los goteros antes de cada uso.',
+    'Podés tomar los extractos solos o en tu infusión preferida.',
+    'Cada producto tiene su modo de uso detallado en la ficha.',
+  ]},
+  { id: 'envios', t: 'Envíos', items: [
+    'Enviamos a todo el país.',
+    'Despacho en 24–72 h hábiles, con embalaje a prueba de golpes.',
+    'Envío gratis en compras desde $85.000.',
+    'Seguimiento por WhatsApp una vez despachado.',
+  ]},
+  { id: 'cambios', t: 'Cambios y devoluciones', items: [
+    'Tenés botón de arrepentimiento según la ley argentina.',
+    'Si algo llega dañado, escribinos y lo resolvemos.',
+    'Política clara y sin vueltas: queremos que estés tranquilo con tu compra.',
+  ]},
+];
+---
+
+<BaseLayout
+  title="Ayuda"
+  description="Cómo usar nuestros productos, envíos, cambios, preguntas frecuentes y contacto. Estamos para acompañarte."
+>
+  <PageHeader
+    eyebrow="Estamos para ayudarte"
+    title="Ayuda y contacto"
+    lead="Todo lo que necesitás saber para comprar tranquilo. Y si algo no está acá, escribinos: te respondemos como personas."
+  />
+
+  <section class="section">
+    <div class="wrap help-grid">
+      {secciones.map((s) => (
+        <article class="help-card" id={s.id} data-reveal="rise">
+          <h2>{s.t}</h2>
+          <ul role="list">
+            {s.items.map((it) => <li>{it}</li>)}
+          </ul>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="section faq-band" id="faq">
+    <div class="wrap faq-wrap">
+      <div class="section-head is-center" data-reveal="rise">
+        <span class="eyebrow">Preguntas frecuentes</span>
+        <h2>Dudas comunes</h2>
+      </div>
+      <div class="faqs" data-reveal="fade">
+        {faqs.map((f, i) => (
+          <Accordion title={f.q} open={i === 0}>
+            <p>{f.a}</p>
+          </Accordion>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section contacto" id="contacto">
+    <div class="wrap contacto-card" data-reveal="rise">
+      <div>
+        <span class="eyebrow">Contacto</span>
+        <h2>Hablemos</h2>
+        <p>Te respondemos por WhatsApp o email, con calma y sin apuro.</p>
+      </div>
+      <div class="contacto-actions">
+        <a class="btn btn-solid" href={waHref} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+        <a class="btn btn-ghost" href={`mailto:${site.email}`}>{site.email}</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .help-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.15rem;
+  }
+  .help-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 1.75rem;
+    scroll-margin-top: 100px;
+  }
+  .help-card h2 {
+    font-size: var(--fs-h3);
+    font-weight: 500;
+    margin-bottom: 0.9rem;
+  }
+  .help-card ul {
+    display: grid;
+    gap: 0.55rem;
+    list-style: none;
+  }
+  .help-card li {
+    position: relative;
+    padding-left: 1.3rem;
+    font-size: 0.92rem;
+    color: var(--text-soft);
+  }
+  .help-card li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 7px;
+    height: 7px;
+    border-radius: var(--r-full);
+    background: var(--salvia);
+  }
+
+  .faq-band {
+    background: var(--bg-alt);
+    scroll-margin-top: 100px;
+  }
+  .faq-wrap {
+    max-width: 760px;
+  }
+  .section-head.is-center {
+    text-align: center;
+    margin-bottom: clamp(1.5rem, 3vw, 2rem);
+  }
+  .section-head h2 {
+    margin-top: 0.4rem;
+  }
+
+  .contacto {
+    scroll-margin-top: 100px;
+  }
+  .contacto-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    background: var(--verde);
+    color: var(--on-dark);
+    border-radius: var(--r-lg);
+    padding: clamp(1.75rem, 4vw, 2.5rem);
+  }
+  .contacto-card h2 {
+    color: var(--crema);
+    margin: 0.35rem 0 0.4rem;
+  }
+  .contacto-card p {
+    color: var(--on-dark-soft);
+  }
+  .contacto-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .contacto-actions .btn-ghost {
+    color: var(--crema);
+    border-color: var(--on-dark-soft);
+  }
+  .contacto-actions .btn-ghost:hover {
+    background: rgba(244, 241, 234, 0.1);
+  }
+
+  @media (max-width: 780px) {
+    .help-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

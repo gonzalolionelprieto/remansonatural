@@ -1,0 +1,386 @@
+---
+// Panel de administración con preview en vivo. UI vía /api/panel.
+---
+
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Panel · Remanso Natural</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      :root {
+        --verde: #2f4a3a; --salvia: #6b8469; --tierra: #a87c5a; --crema: #f4f1ea;
+        --bg: #1c2a22; --panel: #24352b; --line: #3a4c40; --text: #eef2ec; --muted: #9fb0a3; --danger: #c65b4e;
+      }
+      body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+      a { color: var(--tierra); }
+      h1 { font-size: 20px; font-weight: 600; }
+      h2 { font-size: 15px; margin-bottom: 10px; color: var(--crema); }
+      h3 { font-size: 13px; color: var(--salvia); margin: 18px 0 6px; text-transform: uppercase; letter-spacing: .06em; }
+      .muted { color: var(--muted); font-size: 13px; }
+      input, select, textarea { width: 100%; background: #1a271f; border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 9px 11px; font: inherit; font-size: 14px; margin-top: 4px; }
+      input:focus, select:focus, textarea:focus { outline: none; border-color: var(--salvia); }
+      textarea { min-height: 60px; resize: vertical; }
+      label { display: block; font-size: 12px; color: var(--muted); margin-top: 12px; }
+      .btn { background: var(--verde); color: var(--crema); border: 1px solid var(--verde); border-radius: 8px; padding: 9px 15px; font: inherit; font-weight: 500; cursor: pointer; }
+      .btn:hover { background: #1f3c2d; }
+      .btn.ghost { background: transparent; color: var(--text); border-color: var(--line); }
+      .btn.danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+      .btn.sm { padding: 6px 11px; font-size: 13px; }
+      .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+      .hidden { display: none !important; }
+      .err { color: var(--danger); font-size: 13px; min-height: 1em; margin-top: 8px; }
+
+      /* Login */
+      .login { max-width: 360px; margin: 14vh auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 28px; }
+
+      /* Layout dos paneles */
+      .app { display: grid; grid-template-columns: 460px 1fr; height: 100vh; }
+      .editor { border-right: 1px solid var(--line); overflow-y: auto; padding: 20px; }
+      .preview { background: #0f1712; position: relative; }
+      .preview iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+      .preview .pv-bar { position: absolute; top: 10px; right: 12px; z-index: 2; }
+
+      .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+      .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+      .tab { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 999px; padding: 7px 15px; cursor: pointer; font: inherit; font-size: 13px; }
+      .tab.active { background: var(--panel); color: var(--crema); border-color: var(--salvia); }
+      .list { display: grid; gap: 8px; }
+      .item { display: flex; align-items: center; gap: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+      .item .thumb { width: 42px; height: 42px; border-radius: 8px; background: #1a271f; object-fit: cover; flex-shrink: 0; }
+      .item .info { flex: 1; min-width: 0; } .item .name { font-weight: 500; font-size: 14px; }
+      .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+      .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+      .chip { border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; cursor: pointer; font-size: 12.5px; }
+      .chip.on { background: var(--verde); border-color: var(--verde); color: var(--crema); }
+
+      /* Widget de imagen */
+      .imgw { margin-top: 6px; }
+      .imgw .prev { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+      .imgw figure { position: relative; }
+      .imgw img { width: 68px; height: 68px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); }
+      .imgw figure button { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; border: none; background: var(--danger); color: #fff; cursor: pointer; }
+      .imgw .up { font-size: 12.5px; color: var(--salvia); cursor: pointer; }
+
+      .toast { position: fixed; bottom: 18px; left: 460px; margin-left: 20px; background: var(--verde); color: var(--crema); padding: 11px 18px; border-radius: 10px; opacity: 0; transition: opacity .3s; box-shadow: 0 8px 30px rgba(0,0,0,.4); z-index: 50; }
+      .toast.show { opacity: 1; }
+      @media (max-width: 900px) { .app { grid-template-columns: 1fr; } .preview { display: none; } }
+    </style>
+  </head>
+  <body>
+    <!-- Login -->
+    <div class="login" id="login">
+      <h1>Panel · Remanso</h1>
+      <p class="muted" style="margin:6px 0 0;">Ingresá la contraseña para administrar.</p>
+      <label for="pass">Contraseña</label>
+      <input id="pass" type="password" autocomplete="current-password" />
+      <div class="err" id="loginErr"></div>
+      <div class="row" style="margin-top:14px;"><button class="btn" id="loginBtn">Entrar</button></div>
+    </div>
+
+    <!-- App -->
+    <div class="app hidden" id="app">
+      <div class="editor">
+        <div class="header">
+          <div><h1>Remanso Natural</h1><span class="muted">Panel</span></div>
+          <button class="btn ghost sm" id="logout">Salir</button>
+        </div>
+        <div class="tabs">
+          <button class="tab active" data-tab="productos">Productos</button>
+          <button class="tab" data-tab="sitio">Sitio (Home)</button>
+          <button class="tab" data-tab="ventas">Ventas</button>
+        </div>
+
+        <!-- Productos -->
+        <section id="tab-productos">
+          <div class="row" style="justify-content:space-between;margin-bottom:12px;">
+            <h2 style="margin:0;">Productos</h2>
+            <button class="btn sm" id="nuevo">+ Nuevo</button>
+          </div>
+          <div class="list" id="lista"></div>
+
+          <div class="card hidden" id="editorP" style="margin-top:14px;">
+            <h2 id="editorTitle">Nuevo producto</h2>
+            <div class="grid2">
+              <div><label>Nombre</label><input id="f-nombre" /></div>
+              <div><label>Slug</label><input id="f-slug" /></div>
+              <div><label>Línea</label><select id="f-linea"><option value="alquimia">Alquimia</option><option value="bach">Flores de Bach</option><option value="humos">Humos & Ritual</option><option value="cristales">Cristales</option></select></div>
+              <div><label>Tipo</label><select id="f-tipo"><option value="extracto">Extracto de hongos</option><option value="esencia">Esencia floral</option><option value="sahumerio">Sahumerio</option><option value="cristal">Cristal</option><option value="kit">Kit</option></select></div>
+              <div><label>Precio (ARS)</label><input id="f-precio" type="number" /></div>
+              <div><label>Stock</label><input id="f-stock" type="number" /></div>
+              <div><label>Volumen / medidas</label><input id="f-volumen" placeholder="50 ml" /></div>
+              <div><label>Graduación</label><input id="f-graduacion" /></div>
+              <div><label>Orden</label><input id="f-orden" type="number" /></div>
+              <div style="display:flex;align-items:flex-end;"><label style="margin:0;display:flex;gap:8px;align-items:center;cursor:pointer;"><input id="f-destacado" type="checkbox" style="width:auto;" /> Destacado</label></div>
+            </div>
+            <label>Objetivos</label>
+            <div class="chips" id="f-objetivos">
+              <span class="chip" data-obj="calma">Calma</span><span class="chip" data-obj="sueno">Sueño</span>
+              <span class="chip" data-obj="enfoque">Enfoque</span><span class="chip" data-obj="ritual">Ritual</span>
+            </div>
+            <label>Imágenes</label><div class="imgw" id="w-prod"></div>
+            <label>Descripción corta</label><input id="f-descCorta" />
+            <label>Para qué momento</label><textarea id="f-momento"></textarea>
+            <label>Descripción larga</label><textarea id="f-descLarga"></textarea>
+            <div class="grid2">
+              <div><label>Ingredientes</label><textarea id="f-ingredientes"></textarea></div>
+              <div><label>Modo de uso</label><textarea id="f-modo"></textarea></div>
+              <div><label>Nuestro proceso</label><textarea id="f-proceso"></textarea></div>
+              <div><label>Envío y cuidado</label><textarea id="f-envio"></textarea></div>
+            </div>
+            <label>Advertencias</label><textarea id="f-advertencias"></textarea>
+            <label>Combiná con (slugs, coma)</label><input id="f-combina" />
+            <div class="err" id="editorErr"></div>
+            <div class="row" style="margin-top:14px;"><button class="btn" id="guardar">Guardar</button><button class="btn ghost" id="cancelar">Cancelar</button></div>
+          </div>
+        </section>
+
+        <!-- Sitio -->
+        <section id="tab-sitio" class="hidden">
+          <div class="card">
+            <h2>Portada (Hero)</h2>
+            <label>Etiqueta superior</label><input id="h-eyebrow" />
+            <label>Título</label><input id="h-titulo" />
+            <label>Palabra destacada</label><input id="h-destacada" />
+            <label>Descripción</label><textarea id="h-lead"></textarea>
+            <label>Foto de fondo (opcional)</label><div class="imgw" id="w-hero"></div>
+          </div>
+
+          <div class="card">
+            <h2>Bloques de categorías (bento)</h2>
+            <p class="muted">Cada bloque puede tener su foto.</p>
+            <div id="bento-blocks"></div>
+          </div>
+
+          <div class="card">
+            <h2>Producto estrella</h2>
+            <label>Etiqueta</label><input id="e-eyebrow" />
+            <label>Título</label><input id="e-titulo" />
+            <label>Descripción</label><textarea id="e-desc"></textarea>
+            <label>Foto</label><div class="imgw" id="w-estrella"></div>
+          </div>
+
+          <div class="err" id="sitioErr"></div>
+          <button class="btn" id="guardarSitio">Guardar sitio</button>
+        </section>
+
+        <!-- Ventas -->
+        <section id="tab-ventas" class="hidden">
+          <div class="row" style="justify-content:space-between;margin-bottom:12px;">
+            <h2 style="margin:0;">Ventas y Pedidos</h2>
+            <button class="btn ghost sm" id="btn-refresh-ventas">↻ Actualizar</button>
+          </div>
+          <div class="list" id="lista-ventas"></div>
+        </section>
+      </div>
+
+      <div class="preview">
+        <div class="pv-bar"><button class="btn ghost sm" id="pvReload">↻ Recargar</button></div>
+        <iframe id="pv" src="/"></iframe>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      // @ts-nocheck
+      const $ = (s) => document.querySelector(s);
+      const KEY = 'rn_panel_pass';
+      let pass = sessionStorage.getItem(KEY) || '';
+      let editSlugOriginal = null;
+      let prodImgs = [];
+      const objSel = new Set();
+      let home = { hero: {}, bento: [{}, {}, {}, {}], estrella: {} };
+      const BENTO_LABELS = ['Bloque 1 (grande, izquierda)', 'Bloque 2 (arriba)', 'Bloque 3', 'Bloque 4'];
+
+      const toast = (m) => { const t = $('#toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); };
+      const api = async (payload) => { const r = await fetch('/api/panel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pass, ...payload }) }); return { ok: r.ok, data: await r.json() }; };
+      const reloadPreview = () => { const f = $('#pv'); try { f.contentWindow.location.reload(); } catch { f.src = '/?t=' + Date.now(); } };
+
+      async function uploadImage(file) {
+        const fd = new FormData(); fd.append('password', pass); fd.append('file', file);
+        const r = await fetch('/api/panel', { method: 'POST', body: fd });
+        const d = await r.json();
+        if (r.ok && d.url) return d.url;
+        toast(d.error || 'Error al subir'); return null;
+      }
+
+      // Widget de imagen genérico. multiple = varias (productos). getArr/setArr manejan el estado.
+      function imgWidget(el, getArr, setArr, multiple) {
+        function render() {
+          const arr = getArr();
+          el.innerHTML = `<div class="prev">${arr.map((u, i) => `<figure><img src="${u}"><button data-rm="${i}">×</button></figure>`).join('')}</div><label class="up">+ Subir imagen<input type="file" accept="image/*" class="hidden"></label>`;
+          el.querySelectorAll('[data-rm]').forEach((b) => b.addEventListener('click', () => { const a = getArr(); a.splice(+b.dataset.rm, 1); setArr(a); render(); }));
+          el.querySelector('input[type=file]').addEventListener('change', async (e) => {
+            const f = e.target.files[0]; if (!f) return; toast('Subiendo…');
+            const url = await uploadImage(f); if (!url) return;
+            let a = getArr(); if (multiple) a.push(url); else a = [url]; setArr(a); render(); toast('Imagen subida');
+          });
+        }
+        render();
+      }
+
+      // ---- Login ----
+      async function tryLogin(p) {
+        const r = await fetch('/api/panel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: p, action: 'login' }) });
+        if (r.ok) { const d = await r.json(); if (d.ok) { pass = p; sessionStorage.setItem(KEY, p); showApp(); return true; } }
+        return false;
+      }
+      $('#loginBtn').addEventListener('click', async () => { if (!(await tryLogin($('#pass').value))) $('#loginErr').textContent = 'Contraseña incorrecta.'; });
+      $('#pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#loginBtn').click(); });
+      $('#logout').addEventListener('click', () => { sessionStorage.removeItem(KEY); location.reload(); });
+      $('#pvReload').addEventListener('click', reloadPreview);
+
+      function showApp() { $('#login').classList.add('hidden'); $('#app').classList.remove('hidden'); loadProductos(); loadSitio(); loadVentas(); }
+
+      document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach((x) => x.classList.remove('active')); t.classList.add('active');
+        $('#tab-productos').classList.toggle('hidden', t.dataset.tab !== 'productos');
+        $('#tab-sitio').classList.toggle('hidden', t.dataset.tab !== 'sitio');
+        $('#tab-ventas').classList.toggle('hidden', t.dataset.tab !== 'ventas');
+        if (t.dataset.tab === 'ventas') loadVentas();
+      }));
+
+      // ---- Productos ----
+      async function loadProductos() {
+        const { ok, data } = await api({ action: 'list' });
+        const lista = $('#lista');
+        if (!ok) { lista.innerHTML = `<p class="muted">${data.error || 'Error'}</p>`; return; }
+        const ps = data.productos || [];
+        if (!ps.length) { lista.innerHTML = '<p class="muted">Todavía no hay productos. Creá el primero.</p>'; return; }
+        lista.innerHTML = ps.map((p) => `<div class="item">${p.imagenes && p.imagenes[0] ? `<img class="thumb" src="${p.imagenes[0]}">` : '<div class="thumb"></div>'}<div class="info"><div class="name">${p.nombre}</div><div class="muted">$${Number(p.precio).toLocaleString('es-AR')} · stock ${p.stock}</div></div><button class="btn ghost sm" data-edit="${p.slug}">Editar</button><button class="btn danger sm" data-del="${p.slug}">✕</button></div>`).join('');
+        lista.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => openP(ps.find((x) => x.slug === b.dataset.edit))));
+        lista.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => delP(b.dataset.del)));
+      }
+      function setObj() { document.querySelectorAll('#f-objetivos .chip').forEach((c) => c.classList.toggle('on', objSel.has(c.dataset.obj))); }
+      function openP(p) {
+        p = p || {}; editSlugOriginal = p.slug || null;
+        $('#editorTitle').textContent = p.slug ? 'Editar producto' : 'Nuevo producto';
+        $('#f-nombre').value = p.nombre || ''; $('#f-slug').value = p.slug || '';
+        $('#f-linea').value = p.linea || 'alquimia'; $('#f-tipo').value = p.tipo || 'extracto';
+        $('#f-precio').value = p.precio ?? ''; $('#f-stock').value = p.stock ?? 0;
+        $('#f-volumen').value = p.volumen || ''; $('#f-graduacion').value = p.graduacion || '';
+        $('#f-orden').value = p.orden ?? ''; $('#f-destacado').checked = !!p.destacado;
+        $('#f-descCorta').value = p.descripcion_corta || ''; $('#f-momento').value = p.para_que_momento || '';
+        $('#f-descLarga').value = p.descripcion_larga || ''; $('#f-ingredientes').value = p.ingredientes || '';
+        $('#f-modo').value = p.modo_de_uso || ''; $('#f-proceso').value = p.nuestro_proceso || '';
+        $('#f-envio').value = p.envio_y_cuidado || ''; $('#f-advertencias').value = p.advertencias || '';
+        $('#f-combina').value = (p.combina_con || []).join(', ');
+        prodImgs = [...(p.imagenes || [])]; imgWidget($('#w-prod'), () => prodImgs, (a) => (prodImgs = a), true);
+        objSel.clear(); (p.objetivos || []).forEach((o) => objSel.add(o)); setObj();
+        $('#editorErr').textContent = ''; $('#editorP').classList.remove('hidden'); $('#editorP').scrollIntoView({ behavior: 'smooth' });
+      }
+      $('#nuevo').addEventListener('click', () => openP(null));
+      $('#cancelar').addEventListener('click', () => $('#editorP').classList.add('hidden'));
+      $('#f-nombre').addEventListener('input', (e) => { if (!editSlugOriginal) $('#f-slug').value = e.target.value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); });
+      document.querySelectorAll('#f-objetivos .chip').forEach((c) => c.addEventListener('click', () => { const o = c.dataset.obj; objSel.has(o) ? objSel.delete(o) : objSel.add(o); setObj(); }));
+      $('#guardar').addEventListener('click', async () => {
+        const product = {
+          slug: $('#f-slug').value.trim(), nombre: $('#f-nombre').value.trim(), linea: $('#f-linea').value, tipo: $('#f-tipo').value,
+          objetivos: [...objSel], precio: parseInt($('#f-precio').value, 10) || 0, stock: parseInt($('#f-stock').value, 10) || 0,
+          volumen: $('#f-volumen').value.trim() || null, graduacion: $('#f-graduacion').value.trim() || null,
+          orden: $('#f-orden').value ? parseInt($('#f-orden').value, 10) : null, destacado: $('#f-destacado').checked,
+          descripcion_corta: $('#f-descCorta').value.trim(), para_que_momento: $('#f-momento').value.trim(), descripcion_larga: $('#f-descLarga').value.trim(),
+          ingredientes: $('#f-ingredientes').value.trim(), modo_de_uso: $('#f-modo').value.trim(), nuestro_proceso: $('#f-proceso').value.trim(),
+          envio_y_cuidado: $('#f-envio').value.trim(), advertencias: $('#f-advertencias').value.trim(),
+          combina_con: $('#f-combina').value.split(',').map((s) => s.trim()).filter(Boolean), imagenes: prodImgs, activo: true,
+        };
+        if (!product.slug || !product.nombre) { $('#editorErr').textContent = 'Nombre y slug obligatorios.'; return; }
+        if (!product.objetivos.length) { $('#editorErr').textContent = 'Elegí al menos un objetivo.'; return; }
+        const { ok, data } = await api({ action: 'save', product });
+        if (ok) { toast('Guardado'); $('#editorP').classList.add('hidden'); loadProductos(); reloadPreview(); } else $('#editorErr').textContent = data.error || 'Error';
+      });
+      async function delP(slug) { if (!confirm('¿Borrar producto?')) return; const { ok, data } = await api({ action: 'delete', slug }); if (ok) { toast('Borrado'); loadProductos(); reloadPreview(); } else toast(data.error || 'Error'); }
+
+      // ---- Sitio ----
+      async function loadSitio() {
+        const { ok, data } = await api({ action: 'getHome' });
+        if (ok && data.data) home = Object.assign({ hero: {}, bento: [{}, {}, {}, {}], estrella: {} }, data.data);
+        if (!Array.isArray(home.bento)) home.bento = [{}, {}, {}, {}];
+        while (home.bento.length < 4) home.bento.push({});
+        $('#h-eyebrow').value = home.hero.eyebrow || ''; $('#h-titulo').value = home.hero.titulo || '';
+        $('#h-destacada').value = home.hero.destacada || ''; $('#h-lead').value = home.hero.lead || '';
+        imgWidget($('#w-hero'), () => (home.hero.imagen ? [home.hero.imagen] : []), (a) => (home.hero.imagen = a[0] || ''), false);
+        $('#e-eyebrow').value = home.estrella.eyebrow || ''; $('#e-titulo').value = home.estrella.titulo || ''; $('#e-desc').value = home.estrella.desc || '';
+        imgWidget($('#w-estrella'), () => (home.estrella.imagen ? [home.estrella.imagen] : []), (a) => (home.estrella.imagen = a[0] || ''), false);
+        // Bento blocks
+        const cont = $('#bento-blocks'); cont.innerHTML = '';
+        home.bento.forEach((b, i) => {
+          const div = document.createElement('div');
+          div.innerHTML = `<h3>${BENTO_LABELS[i]}</h3><label>Título</label><input class="b-tit" value="${(b.titulo || '').replace(/"/g, '&quot;')}"><label>Subtítulo</label><input class="b-sub" value="${(b.sub || '').replace(/"/g, '&quot;')}"><label>Foto</label><div class="imgw b-img"></div>`;
+          cont.appendChild(div);
+          div.querySelector('.b-tit').addEventListener('input', (e) => (home.bento[i].titulo = e.target.value));
+          div.querySelector('.b-sub').addEventListener('input', (e) => (home.bento[i].sub = e.target.value));
+          imgWidget(div.querySelector('.b-img'), () => (home.bento[i].imagen ? [home.bento[i].imagen] : []), (a) => (home.bento[i].imagen = a[0] || ''), false);
+        });
+      }
+      $('#guardarSitio').addEventListener('click', async () => {
+        home.hero.eyebrow = $('#h-eyebrow').value; home.hero.titulo = $('#h-titulo').value;
+        home.hero.destacada = $('#h-destacada').value; home.hero.lead = $('#h-lead').value;
+        home.estrella.eyebrow = $('#e-eyebrow').value; home.estrella.titulo = $('#e-titulo').value; home.estrella.desc = $('#e-desc').value;
+        const { ok, data } = await api({ action: 'saveHome', data: home });
+        if (ok) { toast('Sitio guardado'); reloadPreview(); } else $('#sitioErr').textContent = data.error || 'Error';
+      });
+
+      // ---- Ventas ----
+      async function loadVentas() {
+        const { ok, data } = await api({ action: 'listOrders' });
+        const lista = $('#lista-ventas');
+        if (!ok) { lista.innerHTML = `<p class="muted">${data.error || 'Error'}</p>`; return; }
+        const os = data.ordenes || [];
+        if (!os.length) { lista.innerHTML = '<p class="muted">Aún no se registraron ventas.</p>'; return; }
+        
+        lista.innerHTML = os.map((o) => {
+          const itemsStr = o.items.map((i) => `• ${i.nombre} (x${i.qty})`).join('<br>');
+          const fecha = new Date(o.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          const badgeColor = o.estado === 'aprobado' ? '#2f4a3a' : o.estado === 'despachado' ? '#6b8469' : '#a87c5a';
+          
+          return `
+            <div class="card" style="margin-bottom:12px;">
+              <div class="row" style="justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                <div>
+                  <strong>${o.nombre_cliente}</strong> <span class="muted">(${o.email_cliente})</span>
+                  <div class="muted" style="margin-top:2px;">Ref: ${o.external_reference} · ${fecha}</div>
+                </div>
+                <span class="chip on" style="background:${badgeColor}; border-color:${badgeColor}; pointer-events:none; text-transform:uppercase; font-size:11px;">
+                  ${o.estado}
+                </span>
+              </div>
+              <div style="font-size:13px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:8px 0; margin:8px 0; line-height:1.4;">
+                <strong>Items:</strong><br>${itemsStr}
+              </div>
+              <div class="grid2" style="font-size:13px; margin-bottom:10px;">
+                <div><strong>WhatsApp:</strong> <a href="https://wa.me/${o.whatsapp_cliente.replace(/[^0-9]/g, '')}" target="_blank" style="color:var(--tierra);">${o.whatsapp_cliente}</a></div>
+                <div><strong>Envío:</strong> ${o.metodo_envio === 'retiro' ? 'Retiro gratis' : `${o.metodo_envio.toUpperCase()} - ${o.direccion}, ${o.localidad}`}</div>
+                <div><strong>Productos:</strong> $${Number(o.monto_productos).toLocaleString('es-AR')}</div>
+                <div><strong>Envío:</strong> $${Number(o.costo_envio).toLocaleString('es-AR')}</div>
+                <div style="grid-column: span 2; font-size:14px; margin-top:4px;"><strong>Total:</strong> $${Number(o.monto_total).toLocaleString('es-AR')}</div>
+              </div>
+              <div class="row" style="gap:6px;">
+                ${o.estado === 'aprobado' ? `<button class="btn sm" data-ship-id="${o.id}">Marcar Despachado</button>` : ''}
+                ${o.estado === 'pendiente' ? `<button class="btn sm ghost" data-approve-id="${o.id}">Marcar Aprobado (Manual)</button>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        lista.querySelectorAll('[data-ship-id]').forEach((b) => b.addEventListener('click', () => changeOrderState(b.dataset.shipId, 'despachado')));
+        lista.querySelectorAll('[data-approve-id]').forEach((b) => b.addEventListener('click', () => changeOrderState(b.dataset.approveId, 'aprobado')));
+      }
+
+      async function changeOrderState(id, estado) {
+        if (!confirm(`¿Cambiar estado de orden a ${estado}?`)) return;
+        const { ok, data } = await api({ action: 'updateOrderState', id, estado });
+        if (ok) { toast('Orden actualizada'); loadVentas(); } else toast(data.error || 'Error');
+      }
+
+      $('#btn-refresh-ventas').addEventListener('click', loadVentas);
+
+      if (pass) tryLogin(pass).then((ok) => { if (!ok) { sessionStorage.removeItem(KEY); pass = ''; } });Storage.removeItem(KEY); pass = ''; } });
+    </script>
+  </body>
+</html>

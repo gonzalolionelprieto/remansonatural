@@ -1,0 +1,157 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+
+const pasos = [
+  {
+    n: '01',
+    t: 'Extracción en alcohol',
+    d: 'El hongo entero, deshidratado, reposa en alcohol de cereal con calor controlado. Así liberamos los compuestos que solo salen en alcohol.',
+  },
+  {
+    n: '02',
+    t: 'Decocción en agua',
+    d: 'Una cocción lenta en agua rescata lo que el alcohol no alcanza. Dos mundos distintos del mismo hongo, capturados por separado.',
+  },
+  {
+    n: '03',
+    t: 'Blend y reposo',
+    d: 'Unimos ambas fases en la proporción justa, dejamos reposar y rotulamos cada lote a mano. Nada de atajos, nada de polvos.',
+  },
+];
+
+const compromisos = [
+  { t: 'Hongo entero, no polvos', d: 'Partimos de materia prima seleccionada y laminada, para saber exactamente qué usamos.' },
+  { t: 'Doble extracto real', d: 'Capturamos el espectro completo: lo soluble en agua y lo soluble en alcohol.' },
+  { t: 'Trazabilidad por lote', d: 'Cada frasco lleva su lote. Sabemos cuándo, cómo y con qué se hizo.' },
+  { t: 'Pequeños lotes', d: 'Producción artesanal y cuidada. Preferimos hacer poco y hacerlo bien.' },
+];
+---
+
+<BaseLayout
+  title="Nuestro método"
+  description="Cómo elaboramos nuestros dobles extractos: fase en alcohol, decocción en agua y blend. Materia prima seleccionada y trazabilidad por lote. Transparencia total."
+>
+  <PageHeader
+    eyebrow="Nuestro método"
+    title="Transparencia, de principio a fin"
+    lead="Hacemos dobles extractos reales. Te contamos exactamente cómo, sin tecnicismos que asusten y sin promesas de más."
+  />
+
+  <section class="section">
+    <div class="wrap steps" data-reveal-group data-reveal-step="120">
+      {pasos.map((p) => (
+        <article class="step" data-reveal="rise">
+          <span class="step-n">{p.n}</span>
+          <h2>{p.t}</h2>
+          <p>{p.d}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="section why">
+    <div class="wrap">
+      <div class="section-head is-center" data-reveal="rise">
+        <span class="eyebrow">Por qué "doble"</span>
+        <h2>Un hongo, dos extracciones</h2>
+        <p class="lead">Hay compuestos que solo salen en alcohol y otros que solo salen en agua. Hacer las dos —y unirlas— es lo que hace a un extracto completo.</p>
+      </div>
+      <ul class="compromisos" data-reveal-group data-reveal-step="80">
+        {compromisos.map((c) => (
+          <li data-reveal="rise">
+            <h3>{c.t}</h3>
+            <p>{c.d}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section cta-band">
+    <div class="wrap" data-reveal="rise">
+      <h2>Hecho a mano, con intención</h2>
+      <p>Cada lote pasa por nuestras manos. Si tenés dudas sobre un producto, escribinos: nos encanta contar cómo lo hacemos.</p>
+      <a class="btn btn-solid" href="/tienda">Ver la colección</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(1.5rem, 4vw, 2.5rem);
+  }
+  .step {
+    border-top: 2px solid var(--tierra);
+    padding-top: 1.25rem;
+  }
+  .step-n {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    color: var(--tierra);
+  }
+  .step h2 {
+    font-size: var(--fs-h3);
+    font-weight: 500;
+    margin: 0.5rem 0 0.6rem;
+  }
+  .step p {
+    color: var(--text-soft);
+    font-size: 0.95rem;
+  }
+
+  .why {
+    background: var(--bg-alt);
+  }
+  .section-head.is-center {
+    text-align: center;
+    max-width: 60ch;
+    margin: 0 auto clamp(2rem, 4vw, 2.75rem);
+  }
+  .section-head h2 {
+    margin-top: 0.4rem;
+  }
+  .section-head .lead {
+    color: var(--text-muted);
+    margin-top: 0.75rem;
+  }
+  .compromisos {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.15rem;
+    list-style: none;
+  }
+  .compromisos li {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 1.5rem;
+  }
+  .compromisos h3 {
+    font-size: var(--fs-h3);
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+  .compromisos p {
+    color: var(--text-soft);
+    font-size: 0.92rem;
+  }
+
+  .cta-band {
+    text-align: center;
+  }
+  .cta-band p {
+    max-width: 52ch;
+    margin: 0.85rem auto 1.75rem;
+    color: var(--text-soft);
+  }
+
+  @media (max-width: 780px) {
+    .steps,
+    .compromisos {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

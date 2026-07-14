@@ -1,0 +1,74 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import { site, disclaimer } from '../lib/site';
+
+const waHref = `https://wa.me/${site.whatsapp}?text=${encodeURIComponent('Hola, quiero ejercer el botón de arrepentimiento de mi compra')}`;
+---
+
+<BaseLayout title="Legales" description="Botón de arrepentimiento, términos y condiciones y política de privacidad de Remanso Natural." noindex>
+  <PageHeader eyebrow="Información legal" title="Legales" />
+
+  <div class="wrap legal">
+    <section id="arrepentimiento" class="legal-sec" data-reveal="rise">
+      <h2>Botón de arrepentimiento</h2>
+      <p>Según la Ley 24.240 de Defensa del Consumidor, tenés derecho a arrepentirte de tu compra dentro de los <strong>10 días corridos</strong> desde que recibís el producto, sin costo ni justificación.</p>
+      <p>Para ejercerlo, escribinos con tu número de pedido y te guiamos en la devolución:</p>
+      <div class="legal-actions">
+        <a class="btn btn-solid" href={waHref} target="_blank" rel="noopener noreferrer">Iniciar por WhatsApp</a>
+        <a class="btn btn-ghost" href={`mailto:${site.email}?subject=Botón de arrepentimiento`}>Iniciar por email</a>
+      </div>
+      <p class="legal-note">También podés consultar a <a href="https://www.argentina.gob.ar/defensadelconsumidor" target="_blank" rel="noopener noreferrer">Defensa de las y los Consumidores</a>.</p>
+    </section>
+
+    <section id="terminos" class="legal-sec" data-reveal="rise">
+      <h2>Términos y condiciones</h2>
+      <p>Al comprar en Remanso Natural aceptás estos términos. Los precios están expresados en pesos argentinos e incluyen impuestos, salvo indicación contraria. Las imágenes son ilustrativas.</p>
+      <p>Nuestros productos son <strong>productos de bienestar</strong>, no medicamentos. No realizamos afirmaciones terapéuticas ni de cura. {disclaimer}</p>
+      <p>Nos reservamos el derecho de actualizar precios y disponibilidad. Ante cualquier inconveniente con tu pedido, nos comprometemos a darte una solución.</p>
+    </section>
+
+    <section id="privacidad" class="legal-sec" data-reveal="rise">
+      <h2>Política de privacidad</h2>
+      <p>Usamos tus datos únicamente para procesar tu pedido, coordinar el envío y comunicarnos con vos. No los vendemos ni los compartimos con terceros salvo lo estrictamente necesario para la entrega y el cobro (correo y Mercado Pago).</p>
+      <p>Podés pedir la baja de nuestras comunicaciones o la eliminación de tus datos cuando quieras, escribiéndonos a <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .legal {
+    max-width: 760px;
+    padding-block: clamp(1rem, 3vw, 2rem) clamp(3rem, 6vw, 5rem);
+    display: grid;
+    gap: clamp(2rem, 5vw, 3rem);
+  }
+  .legal-sec {
+    scroll-margin-top: 100px;
+  }
+  .legal-sec h2 {
+    margin-bottom: 0.85rem;
+  }
+  .legal-sec p {
+    color: var(--text-soft);
+    margin-bottom: 0.9rem;
+  }
+  .legal-sec strong {
+    color: var(--verde);
+  }
+  .legal-sec a {
+    color: var(--tierra);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .legal-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin: 1.25rem 0;
+  }
+  .legal-note {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+  }
+</style>

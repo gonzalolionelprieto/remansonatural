@@ -1,0 +1,543 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCatalog } from '../lib/catalog';
+import ProductCard from '../components/ProductCard.astro';
+
+// SSR: Leemos catálogo para pasar la base de datos de recomendación al cliente
+export const prerender = false;
+const products = await getCatalog();
+---
+
+<BaseLayout 
+  title="Test de Bienestar" 
+  description="Respondé estas breves preguntas y encontrá las fórmulas y rituales de Remanso Natural ideales para vos."
+>
+  <section class="quiz-header">
+    <div class="wrap">
+      <span class="eyebrow" data-enter style="--enter-delay:60ms">Recomendador Holístico</span>
+      <h1 data-enter style="--enter-delay:160ms">Tu Ritual Ideal</h1>
+      <p class="lead" data-enter style="--enter-delay:280ms">
+        Respondé este breve test de 3 preguntas. Nuestro algoritmo analizará tu estado y te recomendará las fórmulas exactas para tu bienestar diario.
+      </p>
+    </div>
+  </section>
+
+  <div class="wrap quiz-container">
+    <!-- Pantalla de Inicio del Test -->
+    <div class="quiz-start card" id="quiz-start-view">
+      <h2>Descubrí tu Remanso</h2>
+      <p>Nos enfocamos en guiarte hacia el bienestar natural sin promesas mágicas. El test toma menos de 1 minuto.</p>
+      <button class="btn btn-solid btn-lg" id="btn-start-quiz">Comenzar Test</button>
+    </div>
+
+    <!-- Cuestionario Activo -->
+    <div class="quiz-active card hidden" id="quiz-active-view">
+      <div class="quiz-progress">
+        <span class="quiz-step-text">Pregunta <span id="current-step-num">1</span> de 3</span>
+        <div class="quiz-progress-bar"><span id="progress-fill" style="width: 33%"></span></div>
+      </div>
+
+      <div class="quiz-question-container">
+        <h2 id="question-title">Cargando pregunta...</h2>
+        <div class="quiz-options-list" id="question-options">
+          <!-- Inyectado dinámicamente por JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Pantalla de Resultados -->
+    <div class="quiz-results hidden" id="quiz-results-view">
+      <div class="results-intro text-center">
+        <span class="results-badge">Tu Diagnóstico Holístico</span>
+        <h2 id="result-type-title">Tu recomendación de calma</h2>
+        <p class="lead" id="result-desc">
+          En base a tus respuestas, tu prioridad número uno es regular el sistema nervioso y calmar la mente. Te sugerimos estos productos:
+        </p>
+      </div>
+
+      <div class="products-grid" id="recommended-products">
+        <!-- Tarjetas de productos recomendados inyectados por JS -->
+      </div>
+
+      <div class="text-center" style="margin-top: 3rem;">
+        <button class="btn btn-ghost" id="btn-restart-quiz">Hacer el test de nuevo</button>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .quiz-header {
+    text-align: center;
+    padding-block: clamp(3rem, 2rem + 4vw, 5rem) clamp(1.5rem, 1rem + 2vw, 2.5rem);
+    background:
+      radial-gradient(110% 80% at 50% -20%, color-mix(in srgb, var(--salvia) 10%, transparent), transparent 60%),
+      var(--crema);
+    border-bottom: 1px solid var(--border);
+  }
+  .quiz-header h1 {
+    margin-top: 0.5rem;
+  }
+  .quiz-header .lead {
+    max-width: 58ch;
+    margin: 1rem auto 0;
+    color: var(--text-soft);
+    font-size: var(--fs-lead);
+  }
+
+  .quiz-container {
+    max-width: 700px;
+    margin-inline: auto;
+    padding-block: clamp(2rem, 1.5rem + 3vw, 4rem);
+  }
+
+  /* Tarjeta general */
+  .quiz-container .card {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: clamp(1.5rem, 1rem + 3vw, 2.75rem);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Start view */
+  .quiz-start {
+    text-align: center;
+  }
+  .quiz-start h2 {
+    font-family: var(--font-serif);
+    color: var(--verde);
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+  }
+  .quiz-start p {
+    color: var(--text-soft);
+    margin-bottom: 1.75rem;
+    line-height: 1.6;
+  }
+  .btn-lg {
+    padding: 0.95rem 2rem;
+    font-size: 1.05rem;
+  }
+
+  /* Active view */
+  .quiz-progress {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.75rem;
+  }
+  .quiz-step-text {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+  .quiz-progress-bar {
+    width: 150px;
+    height: 5px;
+    background: var(--crema-3);
+    border-radius: var(--r-full);
+    overflow: hidden;
+  }
+  .quiz-progress-bar span {
+    display: block;
+    height: 100%;
+    background: var(--verde);
+    border-radius: inherit;
+    transition: width 0.3s ease;
+  }
+
+  .quiz-question-container h2 {
+    font-family: var(--font-serif);
+    color: var(--verde);
+    font-size: clamp(1.3rem, 1.1rem + 1vw, 1.65rem);
+    margin-bottom: 1.5rem;
+    line-height: 1.35;
+  }
+
+  .quiz-options-list {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  /* Botones de opción */
+  .quiz-opt-btn {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 1.15rem 1.35rem;
+    border: 1px solid var(--border-strong);
+    background: var(--crema);
+    color: var(--text);
+    border-radius: var(--r-btn);
+    font: inherit;
+    font-size: 0.95rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.25s var(--ease-out);
+  }
+  .quiz-opt-btn:hover {
+    border-color: var(--verde);
+    background: rgba(47, 74, 58, 0.04);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+  .quiz-opt-letter {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--crema-2);
+    border: 1px solid var(--border-strong);
+    margin-right: 1rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--verde);
+    flex-shrink: 0;
+  }
+  .quiz-opt-btn:hover .quiz-opt-letter {
+    background: var(--verde);
+    color: var(--crema);
+    border-color: var(--verde);
+  }
+
+  /* Results view */
+  .results-intro {
+    margin-bottom: 2.5rem;
+  }
+  .results-badge {
+    display: inline-block;
+    background: var(--verde);
+    color: var(--crema);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.85rem;
+    border-radius: var(--r-pill);
+    margin-bottom: 0.85rem;
+  }
+  .results-intro h2 {
+    font-family: var(--font-serif);
+    color: var(--verde);
+    font-size: clamp(1.8rem, 1.5rem + 2vw, 2.40rem);
+    margin-bottom: 0.75rem;
+  }
+  .results-intro p {
+    color: var(--text-soft);
+    max-width: 58ch;
+    margin-inline: auto;
+  }
+
+  /* Products recommendations */
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  @media (max-width: 600px) {
+    .products-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script define:vars={{ products }}>
+  // Guardamos las preguntas del test
+  const QUESTIONS = [
+    {
+      title: "¿Cómo describirías tu estado principal en el día a día?",
+      options: [
+        { text: "Mucha ansiedad, mi mente no para y me cuesta relajarme.", val: "calma" },
+        { text: "Cansancio mental, dispersión y dificultad para enfocarme.", val: "enfoque" },
+        { text: "Problemas para dormir bien, insomnio o sueño inquieto.", val: "sueno" },
+        { text: "Busco armar un ambiente de paz, meditación o sahumar.", val: "ritual" }
+      ]
+    },
+    {
+      title: "¿Qué tipo de formato te resulta más cómodo para incorporar?",
+      options: [
+        { text: "Extractos líquidos en gotas (fáciles de mezclar en agua o té).", val: "extracto" },
+        { text: "Esencias naturales directas (gotas sublinguales).", val: "esencia" },
+        { text: "Sahumerios, humos y rituales aromáticos para el espacio.", val: "sahumerio" },
+        { text: "Prefiero un Kit completo que tenga todo listo para arrancar.", val: "kit" }
+      ]
+    },
+    {
+      title: "¿Tenés alguna preferencia por los ingredientes o herramientas?",
+      options: [
+        { text: "Me atraen los hongos adaptógenos (Melena de León, Reishi).", val: "hongo" },
+        { text: "Prefiero las flores y la botánica holística (Flores de Bach).", val: "bach" },
+        { text: "Me conecto con las piedras energéticas y cuarzos naturales.", val: "cristal" },
+        { text: "No tengo preferencia, quiero lo más efectivo para mi objetivo.", val: "indiferente" }
+      ]
+    }
+  ];
+
+  // Explicación de cada diagnóstico según el objetivo principal
+  const DIAGNOSTICOS = {
+    calma: {
+      title: "Tu recomendación para la Calma y Ansiedad 🌿",
+      desc: "Tus respuestas sugieren que estás lidiando con sobrecarga mental, ansiedad o dificultad para aquietar la mente. Te sugerimos incorporar plantas adaptógenas y esencias vibracionales enfocadas en regular tu sistema nervioso y traer calma de forma natural en el día a día."
+    },
+    enfoque: {
+      title: "Tu recomendación para el Enfoque y Claridad 🧠",
+      desc: "Detectamos que estás buscando mejorar tu rendimiento cognitivo, reducir la niebla mental y encontrar foco en tus actividades diarias. Te sugerimos extractos bioactivos que estimulan el factor de crecimiento neuronal y promueven la concentración."
+    },
+    sueno: {
+      title: "Tu recomendación para el Sueño y Descanso 🌙",
+      desc: "Tus respuestas reflejan la necesidad de restablecer un ritmo de sueño saludable, relajarte profundamente antes de acostarte y asegurar un descanso reparador. Te recomendamos fórmulas herbales y rituales nocturnos para inducir un sueño profundo."
+    },
+    ritual: {
+      title: "Tu recomendación para Rituales y Espacios ✨",
+      desc: "Buscás conectar con la energía de tu entorno, limpiar espacios o establecer un momento de meditación a través de humos sagrados y elementos naturales de la tierra. Te recomendamos kits y sahumerios herbales."
+    }
+  };
+
+  let answers = {
+    objetivo: "", // calma|enfoque|sueno|ritual
+    tipo: "",     // extracto|esencia|sahumerio|kit
+    ingrediente: "" // hongo|bach|cristal|indiferente
+  };
+
+  let currentStep = 0;
+
+  function initQuiz() {
+    const startView = document.getElementById('quiz-start-view');
+    const activeView = document.getElementById('quiz-active-view');
+    const resultsView = document.getElementById('quiz-results-view');
+
+    const btnStart = document.getElementById('btn-start-quiz');
+    const btnRestart = document.getElementById('btn-restart-quiz');
+
+    if (!btnStart) return;
+
+    btnStart.addEventListener('click', () => {
+      startView.classList.add('hidden');
+      activeView.classList.remove('hidden');
+      currentStep = 0;
+      showQuestion();
+    });
+
+    btnRestart.addEventListener('click', () => {
+      resultsView.classList.add('hidden');
+      startView.classList.remove('hidden');
+    });
+  }
+
+  function showQuestion() {
+    const q = QUESTIONS[currentStep];
+    
+    // Actualizar progreso
+    document.getElementById('current-step-num').textContent = String(currentStep + 1);
+    document.getElementById('progress-fill').style.width = `${((currentStep + 1) / QUESTIONS.length) * 100}%`;
+    
+    // Título
+    document.getElementById('question-title').textContent = q.title;
+
+    // Opciones
+    const container = document.getElementById('question-options');
+    container.innerHTML = '';
+
+    q.options.forEach((opt, idx) => {
+      const letter = String.fromCharCode(65 + idx); // A, B, C, D
+      const btn = document.createElement('button');
+      btn.className = 'quiz-opt-btn';
+      btn.innerHTML = `<span class="quiz-opt-letter">${letter}</span><span>${opt.text}</span>`;
+      btn.addEventListener('click', () => selectOption(opt.val));
+      container.appendChild(btn);
+    });
+  }
+
+  function selectOption(val) {
+    if (currentStep === 0) answers.objetivo = val;
+    else if (currentStep === 1) answers.tipo = val;
+    else if (currentStep === 2) answers.ingrediente = val;
+
+    currentStep++;
+
+    if (currentStep < QUESTIONS.length) {
+      showQuestion();
+    } else {
+      showResults();
+    }
+  }
+
+  function showResults() {
+    document.getElementById('quiz-active-view').classList.add('hidden');
+    document.getElementById('quiz-results-view').classList.remove('hidden');
+
+    const obj = answers.objetivo;
+    const diag = DIAGNOSTICOS[obj] || DIAGNOSTICOS.calma;
+
+    document.getElementById('result-type-title').textContent = diag.title;
+    document.getElementById('result-desc').textContent = diag.desc;
+
+    // Filtrar catálogo para recomendar productos
+    // Algoritmo:
+    // 1. Priorizamos productos que tengan como OBJETIVO el seleccionado en la pregunta 1.
+    // 2. Intentamos buscar coincidencias con el tipo de producto (pregunta 2) o ingrediente.
+    let recommended = products.filter(p => p.objetivos && p.objetivos.includes(obj));
+
+    // Si no hay suficientes, agregamos destacados o productos de la misma línea
+    if (recommended.length < 2) {
+      const extras = products.filter(p => !recommended.some(r => r.slug === p.slug));
+      recommended = [...recommended, ...extras.slice(0, 2 - recommended.length)];
+    }
+
+    // Limitar a máximo 2-3 productos para enfocar la recomendación
+    const finalRecs = recommended.slice(0, 2);
+
+    const grid = document.getElementById('recommended-products');
+    grid.innerHTML = '';
+
+    // Renderizamos las tarjetas de producto
+    finalRecs.forEach(p => {
+      const imgHtml = p.imagenes && p.imagenes[0] 
+        ? `<img src="${p.imagenes[0]}" alt="${p.nombre}" class="p-img">`
+        : `<div class="p-img-ph">🌿</div>`;
+
+      const card = document.createElement('article');
+      card.className = 'quiz-product-card';
+      
+      // Estilo de tarjeta
+      card.innerHTML = `
+        <div class="qp-card">
+          <div class="qp-image-wrap">
+            ${imgHtml}
+          </div>
+          <div class="qp-info">
+            <span class="qp-linea">${p.linea.toUpperCase()}</span>
+            <h3>${p.nombre}</h3>
+            <p class="qp-desc">${p.descripcionCorta || ''}</p>
+            <div class="qp-bottom">
+              <span class="qp-price">$${Number(p.precio).toLocaleString('es-AR')}</span>
+              <button class="btn btn-solid sm qp-add" data-add="${p.slug}" data-nombre="${p.nombre}" data-precio="${p.precio}" data-linea="${p.linea}">
+                Agregar al Carrito
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    // Inyectamos estilos para las tarjetas de recomendación del test
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .qp-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .qp-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+      }
+      .qp-image-wrap {
+        aspect-ratio: 16/10;
+        background: var(--crema-2);
+        overflow: hidden;
+      }
+      .qp-image-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .p-img-ph {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        place-items: center;
+        font-size: 2rem;
+        background: var(--crema-2);
+      }
+      .qp-info {
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+      .qp-linea {
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        font-weight: 600;
+        margin-bottom: 0.35rem;
+      }
+      .qp-info h3 {
+        font-family: var(--font-serif);
+        color: var(--verde);
+        font-size: 1.15rem;
+        margin: 0 0 0.5rem;
+      }
+      .qp-desc {
+        font-size: 0.8rem;
+        color: var(--text-soft);
+        margin: 0 0 1rem;
+        line-height: 1.5;
+        flex: 1;
+      }
+      .qp-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: auto;
+      }
+      .qp-price {
+        font-family: var(--font-serif);
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--verde);
+      }
+      .qp-add {
+        font-size: 0.78rem;
+        padding: 0.5rem 0.9rem;
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Conectar botones de agregar al carrito del test
+    grid.querySelectorAll('.qp-add').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget;
+        const addBtn = document.createElement('button');
+        addBtn.dataset.slug = target.dataset.add;
+        addBtn.dataset.nombre = target.dataset.nombre;
+        addBtn.dataset.precio = target.dataset.precio;
+        addBtn.dataset.linea = target.dataset.linea;
+        addBtn.dataset.addToCart = "";
+        
+        // Simular click en un botón add to cart para que el script global lo detecte y procese
+        document.body.appendChild(addBtn);
+        addBtn.click();
+        document.body.removeChild(addBtn);
+
+        target.textContent = "✓ Agregado";
+        target.disabled = true;
+        setTimeout(() => {
+          target.textContent = "Agregar al Carrito";
+          target.disabled = false;
+        }, 1500);
+      });
+    });
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    initQuiz();
+  });
+</script>

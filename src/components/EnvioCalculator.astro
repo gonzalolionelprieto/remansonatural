@@ -1,0 +1,141 @@
+---
+/**
+ * Calculadora de envío por código postal (estimación).
+ * No usa API real todavía: estima por rango de CP (CABA / GBA / Interior).
+ * Cuando integres un correo (Andreani/OCA/Correo Argentino) se reemplaza la
+ * función `estimar` por la llamada real.
+ */
+---
+
+<div class="envio" data-envio>
+  <div class="envio-head">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v8H3zM14 10h4l3 3v2h-7z"></path><circle cx="7" cy="17" r="1.6"></circle><circle cx="17.5" cy="17" r="1.6"></circle></svg>
+    <span>Calculá tu envío</span>
+  </div>
+  <form class="envio-form" data-envio-form novalidate>
+    <label class="visually-hidden" for="cp">Código postal</label>
+    <input id="cp" type="text" inputmode="numeric" maxlength="4" placeholder="Código postal" data-cp autocomplete="postal-code" />
+    <button class="btn-cp" type="submit">Calcular</button>
+  </form>
+  <p class="envio-result" data-envio-result role="status" aria-live="polite"></p>
+  <a class="envio-help" href="https://www.correoargentino.com.ar/formularios/cpa" target="_blank" rel="noopener noreferrer">No sé mi código postal</a>
+</div>
+
+<style>
+  .envio {
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 1.15rem 1.25rem;
+  }
+  .envio-head {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.85rem;
+  }
+  .envio-head svg {
+    width: 20px;
+    height: 20px;
+    color: var(--tierra);
+  }
+  .envio-form {
+    display: flex;
+    gap: 0.6rem;
+  }
+  .envio-form input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-btn);
+    padding: 0.7rem 0.9rem;
+    background: var(--surface);
+    font-size: 0.92rem;
+    transition: border-color var(--dur) var(--ease-out),
+      box-shadow var(--dur) var(--ease-out);
+  }
+  .envio-form input:focus {
+    outline: none;
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(47, 74, 58, 0.1);
+  }
+  .btn-cp {
+    border: 1px solid var(--verde);
+    background: transparent;
+    color: var(--verde);
+    border-radius: var(--r-btn);
+    padding: 0.7rem 1.1rem;
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background var(--dur) var(--ease-out),
+      color var(--dur) var(--ease-out);
+  }
+  .btn-cp:hover {
+    background: var(--verde);
+    color: var(--crema);
+  }
+  .envio-result {
+    min-height: 1.2em;
+    margin-top: 0.85rem;
+    font-size: 0.88rem;
+    color: var(--text-soft);
+  }
+  .envio-result b {
+    color: var(--verde);
+  }
+  .envio-result.free {
+    color: var(--salvia);
+    font-weight: 500;
+  }
+  .envio-help {
+    display: inline-block;
+    margin-top: 0.6rem;
+    font-size: 0.78rem;
+    color: var(--tierra);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+</style>
+
+<script>
+  function estimar(cp: number) {
+    if (cp >= 1000 && cp <= 1499)
+      return { zona: 'CABA', costo: 2500, dias: '1 a 3 días hábiles' };
+    if (cp >= 1500 && cp <= 2000)
+      return { zona: 'GBA', costo: 3500, dias: '2 a 4 días hábiles' };
+    return { zona: 'Interior', costo: 5500, dias: '3 a 7 días hábiles' };
+  }
+  const fmt = (n: number) => `$${n.toLocaleString('es-AR')}`;
+
+  function initEnvio() {
+    document.querySelectorAll<HTMLFormElement>('[data-envio-form]').forEach((form) => {
+      if (form.dataset.bound) return;
+      form.dataset.bound = '1';
+      const input = form.querySelector<HTMLInputElement>('[data-cp]');
+      const out = form.parentElement?.querySelector<HTMLElement>('[data-envio-result]');
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!input || !out) return;
+        const cp = parseInt(input.value.replace(/\D/g, ''), 10);
+        if (!cp || input.value.replace(/\D/g, '').length < 4) {
+          out.className = 'envio-result';
+          out.textContent = 'Ingresá un código postal válido (4 dígitos).';
+          return;
+        }
+        const r = estimar(cp);
+        out.className = 'envio-result';
+        out.innerHTML = `Envío a <b>${r.zona}</b>: ${fmt(r.costo)} · llega en ${r.dias}. <br><span style="color:var(--text-muted)">Gratis en compras desde ${fmt(85000)}.</span>`;
+      });
+    });
+  }
+
+  document.addEventListener('astro:page-load', initEnvio);
+</script>

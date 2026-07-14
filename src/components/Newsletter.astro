@@ -1,0 +1,107 @@
+---
+/** Captura de email. El submit real se conecta en el paso de integración;
+ *  por ahora valida y muestra confirmación amable sin recargar. */
+---
+
+<section class="section news">
+  <div class="wrap" data-reveal="rise">
+    <span class="eyebrow">Sumate al remanso</span>
+    <h2>Calma en tu casilla</h2>
+    <p class="news-lead">
+      Rituales, novedades y descuentos suaves. Sin spam, lo prometemos.
+    </p>
+    <form class="news-form" data-newsletter novalidate>
+      <label class="visually-hidden" for="news-email">Tu email</label>
+      <input
+        id="news-email"
+        type="email"
+        name="email"
+        placeholder="tu@email.com"
+        autocomplete="email"
+        required
+      />
+      <button class="btn btn-solid" type="submit">Suscribirme</button>
+    </form>
+    <p class="news-msg" data-newsletter-msg role="status" aria-live="polite"></p>
+  </div>
+</section>
+
+<style>
+  .news {
+    background: var(--bg-alt);
+    text-align: center;
+  }
+  .news h2 {
+    font-size: clamp(1.6rem, 1.3rem + 1.4vw, 2.1rem);
+    margin-top: 0.5rem;
+  }
+  .news-lead {
+    color: var(--text-muted);
+    max-width: 48ch;
+    margin: 0.75rem auto 0;
+  }
+  .news-form {
+    display: flex;
+    gap: 0.6rem;
+    max-width: 440px;
+    margin: 1.6rem auto 0;
+  }
+  .news-form input {
+    flex: 1;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-pill);
+    padding: 0.8rem 1.25rem;
+    background: var(--surface);
+    font-size: 0.9rem;
+    transition: border-color var(--dur) var(--ease-out),
+      box-shadow var(--dur) var(--ease-out);
+  }
+  .news-form input:focus {
+    outline: none;
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(47, 74, 58, 0.12);
+  }
+  .news-msg {
+    min-height: 1.2em;
+    margin-top: 0.9rem;
+    font-size: 0.85rem;
+    color: var(--verde);
+    opacity: 0;
+    transition: opacity var(--dur) var(--ease-out);
+  }
+  .news-msg.show {
+    opacity: 1;
+  }
+
+  @media (max-width: 560px) {
+    .news-form {
+      flex-direction: column;
+    }
+  }
+</style>
+
+<script>
+  function initNewsletter() {
+    const form = document.querySelector<HTMLFormElement>('[data-newsletter]');
+    const msg = document.querySelector<HTMLElement>('[data-newsletter-msg]');
+    if (!form || form.dataset.bound) return;
+    form.dataset.bound = '1';
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = form.querySelector<HTMLInputElement>('input[type="email"]');
+      if (!input || !msg) return;
+      if (!input.checkValidity()) {
+        msg.textContent = 'Ingresá un email válido 🌿';
+        msg.classList.add('show');
+        input.focus();
+        return;
+      }
+      // TODO: conectar a proveedor de email (paso de integración).
+      msg.textContent = '¡Gracias! Te sumamos al remanso 🌿';
+      msg.classList.add('show');
+      form.reset();
+    });
+  }
+
+  document.addEventListener('astro:page-load', initNewsletter);
+</script>

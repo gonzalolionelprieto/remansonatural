@@ -1,0 +1,92 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import CategoriaBento from '../components/CategoriaBento.astro';
+import SectionHead from '../components/SectionHead.astro';
+import ObjetivoCard from '../components/ObjetivoCard.astro';
+import ProductCard from '../components/ProductCard.astro';
+import ProductoEstrella from '../components/ProductoEstrella.astro';
+import TrustStrip from '../components/TrustStrip.astro';
+import MethodSteps from '../components/MethodSteps.astro';
+import Newsletter from '../components/Newsletter.astro';
+import { objetivos } from '../lib/site';
+import { getCatalogFeatured, getHomeConfig } from '../lib/catalog';
+
+// SSR: el home lee contenido editable (textos + fotos) de Supabase, así lo
+// que cambiás en el panel se ve al recargar. Con fallback a los defaults.
+export const prerender = false;
+
+const [featuredProducts, home] = await Promise.all([
+  getCatalogFeatured(),
+  getHomeConfig(),
+]);
+---
+
+<BaseLayout>
+  <Hero config={home.hero} />
+
+  <CategoriaBento panels={home.bento} />
+
+  <!-- Comprá por objetivo -->
+  <section class="section" id="objetivos">
+    <div class="wrap">
+      <SectionHead
+        eyebrow="Comprá por objetivo"
+        title="¿Qué buscás hoy?"
+        lead="Elegí por cómo te querés sentir. Cada fórmula está pensada para acompañar un momento."
+      />
+      <div class="grid-4" data-reveal-group data-reveal-step="90">
+        {objetivos.map((o) => (
+          <ObjetivoCard slug={o.slug} label={o.label} desc={o.desc} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Productos destacados -->
+  <section class="section prods" id="destacados">
+    <div class="wrap">
+      <SectionHead eyebrow="Lo más elegido" title="Productos destacados" />
+      <div class="grid-4" data-reveal-group data-reveal-step="90">
+        {featuredProducts.map((p) => (
+          <ProductCard product={p} />
+        ))}
+      </div>
+      <div class="prods-cta" data-reveal="fade">
+        <a class="btn btn-ghost" href="/tienda">Ver toda la tienda</a>
+      </div>
+    </div>
+  </section>
+
+  <ProductoEstrella config={home.estrella} />
+  <TrustStrip />
+  <MethodSteps />
+  <Newsletter />
+</BaseLayout>
+
+<style>
+  .grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.15rem;
+  }
+
+  .prods {
+    background: var(--bg-alt);
+  }
+  .prods-cta {
+    text-align: center;
+    margin-top: clamp(2rem, 4vw, 2.75rem);
+  }
+
+  @media (max-width: 860px) {
+    .grid-4 {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media (max-width: 480px) {
+    .grid-4 {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,92 @@
+---
+import SectionHead from './SectionHead.astro';
+
+const steps = [
+  {
+    title: 'Extracción en alcohol',
+    desc: 'El hongo reposa en alcohol con calor controlado para liberar sus compuestos.',
+  },
+  {
+    title: 'Decocción en agua',
+    desc: 'Una cocción lenta en agua rescata lo que el alcohol no alcanza.',
+  },
+  {
+    title: 'Blend y reposo',
+    desc: 'Unimos ambas fases en la proporción justa y rotulamos cada lote.',
+  },
+];
+---
+
+<section class="section" id="metodo">
+  <div class="wrap">
+    <SectionHead
+      eyebrow="Nuestro método"
+      title="Transparencia, de principio a fin"
+      lead="Hacemos dobles extractos reales: capturamos lo que sale en agua y lo que sale en alcohol. Nada de atajos."
+    />
+    <ol class="steps" data-reveal-group data-reveal-step="120">
+      {steps.map((s, i) => (
+        <li class="step" data-reveal="rise">
+          <span class="step-num">{String(i + 1).padStart(2, '0')}</span>
+          <h3>{s.title}</h3>
+          <p>{s.desc}</p>
+        </li>
+      ))}
+    </ol>
+    <div class="steps-cta">
+      <a class="btn btn-ghost" href="/metodo">Ver el método completo</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .steps {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(1.5rem, 4vw, 2.25rem);
+    position: relative;
+  }
+  .step {
+    text-align: center;
+    padding-inline: 0.5rem;
+  }
+  .step-num {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    margin: 0 auto 1rem;
+    border-radius: var(--r-full);
+    border: 1px solid var(--tierra);
+    font-family: var(--font-serif);
+    font-size: 0.95rem;
+    color: var(--tierra);
+    transition: background var(--dur) var(--ease-out),
+      color var(--dur) var(--ease-out);
+  }
+  .step:hover .step-num {
+    background: var(--tierra);
+    color: var(--crema);
+  }
+  .step h3 {
+    font-size: var(--fs-h3);
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+  .step p {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+  .steps-cta {
+    text-align: center;
+    margin-top: clamp(2rem, 4vw, 2.75rem);
+  }
+
+  @media (max-width: 860px) {
+    .steps {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+  }
+</style>

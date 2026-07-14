@@ -1,0 +1,672 @@
+---
+import ProductCard from './ProductCard.astro';
+import { site } from '../lib/site';
+import { getFacets } from '../lib/products';
+import type { Product } from '../lib/types';
+
+interface Props {
+  products: Product[];
+}
+const { products } = Astro.props;
+const { objetivos, tipos } = getFacets(products);
+
+const waHref = `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(
+  'Hola 🌿 ¿Me ayudan a elegir el ritual ideal para mí?'
+)}`;
+---
+
+<div class="catalog" data-catalog>
+  <!-- Botón de filtros (sólo mobile) -->
+  <div class="mobile-filterbar">
+    <button class="filter-toggle" type="button" data-filters-toggle aria-expanded="false" aria-controls="filters-panel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 5h18M6 12h12M10 19h4"></path></svg>
+      Filtrar
+      <span class="filter-badge" data-active-count hidden></span>
+    </button>
+    <p class="count count-mobile" data-count aria-live="polite"></p>
+  </div>
+
+  <div class="catalog-layout">
+    <!-- Backdrop del drawer (mobile) -->
+    <div class="filters-backdrop" data-filters-backdrop hidden></div>
+
+    <!-- Sidebar de filtros -->
+    <aside class="filters" id="filters-panel" data-filters aria-label="Filtros">
+      <div class="filters-head">
+        <span class="filters-title">Filtrar</span>
+        <button class="filters-close" type="button" data-filters-close aria-label="Cerrar filtros">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.2-3.2"></path></svg>
+        <label class="visually-hidden" for="buscar">Buscar productos</label>
+        <input id="buscar" type="search" placeholder="Buscar…" data-search autocomplete="off" />
+      </div>
+
+      <fieldset class="facet">
+        <legend>¿Cómo te querés sentir?</legend>
+        <ul role="list">
+          <li><button class="opt is-active" type="button" data-facet="objetivo" data-value="" aria-pressed="true">Todo</button></li>
+          {objetivos.map((o) => (
+            <li>
+              <button class="opt" type="button" data-facet="objetivo" data-value={o.slug} aria-pressed="false">
+                <span>{o.label}</span><span class="opt-count">{o.count}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </fieldset>
+
+      <fieldset class="facet">
+        <legend>Tipo de producto</legend>
+        <ul role="list">
+          <li><button class="opt is-active" type="button" data-facet="tipo" data-value="" aria-pressed="true">Todos</button></li>
+          {tipos.map((t) => (
+            <li>
+              <button class="opt" type="button" data-facet="tipo" data-value={t.slug} aria-pressed="false">
+                <span>{t.label}</span><span class="opt-count">{t.count}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </fieldset>
+
+      <button class="clear" type="button" data-clear hidden>Limpiar filtros</button>
+
+      <div class="filters-apply">
+        <button class="btn btn-solid" type="button" data-filters-close-2>Ver resultados</button>
+      </div>
+    </aside>
+
+    <!-- Contenido -->
+    <div class="catalog-main">
+      <div class="catalog-bar">
+        <p class="count count-desktop" data-count-2 aria-live="polite"></p>
+        <div class="sort">
+          <label class="visually-hidden" for="cat-sort">Ordenar</label>
+          <select id="cat-sort" data-sort>
+            <option value="relevancia">Relevancia</option>
+            <option value="precio-asc">Menor precio</option>
+            <option value="precio-desc">Mayor precio</option>
+            <option value="nombre">Nombre (A–Z)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="catalog-grid" data-grid>
+        {products.map((p) => (
+          <ProductCard product={p} reveal={false} />
+        ))}
+      </div>
+
+      <div class="empty" data-empty hidden>
+        <p class="empty-title">No encontramos rituales con esos filtros</p>
+        <p class="empty-sub">Probá con otra combinación, o escribinos y te ayudamos a elegir.</p>
+        <button class="btn btn-ghost" type="button" data-clear-2>Ver todo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ayuda / pre-compra: guía humana -->
+  <aside class="helper">
+    <div class="helper-text">
+      <p class="eyebrow">¿No sabés por dónde empezar?</p>
+      <h3>Te ayudamos a armar tu ritual</h3>
+      <p>Contanos cómo te querés sentir y te recomendamos lo justo para vos. Sin apuro, con atención humana.</p>
+    </div>
+    <a class="btn btn-solid" href={waHref} target="_blank" rel="noopener noreferrer">Escribinos por WhatsApp</a>
+  </aside>
+</div>
+
+<style>
+  .catalog {
+    display: grid;
+    gap: clamp(1.5rem, 4vw, 2rem);
+  }
+  .catalog-layout {
+    display: grid;
+    grid-template-columns: 232px 1fr;
+    gap: clamp(1.5rem, 3vw, 2.5rem);
+    align-items: start;
+  }
+
+  /* ---- Sidebar ---- */
+  .filters {
+    position: sticky;
+    top: 96px;
+    display: grid;
+    gap: 1.5rem;
+    align-content: start;
+  }
+  .filters-head,
+  .filters-apply {
+    display: none;
+  }
+
+  .search {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .search svg {
+    position: absolute;
+    left: 0.85rem;
+    width: 17px;
+    height: 17px;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+  .search input {
+    width: 100%;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-pill);
+    padding: 0.65rem 0.9rem 0.65rem 2.3rem;
+    background: var(--surface);
+    font-size: 0.9rem;
+    transition: border-color var(--dur) var(--ease-out),
+      box-shadow var(--dur) var(--ease-out);
+  }
+  .search input:focus {
+    outline: none;
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(47, 74, 58, 0.1);
+  }
+
+  .facet {
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+  .facet legend {
+    font-size: 0.7rem;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.65rem;
+    padding: 0;
+  }
+  .facet ul {
+    display: grid;
+    gap: 0.15rem;
+  }
+  .opt {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    border-radius: var(--r-sm);
+    padding: 0.5rem 0.65rem;
+    font-size: 0.9rem;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--dur) var(--ease-out),
+      color var(--dur) var(--ease-out);
+  }
+  .opt:hover {
+    background: rgba(47, 74, 58, 0.06);
+  }
+  .opt.is-active {
+    background: var(--verde);
+    color: var(--crema);
+    font-weight: 500;
+  }
+  .opt-count {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .opt.is-active .opt-count {
+    color: var(--on-dark-soft);
+  }
+
+  .clear {
+    justify-self: start;
+    background: none;
+    border: none;
+    color: var(--tierra);
+    font-size: 0.82rem;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 0;
+  }
+
+  /* ---- Barra de resultados ---- */
+  .catalog-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .count {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .count :global(b),
+  .count b {
+    color: var(--verde);
+    font-weight: 500;
+  }
+  .count-mobile {
+    display: none;
+  }
+  .sort select {
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-pill);
+    padding: 0.55rem 2.2rem 0.55rem 1rem;
+    background: var(--surface)
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%232F4A3A' stroke-width='2'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E")
+      no-repeat right 0.9rem center;
+    font-size: 0.88rem;
+    cursor: pointer;
+    appearance: none;
+  }
+  .sort select:focus {
+    outline: none;
+    border-color: var(--verde);
+  }
+
+  /* ---- Grilla ---- */
+  .catalog-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.15rem;
+  }
+  .catalog-grid > :global(.card) {
+    animation: rn-rise 0.55s var(--ease-out) both;
+  }
+  .catalog-grid > :global(.card:nth-child(1)) { animation-delay: 0.02s; }
+  .catalog-grid > :global(.card:nth-child(2)) { animation-delay: 0.08s; }
+  .catalog-grid > :global(.card:nth-child(3)) { animation-delay: 0.14s; }
+  .catalog-grid > :global(.card:nth-child(4)) { animation-delay: 0.2s; }
+  .catalog-grid > :global(.card:nth-child(5)) { animation-delay: 0.26s; }
+  .catalog-grid > :global(.card:nth-child(6)) { animation-delay: 0.32s; }
+  .catalog-grid > :global(.card:nth-child(7)) { animation-delay: 0.38s; }
+  .catalog-grid > :global(.card:nth-child(8)) { animation-delay: 0.44s; }
+  .catalog-grid > :global(.card.is-hidden) {
+    display: none;
+  }
+  .catalog-grid[hidden] {
+    display: none;
+  }
+
+  /* ---- Empty ---- */
+  .empty {
+    text-align: center;
+    padding: 3rem 1rem;
+  }
+  .empty-title {
+    font-family: var(--font-serif);
+    font-size: 1.3rem;
+    color: var(--verde);
+  }
+  .empty-sub {
+    color: var(--text-muted);
+    margin: 0.5rem 0 1.25rem;
+  }
+
+  /* ---- Helper (pre-compra) ---- */
+  .helper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: clamp(1.5rem, 4vw, 2.25rem);
+  }
+  .helper h3 {
+    font-size: var(--fs-h3);
+    font-weight: 500;
+    margin: 0.35rem 0 0.4rem;
+  }
+  .helper p:last-of-type {
+    color: var(--text-soft);
+    max-width: 48ch;
+    font-size: 0.95rem;
+  }
+  .helper .btn {
+    flex-shrink: 0;
+  }
+
+  /* ---- Mobile filter bar (oculto en desktop) ---- */
+  .mobile-filterbar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .filter-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    border-radius: var(--r-pill);
+    padding: 0.55rem 1.1rem;
+    font-size: 0.88rem;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .filter-toggle svg {
+    width: 18px;
+    height: 18px;
+  }
+  .filter-badge[hidden] {
+    display: none;
+  }
+  .filter-badge {
+    display: inline-grid;
+    place-items: center;
+    min-width: 18px;
+    height: 18px;
+    padding-inline: 4px;
+    border-radius: var(--r-full);
+    background: var(--tierra);
+    color: var(--crema);
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+  .filters-backdrop {
+    display: none;
+  }
+
+  @media (min-width: 861px) and (max-width: 1040px) {
+    .catalog-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* ---- Responsive: drawer en mobile ---- */
+  @media (max-width: 860px) {
+    .catalog-layout {
+      grid-template-columns: 1fr;
+    }
+    .mobile-filterbar {
+      display: flex;
+    }
+    .count-desktop {
+      display: none;
+    }
+    .count-mobile {
+      display: block;
+    }
+    .catalog-bar {
+      justify-content: flex-end;
+      border-bottom: none;
+      padding-bottom: 0;
+      margin-bottom: 1rem;
+    }
+
+    /* Drawer */
+    .filters {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: var(--z-drawer);
+      width: min(84vw, 320px);
+      background: var(--crema);
+      padding: 1.25rem;
+      overflow-y: auto;
+      transform: translateX(-100%);
+      transition: transform var(--dur) var(--ease-out);
+      box-shadow: var(--shadow-lg);
+      gap: 1.35rem;
+    }
+    .catalog[data-filters-open] .filters {
+      transform: translateX(0);
+    }
+    .filters-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .filters-title {
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      color: var(--verde);
+    }
+    .filters-close {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border: none;
+      background: none;
+      color: var(--verde);
+      cursor: pointer;
+    }
+    .filters-close svg {
+      width: 22px;
+      height: 22px;
+    }
+    .filters-apply {
+      display: block;
+      position: sticky;
+      bottom: 0;
+      padding-top: 0.5rem;
+      background: var(--crema);
+    }
+    .filters-apply .btn {
+      width: 100%;
+    }
+    .filters-backdrop {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: var(--z-overlay);
+      background: rgba(30, 30, 30, 0.42);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--dur) var(--ease-out);
+    }
+    .catalog[data-filters-open] .filters-backdrop {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .catalog-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .catalog-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .catalog-grid > :global(.card) {
+      animation: none;
+    }
+    .filters {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  interface CatState {
+    objetivo: string;
+    tipo: string;
+    q: string;
+    sort: string;
+  }
+
+  // Listener global de Escape: se registra una sola vez (el módulo persiste
+  // entre navegaciones con ClientRouter). Cierra el drawer activo.
+  let escBound = false;
+  function bindEscapeOnce() {
+    if (escBound) return;
+    escBound = true;
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const r = document.querySelector<HTMLElement>('[data-catalog]');
+      if (r?.hasAttribute('data-filters-open')) {
+        r.removeAttribute('data-filters-open');
+        document.body.style.overflow = '';
+        r.querySelector('[data-filters-toggle]')?.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  function initCatalog() {
+    const root = document.querySelector<HTMLElement>('[data-catalog]');
+    if (!root) return;
+
+    const grid = root.querySelector<HTMLElement>('[data-grid]');
+    const cards = Array.from(root.querySelectorAll<HTMLElement>('[data-product]'));
+    const countEls = root.querySelectorAll<HTMLElement>('[data-count],[data-count-2]');
+    const emptyEl = root.querySelector<HTMLElement>('[data-empty]');
+    const searchEl = root.querySelector<HTMLInputElement>('[data-search]');
+    const sortEl = root.querySelector<HTMLSelectElement>('[data-sort]');
+    const clearEls = root.querySelectorAll<HTMLButtonElement>('[data-clear],[data-clear-2]');
+    const activeCountEl = root.querySelector<HTMLElement>('[data-active-count]');
+    if (!grid) return;
+
+    const params = new URLSearchParams(location.search);
+    const state: CatState = {
+      objetivo: params.get('objetivo') ?? '',
+      tipo: params.get('tipo') ?? '',
+      q: params.get('q') ?? '',
+      sort: params.get('sort') ?? 'relevancia',
+    };
+    if (searchEl && state.q) searchEl.value = state.q;
+    if (sortEl) sortEl.value = state.sort;
+
+    const setOpts = () => {
+      root.querySelectorAll<HTMLButtonElement>('.opt').forEach((opt) => {
+        const facet = opt.dataset.facet as 'objetivo' | 'tipo';
+        const active = (state[facet] ?? '') === opt.dataset.value;
+        opt.classList.toggle('is-active', active);
+        opt.setAttribute('aria-pressed', String(active));
+      });
+    };
+
+    const apply = () => {
+      let visible = 0;
+      cards.forEach((card) => {
+        const objetivos = (card.dataset.objetivos ?? '').split(' ');
+        const matchObj = !state.objetivo || objetivos.includes(state.objetivo);
+        const matchTipo = !state.tipo || card.dataset.tipo === state.tipo;
+        const matchQ =
+          !state.q || (card.dataset.nombre ?? '').includes(state.q.toLowerCase());
+        const show = matchObj && matchTipo && matchQ;
+        card.classList.toggle('is-hidden', !show);
+        if (show) visible++;
+      });
+
+      const sorted = [...cards].sort((a, b) => {
+        switch (state.sort) {
+          case 'precio-asc':
+            return +a.dataset.precio! - +b.dataset.precio!;
+          case 'precio-desc':
+            return +b.dataset.precio! - +a.dataset.precio!;
+          case 'nombre':
+            return (a.dataset.nombre ?? '').localeCompare(b.dataset.nombre ?? '', 'es');
+          default:
+            return (
+              +b.dataset.destacado! - +a.dataset.destacado! ||
+              +a.dataset.orden! - +b.dataset.orden!
+            );
+        }
+      });
+      sorted.forEach((c) => grid.appendChild(c));
+
+      const label =
+        visible === 0
+          ? ''
+          : `<b>${visible}</b> ${visible === 1 ? 'ritual' : 'rituales'} para vos`;
+      countEls.forEach((el) => (el.innerHTML = label));
+      if (emptyEl) emptyEl.hidden = visible !== 0;
+      grid.hidden = visible === 0;
+
+      const activeFilters =
+        (state.objetivo ? 1 : 0) + (state.tipo ? 1 : 0) + (state.q ? 1 : 0);
+      const dirty = activeFilters > 0 || state.sort !== 'relevancia';
+      clearEls.forEach((el) => {
+        if (el.hasAttribute('data-clear')) el.hidden = !dirty;
+      });
+      if (activeCountEl) {
+        activeCountEl.textContent = String(activeFilters);
+        activeCountEl.hidden = activeFilters === 0;
+      }
+
+      setOpts();
+      updateURL();
+    };
+
+    const updateURL = () => {
+      const p = new URLSearchParams();
+      if (state.objetivo) p.set('objetivo', state.objetivo);
+      if (state.tipo) p.set('tipo', state.tipo);
+      if (state.q) p.set('q', state.q);
+      if (state.sort !== 'relevancia') p.set('sort', state.sort);
+      const qs = p.toString();
+      history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+    };
+
+    // ---- Drawer (mobile) ----
+    const setDrawer = (open: boolean) => {
+      root.toggleAttribute('data-filters-open', open);
+      root
+        .querySelector('[data-filters-toggle]')
+        ?.setAttribute('aria-expanded', String(open));
+      document.body.style.overflow = open ? 'hidden' : '';
+    };
+    root
+      .querySelector('[data-filters-toggle]')
+      ?.addEventListener('click', () => setDrawer(true));
+    root
+      .querySelectorAll('[data-filters-close],[data-filters-close-2],[data-filters-backdrop]')
+      .forEach((el) => el.addEventListener('click', () => setDrawer(false)));
+    bindEscapeOnce();
+
+    // ---- Eventos de filtro ----
+    root.querySelectorAll<HTMLButtonElement>('.opt').forEach((opt) => {
+      opt.addEventListener('click', () => {
+        const facet = opt.dataset.facet as 'objetivo' | 'tipo';
+        state[facet] = opt.dataset.value ?? '';
+        apply();
+      });
+    });
+    searchEl?.addEventListener('input', () => {
+      state.q = searchEl.value.trim();
+      apply();
+    });
+    sortEl?.addEventListener('change', () => {
+      state.sort = sortEl.value;
+      apply();
+    });
+    clearEls.forEach((el) =>
+      el.addEventListener('click', () => {
+        state.objetivo = '';
+        state.tipo = '';
+        state.q = '';
+        state.sort = 'relevancia';
+        if (searchEl) searchEl.value = '';
+        if (sortEl) sortEl.value = 'relevancia';
+        apply();
+      })
+    );
+
+    // Foco en la búsqueda si llegan desde el ícono del header (/tienda#buscar)
+    if (location.hash === '#buscar') {
+      searchEl?.focus();
+      searchEl?.scrollIntoView({ block: 'center' });
+    }
+
+    apply();
+  }
+
+  document.addEventListener('astro:page-load', initCatalog);
+</script>

@@ -1,0 +1,203 @@
+---
+import Logo from './Logo.astro';
+import { footerNav, disclaimer, site } from '../lib/site';
+
+const year = new Date().getFullYear();
+const pagos = ['Mercado Pago', 'Visa', 'Mastercard', 'Transferencia', '3 cuotas'];
+const columns = [footerNav.tienda, footerNav.lineas, footerNav.ayuda];
+---
+
+<footer class="site-footer">
+  <div class="wrap footer-cols">
+    <div class="footer-brand">
+      <a href="/" class="brand" aria-label={`${site.name} — inicio`}>
+        <Logo size={30} stroke="var(--crema)" accent="var(--tierra)" />
+        <span class="brand-name">Remanso Natural</span>
+      </a>
+      <p class="footer-tag">
+        Rituales de calma, hechos a mano. Botica holística artesanal, 100% online.
+      </p>
+    </div>
+
+    {columns.map((col) => (
+      <nav class="footer-col" aria-label={col.title}>
+        <h4>{col.title}</h4>
+        <ul role="list">
+          {col.links.map((l) => (
+            <li><a href={l.href}>{l.label}</a></li>
+          ))}
+        </ul>
+      </nav>
+    ))}
+  </div>
+
+  <div class="wrap footer-pay">
+    <span class="pay-label">Medios de pago</span>
+    <ul role="list" class="pay-chips">
+      {pagos.map((p) => <li class="chip">{p}</li>)}
+    </ul>
+  </div>
+
+  <div class="wrap footer-legal">
+    <p class="disclaimer">{disclaimer}</p>
+    <div class="legal-links">
+      <a href="/legales#arrepentimiento" class="legal-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14l-4-4 4-4"></path><path d="M5 10h9a5 5 0 0 1 0 10h-1"></path></svg>
+        Botón de arrepentimiento
+      </a>
+      <a href="https://www.argentina.gob.ar/defensadelconsumidor" target="_blank" rel="noopener noreferrer">Defensa de las y los Consumidores</a>
+      <a href="/legales#terminos">Términos</a>
+      <a href="/legales#privacidad">Privacidad</a>
+    </div>
+    <p class="copyright">© {year} {site.name}. Hecho a mano en Argentina.</p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background: var(--carbon);
+    color: #cfcbc2;
+    font-size: var(--fs-sm);
+  }
+
+  .footer-cols {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr 1fr;
+    gap: clamp(1.5rem, 4vw, 2.5rem);
+    padding-block: clamp(2.75rem, 5vw, 3.75rem) 2.25rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.9rem;
+  }
+  .brand-name {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--crema);
+  }
+  .footer-tag {
+    color: #8a857c;
+    max-width: 34ch;
+    font-size: var(--fs-sm);
+    line-height: 1.6;
+  }
+
+  .footer-col h4 {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    color: #928d84;
+    margin-bottom: 1rem;
+  }
+  .footer-col ul {
+    display: grid;
+    gap: 0.55rem;
+  }
+  .footer-col a {
+    color: #cfcbc2;
+    transition: color var(--dur) var(--ease-out),
+      padding-left var(--dur) var(--ease-out);
+  }
+  .footer-col a:hover {
+    color: #fff;
+    padding-left: 4px;
+  }
+
+  .footer-pay {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    border-top: 1px solid #3a3a38;
+    padding-block: 1.15rem;
+  }
+  .pay-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #8a857c;
+  }
+  .pay-chips {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .chip {
+    border: 1px solid #3a3a38;
+    border-radius: var(--r-sm);
+    padding: 0.2rem 0.55rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.03em;
+    color: #b7b2a9;
+  }
+
+  .footer-legal {
+    border-top: 1px solid #3a3a38;
+    padding-block: 1.25rem 2.75rem;
+  }
+  .disclaimer {
+    font-size: 0.75rem;
+    color: #8a857c;
+    line-height: 1.65;
+    max-width: 90ch;
+  }
+  .legal-links {
+    margin-top: 0.9rem;
+    display: flex;
+    gap: 1.1rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .legal-links a {
+    font-size: 0.75rem;
+    color: #b7b2a9;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color var(--dur) var(--ease-out);
+  }
+  .legal-links a:hover {
+    color: #fff;
+  }
+  /* Botón de arrepentimiento resaltado (obligatorio y visible) */
+  .legal-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    text-decoration: none !important;
+    border: 1px solid #4a4a46;
+    border-radius: var(--r-pill);
+    padding: 0.4rem 0.85rem;
+    color: #d8d3ca !important;
+  }
+  .legal-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+  .legal-btn:hover {
+    border-color: var(--tierra);
+    color: #fff !important;
+  }
+  .copyright {
+    margin-top: 1.25rem;
+    font-size: 0.72rem;
+    color: #6f6a62;
+  }
+
+  @media (max-width: 860px) {
+    .footer-cols {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media (max-width: 560px) {
+    .footer-cols {
+      grid-template-columns: 1fr;
+      gap: 1.75rem;
+    }
+  }
+</style>

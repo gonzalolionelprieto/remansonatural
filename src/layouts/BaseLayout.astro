@@ -1,0 +1,89 @@
+---
+import '../styles/global.css';
+import { ClientRouter } from 'astro:transitions';
+import AnnounceBar from '../components/AnnounceBar.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import WhatsAppFab from '../components/WhatsAppFab.astro';
+import CartDrawer from '../components/CartDrawer.astro';
+import { site } from '../lib/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** ruta a la imagen OG (relativa a /public), opcional */
+  ogImage?: string;
+  /** noindex para páginas legales o utilitarias si hiciera falta */
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description = site.description,
+  ogImage = '/og-default.jpg',
+  noindex = false,
+} = Astro.props;
+
+const pageTitle = title
+  ? `${title} · ${site.name}`
+  : `${site.name} · ${site.tagline}`;
+
+const canonical = new URL(Astro.url.pathname, site.url).href;
+const ogImageUrl = new URL(ogImage, site.url).href;
+---
+
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    <meta name="theme-color" content="#2F4A3A" />
+    <meta name="color-scheme" content="light" />
+
+    <!-- Favicon (isotipo) -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:locale" content={site.locale} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImageUrl} />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    <!-- Datos estructurados por página (Product, Article, etc.) -->
+    <slot name="head" />
+
+    <ClientRouter />
+  </head>
+
+  <body>
+    <AnnounceBar />
+    <Nav />
+
+    <main id="contenido">
+      <slot />
+    </main>
+
+    <Footer />
+    <WhatsAppFab />
+    <CartDrawer />
+
+    <script>
+      import '../scripts/reveal.ts';
+    </script>
+  </body>
+</html>

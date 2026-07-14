@@ -1,0 +1,178 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductCard from '../components/ProductCard.astro';
+import Logo from '../components/Logo.astro';
+import { getFeatured } from '../lib/products';
+import { site } from '../lib/site';
+
+const relacionados = (await getFeatured()).slice(0, 3);
+const waHref = `https://wa.me/${site.whatsapp}?text=${encodeURIComponent('Hola 🌿 acabo de hacer un pedido y quería consultar')}`;
+
+const pasos = [
+  { t: 'Preparamos tu pedido', d: 'Lo armamos a mano y con cuidado, en 24–72 h hábiles.' },
+  { t: 'Te avisamos por WhatsApp', d: 'Cuando despachamos, te llega el seguimiento.' },
+  { t: 'Volvés a tu remanso', d: 'Cuando llegue, date el tiempo para tu ritual. Sin apuro.' },
+];
+---
+
+<BaseLayout title="¡Gracias!" description="Gracias por tu compra en Remanso Natural." noindex>
+  <section class="gracias">
+    <div class="gracias-glow" aria-hidden="true"></div>
+    <div class="wrap gracias-inner">
+      <div class="gracias-seal" data-enter style="--enter-delay:40ms" aria-hidden="true">
+        <Logo size={82} animated />
+      </div>
+      <span class="eyebrow" data-enter style="--enter-delay:180ms">Pedido recibido</span>
+      <h1 data-enter style="--enter-delay:280ms">Gracias por elegir <em>tu remanso</em></h1>
+      <p class="gracias-lead" data-enter style="--enter-delay:400ms">
+        Tu pedido ya está en nuestras manos. Te enviamos un correo con el detalle
+        y te vamos a avisar por WhatsApp en cada paso. Ahora, respirá: lo demás lo
+        hacemos nosotros.
+      </p>
+      <div class="gracias-ctas" data-enter style="--enter-delay:520ms">
+        <a class="btn btn-solid" href="/tienda">Seguir explorando</a>
+        <a class="btn btn-ghost" href={waHref} target="_blank" rel="noopener noreferrer">Escribinos por WhatsApp</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section pasos-sec">
+    <div class="wrap">
+      <ol class="pasos" data-reveal-group data-reveal-step="100">
+        {pasos.map((p, i) => (
+          <li class="paso" data-reveal="rise">
+            <span class="paso-n">{i + 1}</span>
+            <h2>{p.t}</h2>
+            <p>{p.d}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  {relacionados.length > 0 && (
+    <section class="section relacionados">
+      <div class="wrap">
+        <div class="section-head is-center" data-reveal="rise">
+          <span class="eyebrow">Para tu próximo ritual</span>
+          <h2>También te puede gustar</h2>
+        </div>
+        <div class="rel-grid" data-reveal-group data-reveal-step="90">
+          {relacionados.map((p) => <ProductCard product={p} />)}
+        </div>
+      </div>
+    </section>
+  )}
+</BaseLayout>
+
+<style>
+  .gracias {
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    padding-block: clamp(3.5rem, 2.5rem + 6vw, 6rem) clamp(3rem, 2rem + 5vw, 5rem);
+    background: var(--crema);
+  }
+  .gracias-glow {
+    position: absolute;
+    inset: -30% 0 auto 0;
+    height: 70%;
+    background: radial-gradient(50% 100% at 50% 0%, color-mix(in srgb, var(--salvia) 20%, transparent), transparent 70%);
+    z-index: 0;
+  }
+  .gracias-inner {
+    position: relative;
+    z-index: 1;
+  }
+  .gracias-seal {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+  }
+  .gracias h1 {
+    margin-top: 0.5rem;
+  }
+  .gracias h1 em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--salvia);
+  }
+  .gracias-lead {
+    max-width: 52ch;
+    margin: 1.25rem auto 2rem;
+    color: var(--text-soft);
+    font-size: var(--fs-lead);
+  }
+  .gracias-ctas {
+    display: flex;
+    gap: 0.85rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .pasos-sec {
+    background: var(--bg-alt);
+  }
+  .pasos {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(1.5rem, 4vw, 2.5rem);
+    list-style: none;
+    counter-reset: none;
+  }
+  .paso {
+    text-align: center;
+  }
+  .paso-n {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin: 0 auto 1rem;
+    border-radius: var(--r-full);
+    border: 1px solid var(--tierra);
+    color: var(--tierra);
+    font-family: var(--font-serif);
+  }
+  .paso h2 {
+    font-size: var(--fs-h3);
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+  .paso p {
+    color: var(--text-soft);
+    font-size: 0.92rem;
+  }
+
+  .section-head.is-center {
+    text-align: center;
+    margin-bottom: clamp(2rem, 4vw, 2.75rem);
+  }
+  .section-head h2 {
+    margin-top: 0.4rem;
+  }
+  .rel-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.15rem;
+    max-width: 860px;
+    margin-inline: auto;
+  }
+
+  @media (max-width: 780px) {
+    .pasos {
+      grid-template-columns: 1fr;
+    }
+    .rel-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  import * as cart from '../lib/cart';
+  // Pedido completado: vaciamos el carrito al llegar a la pantalla de gracias.
+  document.addEventListener('astro:page-load', () => {
+    if (location.pathname.startsWith('/gracias')) cart.clear();
+  });
+</script>

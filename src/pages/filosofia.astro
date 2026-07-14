@@ -1,0 +1,128 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Logo from '../components/Logo.astro';
+
+const valores = [
+  { t: 'Calma', d: 'Volver a lo esencial. Menos ruido, más presencia.' },
+  { t: 'Transparencia', d: 'Mostramos, explicamos y compartimos cómo hacemos todo.' },
+  { t: 'Artesanal', d: 'Hecho a mano, en pequeños lotes, con tiempo y cuidado.' },
+  { t: 'Consciente', d: 'Elegimos lo que hace bien al planeta y a vos.' },
+];
+---
+
+<BaseLayout
+  title="Filosofía"
+  description="Quiénes somos y por qué hacemos lo que hacemos. Rituales de calma, hechos a mano, con transparencia y conciencia."
+>
+  <PageHeader
+    eyebrow="Quiénes somos"
+    title="Volver a tu remanso"
+    lead="Remanso Natural nació de una idea simple: que cuidarse pueda ser un ritual, no una obligación."
+  />
+
+  <section class="section">
+    <div class="wrap story">
+      <div class="story-text" data-reveal="rise">
+        <p>Vivimos apurados. Entre pantallas, ruido y listas interminables, perdimos el hábito de la pausa. <strong>Remanso</strong> es nuestro intento de devolverle lugar a ese gesto pequeño y poderoso: frenar.</p>
+        <p>Elaboramos dobles extractos de hongos, esencias florales y rituales naturales para acompañar tus momentos —los de calma, los de descanso, los de enfoque—. No prometemos magia: preparamos, con nuestras manos y en pequeños lotes, productos honestos para que armes tu propio ritual.</p>
+        <p>Creemos en la transparencia total: te contamos qué usamos, cómo lo hacemos y por qué. Porque la confianza, como la calma, se construye despacio.</p>
+      </div>
+      <div class="story-mark" data-reveal="scale" aria-hidden="true">
+        <Logo size={140} stroke="var(--salvia)" accent="var(--tierra)" />
+      </div>
+    </div>
+  </section>
+
+  <section class="section valores-band">
+    <div class="wrap">
+      <ul class="valores" data-reveal-group data-reveal-step="80">
+        {valores.map((v) => (
+          <li data-reveal="rise">
+            <h2>{v.t}</h2>
+            <p>{v.d}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section cta-band">
+    <div class="wrap" data-reveal="rise">
+      <span class="eyebrow">Sin apuro</span>
+      <h2>Rituales simples para una vida más consciente</h2>
+      <a class="btn btn-solid" href="/tienda">Empezá tu ritual</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .story {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: center;
+  }
+  .story-text p {
+    color: var(--text-soft);
+    margin-bottom: 1.1rem;
+    font-size: 1.02rem;
+  }
+  .story-text strong {
+    color: var(--verde);
+  }
+  .story-mark {
+    display: grid;
+    place-items: center;
+  }
+  .story-mark :global(.rn-logo) {
+    animation: rn-breathe 7s var(--ease-in-out) infinite;
+  }
+
+  .valores-band {
+    background: var(--verde);
+    color: var(--on-dark);
+  }
+  .valores {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    list-style: none;
+    text-align: center;
+  }
+  .valores h2 {
+    color: var(--crema);
+    font-size: 1.4rem;
+    margin-bottom: 0.4rem;
+  }
+  .valores p {
+    color: var(--on-dark-soft);
+    font-size: 0.9rem;
+  }
+
+  .cta-band {
+    text-align: center;
+  }
+  .cta-band h2 {
+    margin: 0.5rem auto 1.75rem;
+    max-width: 24ch;
+  }
+
+  @media (max-width: 780px) {
+    .story {
+      grid-template-columns: 1fr;
+    }
+    .story-mark {
+      order: -1;
+    }
+    .valores {
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem 1.5rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .story-mark :global(.rn-logo) {
+      animation: none;
+    }
+  }
+</style>

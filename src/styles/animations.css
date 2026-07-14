@@ -1,0 +1,139 @@
+/* ============================================================
+   Remanso Natural · Motion
+   Reveals al hacer scroll, entradas escalonadas y micro-interacciones.
+   Filosofía: calma. Movimientos lentos, suaves, nunca bruscos.
+   Todo respeta prefers-reduced-motion.
+   ============================================================ */
+
+/* ---- Keyframes ---- */
+@keyframes rn-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rn-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rn-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes rn-blur-in {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+/* Deriva lenta y continua para el patrón botánico del hero */
+@keyframes rn-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-24px, -16px, 0);
+  }
+}
+
+/* Respiración muy sutil del sello / isotipo */
+@keyframes rn-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+/* Trazo de línea (para dibujar SVG del logo) */
+@keyframes rn-draw {
+  from {
+    stroke-dashoffset: var(--draw-length, 300);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ============================================================
+   Reveal on scroll
+   El elemento arranca oculto (data-reveal) y se anima cuando
+   IntersectionObserver le agrega .is-visible.
+   El tipo de animación se elige con data-reveal="rise|fade|scale|blur".
+   El retardo escalonado con --reveal-delay (lo setea el JS por índice).
+   ============================================================ */
+[data-reveal] {
+  opacity: 0;
+  will-change: opacity, transform;
+}
+
+[data-reveal].is-visible {
+  animation-duration: var(--dur-reveal);
+  animation-timing-function: var(--ease-out);
+  animation-fill-mode: both;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+
+[data-reveal='rise'].is-visible {
+  animation-name: rn-rise;
+}
+[data-reveal='fade'].is-visible {
+  animation-name: rn-fade;
+}
+[data-reveal='scale'].is-visible {
+  animation-name: rn-scale-in;
+}
+[data-reveal='blur'].is-visible {
+  animation-name: rn-blur-in;
+}
+
+/* Entrada del hero al cargar la página (sin esperar scroll) */
+[data-enter] {
+  opacity: 0;
+  animation: rn-rise var(--dur-reveal) var(--ease-out) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+/* ---- Respeto total a reduced-motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  [data-reveal],
+  [data-enter] {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}

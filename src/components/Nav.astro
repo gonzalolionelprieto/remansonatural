@@ -1,0 +1,319 @@
+---
+import Logo from './Logo.astro';
+import { mainNav, site } from '../lib/site';
+
+const path = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === '/' ? path === '/' : path.startsWith(href);
+---
+
+<header class="site-header" data-header>
+  <a href="#contenido" class="skip-link">Saltar al contenido</a>
+  <div class="wrap nav">
+    <a class="brand" href="/" aria-label={`${site.name} — inicio`}>
+      <Logo size={34} />
+      <span class="brand-name">Remanso <i>Natural</i></span>
+    </a>
+
+    <nav class="menu" aria-label="Navegación principal">
+      {mainNav.map((item) => (
+        <a
+          href={item.href}
+          class="menu-link"
+          aria-current={isActive(item.href) ? 'page' : undefined}
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="nav-actions">
+      <a class="icon-btn search-btn" href="/tienda#buscar" aria-label="Buscar en la tienda">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.2-3.2"></path></svg>
+      </a>
+
+      <button class="icon-btn cart-btn" type="button" aria-label="Ver carrito" data-cart-open>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12l-1 12H7L6 8z"></path><path d="M9 8a3 3 0 0 1 6 0"></path></svg>
+        <span class="cart-count" data-cart-count hidden>0</span>
+      </button>
+
+      <button
+        class="icon-btn menu-toggle"
+        type="button"
+        aria-label="Abrir menú"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+        data-menu-toggle
+      >
+        <span class="bars" aria-hidden="true"><span></span><span></span><span></span></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Menú móvil -->
+  <div class="mobile-menu" id="mobile-menu" data-mobile-menu hidden>
+    <nav aria-label="Navegación móvil">
+      {mainNav.map((item, i) => (
+        <a
+          href={item.href}
+          class="mobile-link"
+          style={`--i:${i}`}
+          aria-current={isActive(item.href) ? 'page' : undefined}
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-header);
+    background: color-mix(in srgb, var(--crema) 92%, transparent);
+    backdrop-filter: blur(10px) saturate(1.05);
+    -webkit-backdrop-filter: blur(10px) saturate(1.05);
+    border-bottom: 1px solid var(--border);
+    transition: box-shadow var(--dur) var(--ease-out),
+      background var(--dur) var(--ease-out);
+  }
+  /* Sombra suave sólo cuando el usuario bajó (data-scrolled lo setea el script) */
+  .site-header[data-scrolled] {
+    box-shadow: var(--shadow-sm);
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 74px;
+    gap: 1rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex-shrink: 0;
+  }
+  .brand-name {
+    font-family: var(--font-serif);
+    font-size: 1.4rem;
+    font-weight: 500;
+    color: var(--verde);
+    font-variation-settings: 'opsz' 40;
+    white-space: nowrap;
+  }
+  .brand-name i {
+    font-style: italic;
+    font-weight: 400;
+  }
+  .brand :global(.rn-logo) {
+    transition: transform var(--dur) var(--ease-out);
+  }
+  .brand:hover :global(.rn-logo) {
+    transform: rotate(-6deg) scale(1.06);
+  }
+
+  .menu {
+    display: flex;
+    gap: clamp(1rem, 2vw, 1.9rem);
+    margin-inline: auto;
+  }
+  .menu-link {
+    position: relative;
+    font-size: 0.9rem;
+    color: var(--text);
+    padding-block: 0.4rem;
+    transition: color var(--dur) var(--ease-out);
+  }
+  .menu-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 1.5px;
+    background: var(--tierra);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--dur) var(--ease-out);
+  }
+  .menu-link:hover,
+  .menu-link[aria-current='page'] {
+    color: var(--tierra);
+  }
+  .menu-link:hover::after,
+  .menu-link[aria-current='page']::after {
+    transform: scaleX(1);
+  }
+
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+  }
+  .icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border: none;
+    background: transparent;
+    color: var(--verde);
+    border-radius: var(--r-full);
+    cursor: pointer;
+    position: relative;
+    transition: background var(--dur) var(--ease-out),
+      transform var(--dur-fast) var(--ease-out);
+  }
+  .icon-btn:hover {
+    background: rgba(47, 74, 58, 0.08);
+  }
+  .icon-btn:active {
+    transform: scale(0.92);
+  }
+  .icon-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .cart-count[hidden] {
+    display: none;
+  }
+  .cart-count {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 16px;
+    height: 16px;
+    padding-inline: 3px;
+    border-radius: var(--r-full);
+    background: var(--tierra);
+    color: var(--crema);
+    font-size: 10px;
+    font-weight: 600;
+    display: grid;
+    place-items: center;
+    line-height: 1;
+  }
+
+  /* Hamburguesa */
+  .menu-toggle {
+    display: none;
+  }
+  .bars {
+    display: grid;
+    gap: 4px;
+  }
+  .bars span {
+    display: block;
+    width: 20px;
+    height: 1.8px;
+    background: var(--verde);
+    border-radius: 2px;
+    transition: transform var(--dur) var(--ease-out),
+      opacity var(--dur-fast) var(--ease-out);
+  }
+  [aria-expanded='true'] .bars span:nth-child(1) {
+    transform: translateY(5.8px) rotate(45deg);
+  }
+  [aria-expanded='true'] .bars span:nth-child(2) {
+    opacity: 0;
+  }
+  [aria-expanded='true'] .bars span:nth-child(3) {
+    transform: translateY(-5.8px) rotate(-45deg);
+  }
+
+  /* Menú móvil desplegable */
+  .mobile-menu {
+    overflow: hidden;
+    border-top: 1px solid var(--border);
+    background: var(--crema);
+  }
+  .mobile-menu nav {
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem var(--gutter) 1.25rem;
+  }
+  .mobile-link {
+    font-family: var(--font-serif);
+    font-size: 1.35rem;
+    color: var(--verde);
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--border);
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  .mobile-menu:not([hidden]) .mobile-link {
+    animation: rn-rise 0.45s var(--ease-out) forwards;
+    animation-delay: calc(var(--i) * 60ms + 80ms);
+  }
+  .mobile-link[aria-current='page'] {
+    color: var(--tierra);
+  }
+
+  @media (max-width: 860px) {
+    .menu,
+    .search-btn {
+      display: none;
+    }
+    .menu-toggle {
+      display: inline-grid;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-menu:not([hidden]) .mobile-link {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  // Header: sombra al hacer scroll. El listener global se registra una sola
+  // vez; consulta el header actual en cada scroll (sobrevive a las
+  // navegaciones con ClientRouter, donde el header se reemplaza).
+  let scrollBound = false;
+  const onScroll = () => {
+    const header = document.querySelector<HTMLElement>('[data-header]');
+    header?.toggleAttribute('data-scrolled', window.scrollY > 8);
+  };
+
+  // Bindings por elemento: se re-ejecutan en cada página (elementos nuevos).
+  function initNav() {
+    onScroll();
+    if (!scrollBound) {
+      scrollBound = true;
+      window.addEventListener('scroll', onScroll, { passive: true });
+    }
+
+    const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+    const panel = document.querySelector<HTMLElement>('[data-mobile-menu]');
+    if (toggle && !toggle.dataset.bound) {
+      toggle.dataset.bound = '1';
+      toggle.addEventListener('click', () => {
+        const open = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', String(!open));
+        toggle.setAttribute('aria-label', open ? 'Abrir menú' : 'Cerrar menú');
+        panel?.toggleAttribute('hidden', open);
+      });
+    }
+    if (panel && !panel.dataset.bound) {
+      panel.dataset.bound = '1';
+      panel.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('a')) {
+          toggle?.setAttribute('aria-expanded', 'false');
+          panel.setAttribute('hidden', '');
+        }
+      });
+    }
+  }
+
+  document.addEventListener('astro:page-load', initNav);
+</script>

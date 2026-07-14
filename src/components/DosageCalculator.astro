@@ -1,0 +1,269 @@
+---
+/**
+ * DosageCalculator.astro
+ * Calculadora interactiva de dosis para extractos de hongos y esencias florales.
+ */
+interface Props {
+  tipo: 'extracto' | 'esencia';
+  nombre: string;
+}
+
+const { tipo, nombre } = Astro.props;
+---
+
+<div class="dc-box" data-reveal="rise">
+  <div class="dc-header">
+    <span class="dc-icon">🌱</span>
+    <div>
+      <h3>Calculador de Dosis</h3>
+      <p class="muted">Encontrá tu dosis ideal recomendada para {nombre}.</p>
+    </div>
+  </div>
+
+  <div class="dc-body">
+    <!-- Selección de Peso -->
+    <div class="dc-control">
+      <label for="dc-weight">Peso aproximado: <b id="dc-weight-val">70 kg</b></label>
+      <input 
+        type="range" 
+        id="dc-weight" 
+        min="40" 
+        max="110" 
+        value="70" 
+        step="5"
+        class="dc-slider"
+      />
+    </div>
+
+    <!-- Selección de Sensibilidad / Intensidad -->
+    <div class="dc-control">
+      <label>Intensidad del efecto buscado</label>
+      <div class="dc-options" role="radiogroup" aria-label="Intensidad de la dosis">
+        <label class="dc-option">
+          <input type="radio" name="dc-intensity" value="suave" checked />
+          <span><b>Suave</b><br><small>Preventivo / Mantenimiento</small></span>
+        </label>
+        <label class="dc-option">
+          <input type="radio" name="dc-intensity" value="moderado" />
+          <span><b>Moderado</b><br><small>Equilibrio diario</small></span>
+        </label>
+        <label class="dc-option">
+          <input type="radio" name="dc-intensity" value="intenso" />
+          <span><b>Intenso</b><br><small>Apoyo agudo</small></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Resultado -->
+    <div class="dc-result">
+      <div class="dc-result-title">Tu dosis diaria estimada</div>
+      <div class="dc-result-value"><span id="dc-drops-val">20</span> gotas</div>
+      <p class="dc-result-desc" id="dc-desc-val">
+        Tomar 10 gotas por la mañana y 10 gotas por la tarde diluidas en agua o infusión tibia.
+      </p>
+    </div>
+
+    <div class="dc-footer-hint">
+      * La dosis es orientativa. Recomendamos empezar siempre con la dosis mínima e ir ajustando según sientas los efectos en tu cuerpo.
+    </div>
+  </div>
+</div>
+
+<style>
+  .dc-box {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 1.5rem;
+    margin-top: 2rem;
+  }
+  .dc-header {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.85rem;
+  }
+  .dc-icon {
+    font-size: 1.6rem;
+  }
+  .dc-header h3 {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    color: var(--verde);
+  }
+  .dc-header .muted {
+    font-size: 0.82rem;
+    color: var(--text-soft);
+    margin-top: 0.15rem;
+  }
+  .dc-body {
+    display: grid;
+    gap: 1.25rem;
+  }
+  .dc-control label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Slider */
+  .dc-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: var(--r-full);
+    background: var(--border-strong);
+    outline: none;
+  }
+  .dc-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--verde);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: background 0.15s;
+  }
+  .dc-slider::-webkit-slider-thumb:hover {
+    background: var(--tierra);
+  }
+
+  /* Radio options */
+  .dc-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+  .dc-option {
+    cursor: pointer;
+    position: relative;
+  }
+  .dc-option input {
+    position: absolute;
+    opacity: 0;
+  }
+  .dc-option span {
+    display: block;
+    text-align: center;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-btn);
+    padding: 0.6rem 0.4rem;
+    font-size: 0.8rem;
+    color: var(--text-soft);
+    background: var(--crema);
+    transition: all 0.2s ease;
+  }
+  .dc-option span small {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+  }
+  .dc-option input:checked + span {
+    border-color: var(--verde);
+    background: var(--verde);
+    color: var(--crema);
+  }
+  .dc-option input:checked + span small {
+    color: var(--on-dark-soft);
+  }
+
+  /* Result */
+  .dc-result {
+    text-align: center;
+    background: var(--crema);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--r-btn);
+    padding: 1.25rem;
+  }
+  .dc-result-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .dc-result-value {
+    font-size: 1.8rem;
+    font-family: var(--font-serif);
+    color: var(--verde);
+    font-weight: 600;
+    margin: 0.25rem 0;
+  }
+  .dc-result-desc {
+    font-size: 0.85rem;
+    color: var(--text-soft);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .dc-footer-hint {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  @media (max-width: 480px) {
+    .dc-options {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script define:vars={{ tipo }}>
+  // Calculadora lógica
+  function initCalculator() {
+    const slider = document.getElementById('dc-weight');
+    const labelVal = document.getElementById('dc-weight-val');
+    const dropsVal = document.getElementById('dc-drops-val');
+    const descVal = document.getElementById('dc-desc-val');
+
+    if (!slider || !labelVal || !dropsVal || !descVal) return;
+
+    function recalculate() {
+      const weight = parseInt(slider.value, 10);
+      const intensity = document.querySelector('input[name="dc-intensity"]:checked')?.value || 'suave';
+      
+      labelVal.textContent = `${weight} kg`;
+
+      // Fórmula orientativa
+      let factor = 0.25; // suave / preventivo
+      if (intensity === 'moderado') factor = 0.35;
+      if (intensity === 'intenso') factor = 0.45;
+
+      if (tipo === 'esencia') {
+        // Las flores de bach son fijas por tomas, no por peso directamente
+        const tomas = intensity === 'suave' ? 4 : intensity === 'moderado' ? 6 : 8;
+        dropsVal.textContent = `${tomas * 4}`;
+        descVal.textContent = `Tomar 4 gotas directamente debajo de la lengua, unas ${tomas} veces al día. Evitar que el gotero toque la boca.`;
+      } else {
+        // Extracto de hongo (melena de león, reishi...)
+        const drops = Math.round(weight * factor);
+        dropsVal.textContent = `${drops}`;
+        
+        if (drops <= 18) {
+          descVal.textContent = `Tomar ${drops} gotas por la mañana disueltas en un vasito de agua tibia antes del desayuno.`;
+        } else {
+          const mitad = Math.floor(drops / 2);
+          const resto = drops - mitad;
+          descVal.textContent = `Tomar ${mitad} gotas por la mañana (antes de desayunar) y ${resto} gotas por la tarde (lejos de las comidas) disueltas en agua.`;
+        }
+      }
+    }
+
+    slider.addEventListener('input', recalculate);
+    document.querySelectorAll('input[name="dc-intensity"]').forEach((r) => {
+      r.addEventListener('change', recalculate);
+    });
+
+    recalculate();
+  }
+
+  document.addEventListener('astro:page-load', initCalculator);
+</script>

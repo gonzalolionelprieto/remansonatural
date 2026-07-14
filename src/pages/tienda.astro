@@ -1,0 +1,108 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Catalog from '../components/Catalog.astro';
+import { getProducts } from '../lib/products';
+
+const products = await getProducts();
+
+const reassurance = [
+  { t: 'Envío a todo el país', s: 'Gratis desde $85.000' },
+  { t: '3 cuotas sin interés', s: 'Con tarjeta' },
+  { t: '10% off', s: 'Pagando por transferencia' },
+  { t: 'Cambios simples', s: 'Y botón de arrepentimiento' },
+];
+---
+
+<BaseLayout
+  title="Tienda"
+  description="Explorá nuestra colección de extractos dobles, flores de Bach, sahumerios y cristales. Elegí por objetivo o por línea y encontrá tu ritual de calma."
+>
+  <section class="tienda-header">
+    <div class="wrap">
+      <span class="eyebrow" data-enter style="--enter-delay:60ms">Nuestra colección</span>
+      <h1 data-enter style="--enter-delay:160ms">Encontrá tu ritual</h1>
+      <p class="lead" data-enter style="--enter-delay:280ms">
+        Elegí por cómo te querés sentir o explorá cada línea. Todo hecho a mano,
+        en pequeños lotes, con lenguaje claro y sin promesas de más.
+      </p>
+    </div>
+  </section>
+
+  <div class="reassure-band">
+    <ul class="wrap reassure" role="list">
+      {reassurance.map((r) => (
+        <li>
+          <span class="r-dot" aria-hidden="true"></span>
+          <span><b>{r.t}</b> · {r.s}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  <section class="section tienda-body">
+    <div class="wrap">
+      <Catalog products={products} />
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .tienda-header {
+    text-align: center;
+    padding-block: clamp(2.75rem, 2rem + 4vw, 4.5rem) clamp(1.5rem, 1rem + 2vw, 2.25rem);
+    background:
+      radial-gradient(110% 80% at 50% -20%, color-mix(in srgb, var(--salvia) 12%, transparent), transparent 60%),
+      var(--crema);
+  }
+  .tienda-header h1 {
+    margin-top: 0.5rem;
+  }
+  .tienda-header .lead {
+    max-width: 56ch;
+    margin: 1rem auto 0;
+    color: var(--text-soft);
+    font-size: var(--fs-lead);
+  }
+
+  .reassure-band {
+    background: var(--verde);
+    color: var(--on-dark);
+  }
+  .reassure {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 2rem;
+    padding-block: 0.85rem;
+    font-size: 0.82rem;
+  }
+  .reassure li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--on-dark-soft);
+  }
+  .reassure b {
+    color: var(--crema);
+    font-weight: 500;
+  }
+  .r-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--r-full);
+    background: var(--tierra);
+    flex-shrink: 0;
+  }
+
+  .tienda-body {
+    padding-top: clamp(2rem, 1.5rem + 2vw, 2.75rem);
+  }
+
+  @media (max-width: 620px) {
+    .reassure {
+      gap: 0.4rem 1.25rem;
+      font-size: 0.75rem;
+    }
+  }
+</style>

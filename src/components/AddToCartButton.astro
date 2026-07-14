@@ -1,0 +1,125 @@
+---
+/**
+ * Botón "Agregar al carrito" reutilizable (cards + ficha).
+ * Emite los data-* que consume el carrito. El estado "✓ Agregado" lo
+ * activa el CartDrawer agregando la clase .is-added tras el click.
+ */
+import type { Product } from '../lib/types';
+
+interface Props {
+  product: Pick<Product, 'slug' | 'nombre' | 'precio' | 'linea'>;
+  variant?: 'outline' | 'solid';
+  label?: string;
+  block?: boolean;
+}
+const {
+  product,
+  variant = 'outline',
+  label = 'Agregar',
+  block = false,
+} = Astro.props;
+---
+
+<button
+  class:list={['btn-add', `is-${variant}`, { 'is-block': block }]}
+  type="button"
+  data-add-to-cart
+  data-slug={product.slug}
+  data-nombre={product.nombre}
+  data-precio={product.precio}
+  data-linea={product.linea}
+>
+  <span class="ba-face ba-idle">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12l-1 11H7L6 8z"></path><path d="M9 8a3 3 0 0 1 6 0"></path><path d="M12 12v4M10 14h4"></path></svg>
+    <span>{label}</span>
+  </span>
+  <span class="ba-face ba-done" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"></path></svg>
+    <span>Agregado</span>
+  </span>
+</button>
+
+<style>
+  .btn-add {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    border-radius: var(--r-btn);
+    border: 1px solid var(--verde);
+    background: transparent;
+    color: var(--verde);
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    overflow: hidden;
+    transition: background var(--dur) var(--ease-out),
+      color var(--dur) var(--ease-out), transform var(--dur-fast) var(--ease-out),
+      box-shadow var(--dur) var(--ease-out);
+  }
+  .btn-add.is-solid {
+    background: var(--verde);
+    color: var(--crema);
+    font-size: 0.94rem;
+    padding: 1.05rem 1.25rem; /* ~56px de alto, como el diseño */
+  }
+  .btn-add:hover {
+    background: var(--verde);
+    color: var(--crema);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+  .btn-add.is-solid:hover {
+    background: var(--verde-900);
+  }
+  .btn-add:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  .ba-face {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: opacity var(--dur) var(--ease-out),
+      transform var(--dur) var(--ease-out);
+  }
+  .ba-face svg {
+    width: 18px;
+    height: 18px;
+  }
+  .ba-done {
+    position: absolute;
+    inset: 0;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(60%);
+    color: var(--crema);
+  }
+
+  /* Estado agregado (lo activa el CartDrawer) */
+  .btn-add.is-added {
+    background: var(--verde);
+    color: var(--crema);
+    border-color: var(--verde);
+  }
+  .btn-add.is-added .ba-idle {
+    opacity: 0;
+    transform: translateY(-60%);
+  }
+  .btn-add.is-added .ba-done {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn-add,
+    .ba-face {
+      transition: none;
+    }
+  }
+</style>

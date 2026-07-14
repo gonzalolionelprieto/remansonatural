@@ -1,0 +1,151 @@
+---
+import Logo from './Logo.astro';
+import { formatPrice } from '../lib/format';
+import { getCatalog } from '../lib/catalog';
+
+interface Props {
+  config?: { eyebrow?: string; titulo?: string; desc?: string; imagen?: string; slug?: string };
+}
+const c = Astro.props.config ?? {};
+const slug = c.slug || 'doble-extracto-reishi';
+
+const productos = await getCatalog();
+const reishi = productos.find((p) => p.slug === slug) ?? productos[0];
+
+const eyebrow = c.eyebrow || 'Producto estrella · Línea Alquimia';
+const titulo = c.titulo || reishi.nombre;
+const desc =
+  c.desc ||
+  'El hongo de la calma. Doble extracción (agua + alcohol) para aprovechar todo el espectro del Reishi, elaborado a mano en pequeños lotes.';
+const imagen = c.imagen || reishi.imagenes?.[0] || '';
+---
+
+<section class="section star">
+  <div class="wrap star-row">
+    <div class="star-visual" data-reveal="scale">
+      {imagen ? (
+        <img class="star-photo" src={imagen} alt={titulo} />
+      ) : (
+        <>
+          <span class="star-ph" aria-hidden="true">
+            <Logo size={92} stroke="var(--salvia)" accent="var(--tierra)" />
+          </span>
+          <span class="star-tag">Foto del gotero</span>
+        </>
+      )}
+    </div>
+
+    <div class="star-content" data-reveal="rise">
+      <span class="eyebrow">{eyebrow}</span>
+      <h2>{titulo}</h2>
+      <p class="star-desc">{desc}</p>
+      <ul class="star-list" data-reveal-group data-reveal-step="70">
+        <li data-reveal="rise">Tradicionalmente usado para acompañar la calma y el descanso</li>
+        <li data-reveal="rise">Materia prima seleccionada, hongo entero</li>
+        <li data-reveal="rise">Gotero de {reishi.volumen} · {reishi.graduacion}</li>
+      </ul>
+      <p class="star-price">{formatPrice(reishi.precio)}</p>
+      <button
+        class="btn btn-solid"
+        type="button"
+        data-add-to-cart
+        data-slug={reishi.slug}
+        data-nombre={reishi.nombre}
+        data-precio={reishi.precio}
+        data-linea={reishi.linea}
+      >
+        Agregar al carrito
+      </button>
+    </div>
+  </div>
+</section>
+
+<style>
+  .star-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(2rem, 5vw, 3.5rem);
+    align-items: center;
+  }
+
+  .star-visual {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    border-radius: var(--r-lg);
+    background:
+      radial-gradient(80% 80% at 50% 35%, color-mix(in srgb, var(--salvia) 10%, transparent), transparent),
+      var(--crema-2);
+    border: 1px solid var(--border);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  .star-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .star-ph {
+    opacity: 0.55;
+    animation: rn-breathe 7s var(--ease-in-out) infinite;
+  }
+  .star-tag {
+    position: absolute;
+    bottom: 1rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+
+  .star h2 {
+    margin-top: 0.5rem;
+  }
+  .star-desc {
+    color: var(--text-soft);
+    margin-top: 0.85rem;
+    max-width: 46ch;
+  }
+  .star-list {
+    list-style: none;
+    margin: 1.2rem 0 1.5rem;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .star-list li {
+    position: relative;
+    padding-left: 1.5rem;
+    font-size: 0.95rem;
+    color: var(--text-soft);
+  }
+  .star-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.6em;
+    width: 9px;
+    height: 9px;
+    border-radius: var(--r-full);
+    background: var(--salvia);
+  }
+  .star-price {
+    font-family: var(--font-serif);
+    font-size: 1.75rem;
+    font-weight: 500;
+    color: var(--tierra);
+    margin-bottom: 1.15rem;
+    font-variation-settings: 'opsz' 40;
+  }
+
+  @media (max-width: 860px) {
+    .star-row {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .star-ph {
+      animation: none;
+    }
+  }
+</style>

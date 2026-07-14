@@ -1,0 +1,85 @@
+---
+/**
+ * Acordeón accesible basado en <details>/<summary>:
+ * funciona sin JS, navegable por teclado, con animación suave al abrir.
+ */
+interface Props {
+  title: string;
+  open?: boolean;
+}
+const { title, open = false } = Astro.props;
+---
+
+<details class="acc" open={open}>
+  <summary class="acc-summary">
+    <span>{title}</span>
+    <svg class="acc-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+  </summary>
+  <div class="acc-body">
+    <div class="acc-inner">
+      <slot />
+    </div>
+  </div>
+</details>
+
+<style>
+  .acc {
+    border-bottom: 1px solid var(--border);
+  }
+  .acc-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.1rem 0.25rem;
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: var(--verde);
+    transition: color var(--dur) var(--ease-out);
+  }
+  .acc-summary::-webkit-details-marker {
+    display: none;
+  }
+  .acc-summary:hover {
+    color: var(--tierra);
+  }
+  .acc-ic {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: var(--tierra);
+    transition: transform var(--dur) var(--ease-out);
+  }
+  .acc[open] .acc-ic {
+    transform: rotate(180deg);
+  }
+
+  /* Animación de apertura con grid-rows (suave y accesible) */
+  .acc-body {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--dur) var(--ease-out);
+  }
+  .acc[open] .acc-body {
+    grid-template-rows: 1fr;
+  }
+  .acc-inner {
+    overflow: hidden;
+  }
+  .acc-inner :global(p) {
+    padding-bottom: 1.1rem;
+    color: var(--text-soft);
+    font-size: 0.95rem;
+    max-width: 62ch;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .acc-body,
+    .acc-ic {
+      transition: none;
+    }
+  }
+</style>
