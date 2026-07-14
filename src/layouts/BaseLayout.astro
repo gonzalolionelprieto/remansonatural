@@ -7,6 +7,17 @@ import Footer from '../components/Footer.astro';
 import WhatsAppFab from '../components/WhatsAppFab.astro';
 import CartDrawer from '../components/CartDrawer.astro';
 import { site } from '../lib/site';
+import { getHomeConfig } from '../lib/catalog';
+
+// Relación de aspecto de las fotos de producto, elegida desde el panel.
+const ASPECTOS: Record<string, string> = {
+  '1:1': '1 / 1',
+  '4:5': '4 / 5',
+  '3:4': '3 / 4',
+  '9:16': '9 / 16',
+};
+const homeCfg = await getHomeConfig();
+const imgAspect = ASPECTOS[homeCfg.imagenAspecto as string] ?? '1 / 1';
 
 interface Props {
   title?: string;
@@ -66,6 +77,8 @@ const ogImageUrl = new URL(ogImage, site.url).href;
 
     <!-- Datos estructurados por página (Product, Article, etc.) -->
     <slot name="head" />
+
+    <style is:global set:html={`:root{--img-aspect:${imgAspect};}`}></style>
 
     <ClientRouter />
   </head>

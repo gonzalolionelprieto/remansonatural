@@ -279,6 +279,19 @@
         <!-- Sitio -->
         <section id="tab-sitio" class="hidden">
           <div class="card">
+            <h2>Fotos de producto</h2>
+            <p class="muted">Relación de aspecto de TODAS las fotos de producto (miniaturas y ficha). Al subir una imagen se recorta sola a esta proporción.</p>
+            <label>Formato</label>
+            <select id="s-aspecto">
+              <option value="1:1">Cuadrada 1:1 — clásica de e-commerce</option>
+              <option value="4:5">Vertical 4:5 — estilo Instagram (recomendada)</option>
+              <option value="3:4">Vertical 3:4 — un poco menos alta</option>
+              <option value="9:16">Vertical 9:16 — bien alta, tipo story</option>
+            </select>
+            <p class="muted" style="margin-top:8px;">Si la cambiás, volvé a subir las fotos para que se recorten con el formato nuevo.</p>
+          </div>
+
+          <div class="card">
             <h2>Portada (Hero)</h2>
             <label>Etiqueta superior</label><input id="h-eyebrow" />
             <label>Título</label><input id="h-titulo" />
@@ -344,6 +357,10 @@
       const objSel = new Set();
       let home = { hero: {}, bento: [{}, {}, {}, {}], estrella: {} };
       const BENTO_LABELS = ['Bloque 1 (grande, izquierda)', 'Bloque 2 (arriba)', 'Bloque 3', 'Bloque 4'];
+
+      // Relación de aspecto de las fotos de producto (elegida en el panel).
+      const ASPECT_NUM = { '1:1': 1, '4:5': 0.8, '3:4': 0.75, '9:16': 0.5625 };
+      const prodAspect = () => ASPECT_NUM[home.imagenAspecto] ?? 1;
 
       // Plantillas por tipo de producto: precargan los campos propios de cada uno.
       const PLANTILLAS = [
@@ -513,7 +530,8 @@
         $('#f-modo').value = p.modo_de_uso || ''; $('#f-proceso').value = p.nuestro_proceso || '';
         $('#f-envio').value = p.envio_y_cuidado || ''; $('#f-advertencias').value = p.advertencias || '';
         $('#f-combina').value = (p.combina_con || []).join(', ');
-        prodImgs = [...(p.imagenes || [])]; imgWidget($('#w-prod'), () => prodImgs, (a) => (prodImgs = a), true, 1, 'Cuadrada (1:1) · se recorta y optimiza sola');
+        const asp = home.imagenAspecto || '1:1';
+        prodImgs = [...(p.imagenes || [])]; imgWidget($('#w-prod'), () => prodImgs, (a) => (prodImgs = a), true, prodAspect(), `Formato ${asp} · se recorta y optimiza sola`);
         objSel.clear(); (p.objetivos || []).forEach((o) => objSel.add(o)); setObj();
         $('#editorErr').textContent = ''; $('#editorP').classList.remove('hidden'); $('#editorP').scrollIntoView({ behavior: 'smooth' });
       }
@@ -565,6 +583,7 @@
         $('#h-eyebrow').value = home.hero.eyebrow || ''; $('#h-titulo').value = home.hero.titulo || '';
         $('#h-destacada').value = home.hero.destacada || ''; $('#h-lead').value = home.hero.lead || '';
         $('#h-overlay').value = home.hero.overlay ?? ''; $('#h-blur').value = home.hero.blur ?? '';
+        $('#s-aspecto').value = home.imagenAspecto || '1:1';
         imgWidget($('#w-hero'), () => (home.hero.imagen ? [home.hero.imagen] : []), (a) => (home.hero.imagen = a[0] || ''), false, 16 / 9, 'Panorámica (16:9)');
         $('#e-eyebrow').value = home.estrella.eyebrow || ''; $('#e-titulo').value = home.estrella.titulo || ''; $('#e-desc').value = home.estrella.desc || '';
         imgWidget($('#w-estrella'), () => (home.estrella.imagen ? [home.estrella.imagen] : []), (a) => (home.estrella.imagen = a[0] || ''), false, 4 / 5, 'Vertical (4:5)');
@@ -588,6 +607,7 @@
       $('#guardarSitio').addEventListener('click', async () => {
         home.hero.eyebrow = $('#h-eyebrow').value; home.hero.titulo = $('#h-titulo').value;
         home.hero.destacada = $('#h-destacada').value; home.hero.lead = $('#h-lead').value;
+        home.imagenAspecto = $('#s-aspecto').value;
         home.hero.overlay = $('#h-overlay').value === '' ? undefined : Number($('#h-overlay').value);
         home.hero.blur = $('#h-blur').value === '' ? undefined : Number($('#h-blur').value);
         home.estrella.eyebrow = $('#e-eyebrow').value; home.estrella.titulo = $('#e-titulo').value; home.estrella.desc = $('#e-desc').value;

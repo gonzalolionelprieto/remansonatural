@@ -83,6 +83,10 @@
   /* ---- Radios ----
      La marca evita "pastilla en todo": los CTAs usan un rectángulo de
      esquinas suaves (--r-btn: 10px). La pastilla queda para badges y chips. */
+  /* Relación de aspecto de las fotos de producto (la elegís en el panel).
+     Se aplica a miniaturas y a la galería de la ficha. */
+  --img-aspect: 1 / 1;
+
   --r-sm: 8px;
   --r-btn: 10px;
   --r-md: 16px;
