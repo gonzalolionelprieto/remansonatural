@@ -1,5 +1,4 @@
 ---
-import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Accordion from '../../components/Accordion.astro';
 import ProductCard from '../../components/ProductCard.astro';
@@ -8,24 +7,24 @@ import EnvioCalculator from '../../components/EnvioCalculator.astro';
 import Stars from '../../components/Stars.astro';
 import Logo from '../../components/Logo.astro';
 import DosageCalculator from '../../components/DosageCalculator.astro';
-import {
-  toProduct,
-  getProductsBySlugs,
-  objetivoLabels,
-  lineaLabels,
-} from '../../lib/products';
+import { objetivoLabels, lineaLabels } from '../../lib/products';
+import { getCatalogBySlug, getCatalogBySlugs } from '../../lib/catalog';
 import { lineaColor } from '../../lib/types';
 import { formatPrice, precioTransferencia, cuota } from '../../lib/format';
 import { site, disclaimer } from '../../lib/site';
 
-export async function getStaticPaths() {
-  const entries = await getCollection('productos');
-  return entries.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
-}
+// SSR: la ficha lee el producto de Supabase (con fallback local). Así las
+// altas/ediciones del panel se ven sin reconstruir el sitio.
+export const prerender = false;
 
-const { entry } = Astro.props;
-const product = toProduct(entry);
-const { Content } = await render(entry);
+const product = await getCatalogBySlug(Astro.params.slug ?? '');
+if (!product) return Astro.redirect('/tienda');
+
+// Párrafos de la descripción larga (texto plano con saltos dobles).
+const descripcionParrafos = (product.descripcionLarga ?? '')
+  .split(/\n\s*\n/)
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 const {
   nombre,
@@ -47,7 +46,7 @@ const {
   reseñas = [],
 } = product;
 
-const cross = await getProductsBySlugs(combinaCon);
+const cross = await getCatalogBySlugs(combinaCon);
 
 const envioGratis = precio >= 85000;
 const sinStock = stock <= 0;
@@ -238,7 +237,9 @@ const jsonLd = {
     <div class="wrap pdp-detail-grid">
       <div class="descripcion" data-reveal="rise">
         <h2>Sobre este ritual</h2>
-        <div class="prose-body"><Content /></div>
+        <div class="prose-body">
+          {descripcionParrafos.map((p) => <p>{p}</p>)}
+        </div>
       </div>
       <div class="acordeones" data-reveal="rise">
         {acordeones.map((a, i) => (

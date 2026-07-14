@@ -12,7 +12,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-    <style>
+    <!-- is:global → los estilos aplican también a los inputs/campos creados
+         por JS (bloques del bento, widgets de imagen), que si no quedan sin
+         estilo porque Astro scopea el <style> por defecto. -->
+    <style is:global>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
       body {

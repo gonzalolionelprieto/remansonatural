@@ -1,9 +1,13 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Catalog from '../components/Catalog.astro';
-import { getProducts } from '../lib/products';
+import { getCatalog } from '../lib/catalog';
 
-const products = await getProducts();
+// SSR: el catálogo lee de Supabase (con fallback local), así los productos
+// que cargás/editás en el panel aparecen sin reconstruir.
+export const prerender = false;
+
+const products = await getCatalog();
 
 const reassurance = [
   { t: 'Envío a todo el país', s: 'Gratis desde $85.000' },
