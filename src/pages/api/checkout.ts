@@ -182,6 +182,9 @@ export const POST: APIRoute = async ({ request, url }) => {
         ...(siteUrl.startsWith('https')
           ? { auto_return: 'approved' as const }
           : {}),
+        // MP nos avisa acá cuando el pago se aprueba (marca la orden, descuenta
+        // stock y dispara los emails).
+        notification_url: `${siteUrl}/api/mp-webhook`,
         statement_descriptor: 'REMANSO NATURAL',
         external_reference: externalReference,
       },
