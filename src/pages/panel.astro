@@ -409,23 +409,52 @@
       const api = async (payload) => { const r = await fetch('/api/panel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pass, ...payload }) }); return { ok: r.ok, data: await r.json() }; };
       const reloadPreview = () => { const f = $('#pv'); try { f.contentWindow.location.reload(); } catch { f.src = '/?t=' + Date.now(); } };
 
-      async function uploadImage(file) {
-        const fd = new FormData(); fd.append('password', pass); fd.append('file', file);
+      /**
+       * Normaliza la imagen ANTES de subirla:
+       *  - recorte centrado a la relación de aspecto del lugar donde va
+       *    (así todas quedan iguales y no se rompe el diseño)
+       *  - reescala a un ancho máximo y convierte a WebP (peso liviano)
+       */
+      async function processImage(file, aspect, maxW) {
+        maxW = maxW || 1400;
+        const bmp = await createImageBitmap(file);
+        let sw = bmp.width, sh = bmp.height, sx = 0, sy = 0;
+        if (aspect) {
+          if (bmp.width / bmp.height > aspect) { sw = bmp.height * aspect; sx = (bmp.width - sw) / 2; }
+          else { sh = bmp.width / aspect; sy = (bmp.height - sh) / 2; }
+        }
+        const outW = Math.min(maxW, Math.round(sw));
+        const outH = Math.round(outW / (aspect || sw / sh));
+        const c = document.createElement('canvas');
+        c.width = outW; c.height = outH;
+        const ctx = c.getContext('2d');
+        ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(bmp, sx, sy, sw, sh, 0, 0, outW, outH);
+        const blob = await new Promise((r) => c.toBlob(r, 'image/webp', 0.82));
+        if (!blob) return file; // navegador sin WebP → subimos el original
+        const name = (file.name.replace(/\.[^.]+$/, '') || 'imagen') + '.webp';
+        return new File([blob], name, { type: 'image/webp' });
+      }
+
+      async function uploadImage(file, aspect) {
+        let f = file;
+        try { f = await processImage(file, aspect); } catch { /* si falla, va el original */ }
+        const fd = new FormData(); fd.append('password', pass); fd.append('file', f);
         const r = await fetch('/api/panel', { method: 'POST', body: fd });
         const d = await r.json();
         if (r.ok && d.url) return d.url;
         toast(d.error || 'Error al subir'); return null;
       }
 
-      // Widget de imagen genérico. multiple = varias (productos). getArr/setArr manejan el estado.
-      function imgWidget(el, getArr, setArr, multiple) {
+      // Widget de imagen. multiple = varias (productos). aspect = relación de aspecto destino.
+      function imgWidget(el, getArr, setArr, multiple, aspect, hint) {
         function render() {
           const arr = getArr();
-          el.innerHTML = `<div class="prev">${arr.map((u, i) => `<figure><img src="${u}"><button data-rm="${i}">×</button></figure>`).join('')}</div><label class="up">+ Subir imagen<input type="file" accept="image/*" class="hidden"></label>`;
+          el.innerHTML = `<div class="prev">${arr.map((u, i) => `<figure><img src="${u}"><button data-rm="${i}">×</button></figure>`).join('')}</div><label class="up">+ Subir imagen<input type="file" accept="image/*" class="hidden"></label>${hint ? `<span class="muted" style="margin-left:10px;">${hint}</span>` : ''}`;
           el.querySelectorAll('[data-rm]').forEach((b) => b.addEventListener('click', () => { const a = getArr(); a.splice(+b.dataset.rm, 1); setArr(a); render(); }));
           el.querySelector('input[type=file]').addEventListener('change', async (e) => {
-            const f = e.target.files[0]; if (!f) return; toast('Subiendo…');
-            const url = await uploadImage(f); if (!url) return;
+            const f = e.target.files[0]; if (!f) return; toast('Optimizando y subiendo…');
+            const url = await uploadImage(f, aspect); if (!url) return;
             let a = getArr(); if (multiple) a.push(url); else a = [url]; setArr(a); render(); toast('Imagen subida');
           });
         }
@@ -484,7 +513,7 @@
         $('#f-modo').value = p.modo_de_uso || ''; $('#f-proceso').value = p.nuestro_proceso || '';
         $('#f-envio').value = p.envio_y_cuidado || ''; $('#f-advertencias').value = p.advertencias || '';
         $('#f-combina').value = (p.combina_con || []).join(', ');
-        prodImgs = [...(p.imagenes || [])]; imgWidget($('#w-prod'), () => prodImgs, (a) => (prodImgs = a), true);
+        prodImgs = [...(p.imagenes || [])]; imgWidget($('#w-prod'), () => prodImgs, (a) => (prodImgs = a), true, 1, 'Cuadrada (1:1) · se recorta y optimiza sola');
         objSel.clear(); (p.objetivos || []).forEach((o) => objSel.add(o)); setObj();
         $('#editorErr').textContent = ''; $('#editorP').classList.remove('hidden'); $('#editorP').scrollIntoView({ behavior: 'smooth' });
       }
@@ -536,9 +565,9 @@
         $('#h-eyebrow').value = home.hero.eyebrow || ''; $('#h-titulo').value = home.hero.titulo || '';
         $('#h-destacada').value = home.hero.destacada || ''; $('#h-lead').value = home.hero.lead || '';
         $('#h-overlay').value = home.hero.overlay ?? ''; $('#h-blur').value = home.hero.blur ?? '';
-        imgWidget($('#w-hero'), () => (home.hero.imagen ? [home.hero.imagen] : []), (a) => (home.hero.imagen = a[0] || ''), false);
+        imgWidget($('#w-hero'), () => (home.hero.imagen ? [home.hero.imagen] : []), (a) => (home.hero.imagen = a[0] || ''), false, 16 / 9, 'Panorámica (16:9)');
         $('#e-eyebrow').value = home.estrella.eyebrow || ''; $('#e-titulo').value = home.estrella.titulo || ''; $('#e-desc').value = home.estrella.desc || '';
-        imgWidget($('#w-estrella'), () => (home.estrella.imagen ? [home.estrella.imagen] : []), (a) => (home.estrella.imagen = a[0] || ''), false);
+        imgWidget($('#w-estrella'), () => (home.estrella.imagen ? [home.estrella.imagen] : []), (a) => (home.estrella.imagen = a[0] || ''), false, 4 / 5, 'Vertical (4:5)');
         // Bento blocks
         const cont = $('#bento-blocks'); cont.innerHTML = '';
         home.bento.forEach((b, i) => {
@@ -553,7 +582,7 @@
           cont.appendChild(div);
           div.querySelector('.b-tit').addEventListener('input', (e) => (home.bento[i].titulo = e.target.value));
           div.querySelector('.b-sub').addEventListener('input', (e) => (home.bento[i].sub = e.target.value));
-          imgWidget(div.querySelector('.b-img'), () => (home.bento[i].imagen ? [home.bento[i].imagen] : []), (a) => (home.bento[i].imagen = a[0] || ''), false);
+          imgWidget(div.querySelector('.b-img'), () => (home.bento[i].imagen ? [home.bento[i].imagen] : []), (a) => (home.bento[i].imagen = a[0] || ''), false, 3 / 2, 'Horizontal (3:2)');
         });
       }
       $('#guardarSitio').addEventListener('click', async () => {
