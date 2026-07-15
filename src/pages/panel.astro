@@ -183,13 +183,25 @@
       .imgw .prev { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
       .imgw figure { position: relative; }
       .imgw img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid #3a4c40; display: block; }
-      .imgw figure button {
+      .imgw figure button[data-rm] {
         position: absolute; top: -6px; right: -6px;
         width: 20px; height: 20px; border-radius: 50%;
         background: #c65b4e; color: #fff;
         border: none; cursor: pointer; font-size: 12px;
         display: flex; align-items: center; justify-content: center;
       }
+      .imgw figure .mv {
+        position: absolute; left: 0; right: 0; bottom: -2px;
+        display: flex; justify-content: space-between; padding: 0 2px;
+      }
+      .imgw figure .mv button {
+        width: 22px; height: 20px; border-radius: 5px;
+        background: rgba(20,31,25,.85); color: #eef2ec;
+        border: 1px solid #3a4c40; cursor: pointer; font-size: 10px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .imgw figure .mv button:hover { background: #2f4a3a; border-color: #6b8469; }
+      .imgw figure .mv:has(button:only-child) { justify-content: flex-end; }
       .imgw .up { display: inline-block; font-size: 12.5px; color: #6b8469; cursor: pointer; border: 1.5px dashed #3a4c40; border-radius: 8px; padding: 8px 14px; transition: border-color .18s, color .18s; }
       .imgw .up:hover { border-color: #6b8469; color: #eef2ec; }
       .imgw input[type=file] { display: none !important; }
@@ -467,8 +479,9 @@
       function imgWidget(el, getArr, setArr, multiple, aspect, hint) {
         function render() {
           const arr = getArr();
-          el.innerHTML = `<div class="prev">${arr.map((u, i) => `<figure><img src="${u}"><button data-rm="${i}">×</button></figure>`).join('')}</div><label class="up">+ Subir imagen<input type="file" accept="image/*" class="hidden"></label>${hint ? `<span class="muted" style="margin-left:10px;">${hint}</span>` : ''}`;
+          el.innerHTML = `<div class="prev">${arr.map((u, i) => `<figure><img src="${u}">${arr.length > 1 ? `<span class="mv">${i > 0 ? `<button data-mv="${i}" data-dir="-1" title="Mover a la izquierda">◀</button>` : ''}${i < arr.length - 1 ? `<button data-mv="${i}" data-dir="1" title="Mover a la derecha">▶</button>` : ''}</span>` : ''}<button data-rm="${i}" title="Quitar">×</button></figure>`).join('')}</div><label class="up">+ Subir imagen<input type="file" accept="image/*" class="hidden"></label>${hint ? `<span class="muted" style="margin-left:10px;">${hint}</span>` : ''}${arr.length > 1 ? `<span class="muted" style="display:block;margin-top:6px;">La primera foto es la principal. Ordená con ◀ ▶.</span>` : ''}`;
           el.querySelectorAll('[data-rm]').forEach((b) => b.addEventListener('click', () => { const a = getArr(); a.splice(+b.dataset.rm, 1); setArr(a); render(); }));
+          el.querySelectorAll('[data-mv]').forEach((b) => b.addEventListener('click', () => { const a = getArr(); const i = +b.dataset.mv, j = i + (+b.dataset.dir); if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; setArr(a); render(); }));
           el.querySelector('input[type=file]').addEventListener('change', async (e) => {
             const f = e.target.files[0]; if (!f) return; toast('Optimizando y subiendo…');
             const url = await uploadImage(f, aspect); if (!url) return;

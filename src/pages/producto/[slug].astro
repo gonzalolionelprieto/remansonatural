@@ -358,6 +358,18 @@ const jsonLd = {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.6s var(--ease-out);
+    will-change: transform;
+  }
+  .gallery-main:hover img {
+    transform: scale(1.08);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gallery-main img,
+    .gallery-main:hover img {
+      transition: none;
+      transform: none;
+    }
   }
   .gallery-ph {
     display: grid;
