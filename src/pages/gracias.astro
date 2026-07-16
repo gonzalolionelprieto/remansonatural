@@ -29,6 +29,9 @@ const pasos = [
         y te vamos a avisar por WhatsApp en cada paso. Ahora, respirá: lo demás lo
         hacemos nosotros.
       </p>
+      <p class="gracias-ref" data-orden-ref hidden>
+        Tu número de pedido: <b data-orden-ref-num></b>
+      </p>
       <div class="gracias-ctas" data-enter style="--enter-delay:520ms">
         <a class="btn btn-solid" href="/tienda">Seguir explorando</a>
         <a class="btn btn-ghost" href={waHref} target="_blank" rel="noopener noreferrer">Escribinos por WhatsApp</a>
@@ -103,6 +106,20 @@ const pasos = [
     color: var(--text-soft);
     font-size: var(--fs-lead);
   }
+  .gracias-ref {
+    margin: -0.75rem auto 1.5rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+  .gracias-ref b {
+    font-family: var(--font-mono, monospace);
+    color: var(--verde);
+    letter-spacing: 0.02em;
+  }
+  .gracias-ref[hidden] {
+    display: none;
+  }
+
   .gracias-ctas {
     display: flex;
     gap: 0.85rem;
@@ -171,8 +188,31 @@ const pasos = [
 
 <script>
   import * as cart from '../lib/cart';
-  // Pedido completado: vaciamos el carrito al llegar a la pantalla de gracias.
+
+  /**
+   * Mercado Pago vuelve acá con ?status=&external_reference= en la URL.
+   * Sólo vaciamos el carrito si el pago realmente salió (approved/pending):
+   * si volvió rechazado, el cliente necesita su carrito para reintentar.
+   */
   document.addEventListener('astro:page-load', () => {
-    if (location.pathname.startsWith('/gracias')) cart.clear();
+    if (!location.pathname.startsWith('/gracias')) return;
+
+    const params = new URLSearchParams(location.search);
+    const status = params.get('status') ?? params.get('collection_status');
+    const ref = params.get('external_reference');
+
+    // Sin status (visita directa) lo tratamos como compra completada, que es
+    // el comportamiento que ya tenía la página.
+    const pagoOk = !status || status === 'approved' || status === 'pending';
+    if (pagoOk) cart.clear();
+
+    if (ref) {
+      const box = document.querySelector<HTMLElement>('[data-orden-ref]');
+      const num = document.querySelector<HTMLElement>('[data-orden-ref-num]');
+      if (box && num) {
+        num.textContent = ref;
+        box.hidden = false;
+      }
+    }
   });
 </script>

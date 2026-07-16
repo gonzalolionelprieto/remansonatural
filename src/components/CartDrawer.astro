@@ -28,6 +28,9 @@
     <div class="cart-body">
       <!-- Paso 1: Lista de items -->
       <div data-step-view="1">
+        <!-- Aviso de stock: aparece si algo se agotó mientras compraba -->
+        <div class="stock-alert" data-stock-alert role="status" aria-live="polite" hidden></div>
+
         <ul class="cart-items" data-cart-list role="list"></ul>
 
         <div class="cart-empty" data-cart-empty>
@@ -355,6 +358,25 @@
     white-space: nowrap;
   }
 
+  /* Aviso de stock dentro del carrito */
+  .stock-alert {
+    margin: 0.9rem 0 0.25rem;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid var(--tierra);
+    border-left-width: 3px;
+    border-radius: var(--r-sm);
+    background: color-mix(in srgb, var(--tierra) 7%, transparent);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .stock-alert[hidden] {
+    display: none;
+  }
+  .stock-alert b {
+    color: var(--tierra);
+  }
+
   .cart-empty {
     text-align: center;
     padding: 3rem 1rem;
@@ -449,6 +471,8 @@
   function openCart() {
     document.querySelector('[data-cart]')?.setAttribute('data-open', '');
     document.body.style.overflow = 'hidden';
+    const alerta = document.querySelector<HTMLElement>('[data-stock-alert]');
+    if (alerta) alerta.hidden = true;
     setStep(1);
   }
   function closeCart() {
@@ -495,6 +519,25 @@
     if (subtotalEl) subtotalEl.textContent = fmt(subtotal);
     if (shippingEl) shippingEl.textContent = shipping === 0 ? 'Gratis' : fmt(shipping);
     if (totalEl) totalEl.textContent = fmt(total);
+  }
+
+  /**
+   * Explica en el carrito qué producto se quedó sin stock y qué hicimos.
+   * El carrito ya viene ajustado; esto sólo cuenta lo que pasó.
+   */
+  function mostrarAvisoStock(sinStock: Array<{ nombre: string; disponible: number }>) {
+    const box = document.querySelector<HTMLElement>('[data-stock-alert]');
+    if (!box) return;
+
+    const lineas = sinStock.map((p) =>
+      p.disponible > 0
+        ? `De <b>${p.nombre}</b> quedan ${p.disponible}. Ajustamos la cantidad.`
+        : `<b>${p.nombre}</b> se quedó sin stock y lo sacamos del carrito.`
+    );
+
+    box.innerHTML = `${lineas.join('<br>')}<br>Revisá el carrito y volvé a intentar el pago.`;
+    box.hidden = false;
+    box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
   // Checkout: crea la preferencia en el server y redirige a Mercado Pago.
@@ -551,6 +594,23 @@
         window.location.href = data.init_point;
         return;
       }
+
+      // 409: algo se quedó sin stock entre que lo agregó y tocó Pagar.
+      // Ajustamos el carrito solo y le explicamos exactamente qué pasó,
+      // en vez de dejarlo con un error genérico que no puede resolver.
+      if (res.status === 409 && Array.isArray(data.sinStock)) {
+        for (const p of data.sinStock) {
+          if (p.disponible > 0) cart.setQty(p.slug, p.disponible);
+          else cart.remove(p.slug);
+        }
+        setStep(1);
+        if (msg) msg.textContent = '';
+        mostrarAvisoStock(data.sinStock);
+        btn.disabled = false;
+        btn.textContent = original;
+        return;
+      }
+
       if (msg) msg.textContent = data.error ?? 'No se pudo iniciar el pago.';
     } catch {
       if (msg) msg.textContent = 'Error de conexión. Intentá de nuevo.';

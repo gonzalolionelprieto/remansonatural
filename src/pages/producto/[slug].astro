@@ -189,7 +189,7 @@ const jsonLd = {
           </div>
         ) : (
           <div class="buy">
-            <div class="qty" role="group" aria-label="Cantidad">
+            <div class="qty" role="group" aria-label="Cantidad" data-stock={stock}>
               <button type="button" class="qty-btn" data-qty-dec aria-label="Quitar uno">−</button>
               <input class="qty-input" type="text" inputmode="numeric" value="1" data-qty aria-label="Cantidad" readonly />
               <button type="button" class="qty-btn" data-qty-inc aria-label="Agregar uno">+</button>
@@ -789,17 +789,24 @@ const jsonLd = {
     });
   }
 
-  // Selector de cantidad (la cantidad se usará en el carrito, paso 5)
+  // Selector de cantidad. El tope es el stock real del producto: no tiene
+  // sentido dejar elegir 10 unidades de algo que tiene 2.
   function initQty() {
     document.querySelectorAll<HTMLElement>('.qty').forEach((box) => {
       const input = box.querySelector<HTMLInputElement>('[data-qty]');
       const dec = box.querySelector<HTMLButtonElement>('[data-qty-dec]');
       const inc = box.querySelector<HTMLButtonElement>('[data-qty-inc]');
+      const stock = Number(box.dataset.stock) || 0;
+      const max = stock > 0 ? Math.min(99, stock) : 99;
       const set = (n: number) => {
-        if (input) input.value = String(Math.max(1, Math.min(99, n)));
+        const v = Math.max(1, Math.min(max, n));
+        if (input) input.value = String(v);
+        if (inc) inc.disabled = v >= max;
+        if (dec) dec.disabled = v <= 1;
       };
       dec?.addEventListener('click', () => set(Number(input?.value ?? 1) - 1));
       inc?.addEventListener('click', () => set(Number(input?.value ?? 1) + 1));
+      set(Number(input?.value ?? 1));
     });
   }
 

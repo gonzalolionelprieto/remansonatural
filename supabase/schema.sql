@@ -114,6 +114,18 @@ create trigger ordenes_updated_at before update on ordenes
 
 alter table ordenes enable row level security;
 
+-- ---- Descuento de stock atómico ----
+-- Lo llama el webhook cuando un pago se aprueba. Hacerlo en una sola
+-- sentencia evita que dos compras simultáneas lean el mismo stock y
+-- terminen vendiendo de más (condición de carrera).
+create or replace function descontar_stock(p_slug text, p_qty integer)
+returns integer as $$
+  update productos
+     set stock = greatest(0, stock - p_qty)
+   where slug = p_slug
+  returning stock;
+$$ language sql;
+
 -- Las órdenes no son legibles de forma anónima pública por privacidad.
 -- Solo service_role (usado por el panel) puede acceder para lectura y escritura.
 

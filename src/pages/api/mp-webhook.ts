@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { supabaseAdmin } from '../../lib/supabase';
 
@@ -9,6 +10,42 @@ const env = (k: string) =>
   (import.meta.env[k] as string | undefined) ?? process.env[k] ?? '';
 
 const fmt = (n: number) => `$${Number(n).toLocaleString('es-AR')}`;
+
+/**
+ * Valida la firma `x-signature` que manda Mercado Pago.
+ *
+ * MP arma el manifest `id:<data.id>;request-id:<x-request-id>;ts:<ts>;` y lo
+ * firma con HMAC-SHA256 usando la clave secreta del webhook. Si todavía no
+ * cargaste MP_WEBHOOK_SECRET devolvemos `true` (útil en pruebas): el endpoint
+ * igual re-consulta el pago real contra la API de MP antes de tocar nada.
+ */
+function firmaValida(request: Request, dataId: string): boolean {
+  const secret = env('MP_WEBHOOK_SECRET');
+  if (!secret) {
+    console.warn('[mp-webhook] MP_WEBHOOK_SECRET sin configurar: no se verifica la firma.');
+    return true;
+  }
+
+  const signature = request.headers.get('x-signature') ?? '';
+  const requestId = request.headers.get('x-request-id') ?? '';
+
+  const partes = Object.fromEntries(
+    signature.split(',').map((p) => {
+      const [k, ...v] = p.split('=');
+      return [k.trim(), v.join('=').trim()];
+    })
+  );
+  const ts = partes.ts;
+  const v1 = partes.v1;
+  if (!ts || !v1) return false;
+
+  const manifest = `id:${dataId.toLowerCase()};request-id:${requestId};ts:${ts};`;
+  const esperado = createHmac('sha256', secret).update(manifest).digest('hex');
+
+  const a = Buffer.from(esperado, 'hex');
+  const b = Buffer.from(v1, 'hex');
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 /** Envía un email con Resend (si no está configurado, no rompe nada). */
 async function enviarEmail(to: string, subject: string, html: string) {
@@ -52,6 +89,12 @@ export const POST: APIRoute = async ({ request, url }) => {
       return new Response('ok', { status: 200 });
     }
 
+    // 0. Rechazar avisos que no vengan firmados por Mercado Pago.
+    if (!firmaValida(request, paymentId)) {
+      console.error('[mp-webhook] Firma inválida para el pago', paymentId);
+      return new Response('firma inválida', { status: 401 });
+    }
+
     // 1. Consultar el pago real en Mercado Pago
     const client = new MercadoPagoConfig({ accessToken: token });
     const pago = await new Payment(client).get({ id: paymentId });
@@ -80,19 +123,16 @@ export const POST: APIRoute = async ({ request, url }) => {
     // 3. Marcar como aprobada
     await admin.from('ordenes').update({ estado: 'aprobado' }).eq('id', orden.id);
 
-    // 4. Descontar stock
+    // 4. Descontar stock (atómico: una sola sentencia por producto, para que
+    //    dos compras simultáneas no puedan vender de más).
     const items: Array<{ slug: string; nombre: string; precio: number; qty: number }> =
       orden.items ?? [];
     for (const it of items) {
-      const { data: prod } = await admin
-        .from('productos')
-        .select('stock')
-        .eq('slug', it.slug)
-        .single();
-      if (prod) {
-        const nuevo = Math.max(0, Number(prod.stock) - Number(it.qty));
-        await admin.from('productos').update({ stock: nuevo }).eq('slug', it.slug);
-      }
+      const { error } = await admin.rpc('descontar_stock', {
+        p_slug: it.slug,
+        p_qty: Number(it.qty),
+      });
+      if (error) console.error('[mp-webhook] no se pudo descontar stock de', it.slug, error);
     }
 
     // 5. Emails

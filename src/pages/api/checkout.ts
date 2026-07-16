@@ -71,10 +71,10 @@ export const POST: APIRoute = async ({ request, url }) => {
   if (!admin) return json({ error: 'Servidor no configurado.' }, 503);
 
   // SEGURIDAD: nunca confiar en el precio que manda el navegador.
-  // Sólo tomamos slug + cantidad; el precio y el nombre salen de la base.
+  // Sólo tomamos slug + cantidad; el precio, el nombre y el stock salen de la base.
   const { data: dbProductos, error: dbError } = await admin
     .from('productos')
-    .select('slug, nombre, precio, activo')
+    .select('slug, nombre, precio, activo, stock')
     .in('slug', pedido.map((i) => String(i.slug)));
 
   if (dbError) {
@@ -91,12 +91,36 @@ export const POST: APIRoute = async ({ request, url }) => {
         nombre: p.nombre,
         precio: Number(p.precio),
         qty: Math.min(99, Math.max(1, Math.floor(Number(i.qty)) || 1)),
+        stock: Math.max(0, Math.floor(Number(p.stock) || 0)),
       };
     })
-    .filter((i): i is { slug: string; nombre: string; precio: number; qty: number } => i !== null);
+    .filter(
+      (i): i is { slug: string; nombre: string; precio: number; qty: number; stock: number } =>
+        i !== null
+    );
 
   if (items.length === 0) {
     return json({ error: 'Los productos del carrito ya no están disponibles.' }, 400);
+  }
+
+  // SEGURIDAD: nunca vender más de lo que hay. Si algún ítem no tiene stock
+  // suficiente, no creamos la orden y devolvemos el detalle para que el
+  // navegador pueda ajustar el carrito y explicarle al cliente qué pasó.
+  const sinStock = items
+    .filter((i) => i.qty > i.stock)
+    .map((i) => ({ slug: i.slug, nombre: i.nombre, disponible: i.stock }));
+
+  if (sinStock.length > 0) {
+    return json(
+      {
+        error:
+          sinStock.length === 1 && sinStock[0].disponible === 0
+            ? `${sinStock[0].nombre} se quedó sin stock.`
+            : 'Algunos productos ya no tienen stock suficiente.',
+        sinStock,
+      },
+      409
+    );
   }
 
   // Subtotal calculado con los precios REALES de la base.
