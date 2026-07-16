@@ -131,6 +131,11 @@ p {
   padding-block: var(--section-y);
 }
 
+/* Utilidad para mostrar/ocultar vistas desde JS (ej. los pasos del test). */
+.hidden {
+  display: none !important;
+}
+
 .eyebrow {
   display: inline-block;
   font-family: var(--font-sans);
@@ -139,22 +144,6 @@ p {
   letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
   color: var(--accent);
-}
-
-/* Salta al contenido (skip link) para lectores de pantalla / teclado */
-.skip-link {
-  position: absolute;
-  left: var(--space-4);
-  top: -3rem;
-  z-index: 100;
-  background: var(--verde);
-  color: var(--crema);
-  padding: 0.6rem 1rem;
-  border-radius: var(--r-sm);
-  transition: top var(--dur-fast) var(--ease-out);
-}
-.skip-link:focus {
-  top: var(--space-4);
 }
 
 /* Sólo para lectores de pantalla */

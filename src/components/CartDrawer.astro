@@ -545,8 +545,9 @@
       });
       const data = await res.json();
       if (res.ok && data.init_point) {
-        // Limpiamos el carrito al redirigir ya que la orden se creó
-        cart.clear();
+        // NO vaciamos el carrito acá: si el usuario vuelve atrás desde Mercado
+        // Pago sin pagar, tiene que encontrar su carrito intacto. El carrito se
+        // vacía sólo cuando el pago se confirma, al llegar a /gracias.
         window.location.href = data.init_point;
         return;
       }
@@ -710,6 +711,18 @@
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeCart();
+    });
+
+    // Al volver atrás desde Mercado Pago la página puede restaurarse desde el
+    // bfcache con el botón "Pagar" trabado en "Cargando pago…". Lo reseteamos.
+    window.addEventListener('pageshow', (e) => {
+      if (!e.persisted) return;
+      const checkoutBtn = document.querySelector<HTMLButtonElement>('[data-checkout]');
+      if (checkoutBtn) {
+        checkoutBtn.disabled = false;
+        checkoutBtn.textContent = 'Pagar';
+      }
+      render();
     });
   }
 
