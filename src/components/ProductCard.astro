@@ -1,6 +1,7 @@
 ---
 import Logo from './Logo.astro';
 import AddToCartButton from './AddToCartButton.astro';
+import Stars from './Stars.astro';
 import { formatPrice } from '../lib/format';
 import { lineaColor, lineaLabel, type Product } from '../lib/types';
 
@@ -19,11 +20,18 @@ const {
   tipo,
   objetivos,
   precio,
+  precioAnterior,
   volumen,
   descripcionCorta,
   imagenes = [],
   stock = 0,
+  beneficios = [],
+  reseñas = [],
 } = product;
+const avgRating =
+  reseñas.length > 0
+    ? reseñas.reduce((s, r) => s + r.estrellas, 0) / reseñas.length
+    : 0;
 
 const href = `/producto/${slug}`;
 const img = imagenes[0];
@@ -65,12 +73,36 @@ const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
   <div class="card-body">
     <span class="card-line">{lineaLabel[linea]}</span>
     <h3><a href={href}>{nombre}</a></h3>
+    {reseñas.length > 0 && (
+      <p class="card-rating">
+        <Stars value={avgRating} size={13} />
+        <span>({reseñas.length})</span>
+      </p>
+    )}
     {sub && <p class="card-sub">{sub}</p>}
-    <p class="card-price">{formatPrice(precio)}</p>
+    {!sinStock && beneficios.length > 0 && (
+      <ul class="card-benefits" role="list">
+        {beneficios.slice(0, 3).map((b) => (
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 6"></path></svg>
+            <span>{b}</span>
+          </li>
+        ))}
+      </ul>
+    )}
+    <p class="card-price">
+      {precioAnterior && precioAnterior > precio && (
+        <span class="card-price-old">{formatPrice(precioAnterior)}</span>
+      )}
+      <span class="card-price-now">{formatPrice(precio)}</span>
+    </p>
     {sinStock ? (
       <a class="card-add is-disabled" href={href}>Ver producto</a>
     ) : (
-      <div class="card-add-wrap"><AddToCartButton product={product} /></div>
+      <div class="card-cta">
+        <a class="card-view" href={href}>Ver Detalles</a>
+        <div class="card-cta-add"><AddToCartButton product={product} /></div>
+      </div>
     )}
   </div>
 </article>
@@ -186,18 +218,60 @@ const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
     font-size: 0.8rem;
     color: var(--text-muted);
   }
+  .card-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 0.3rem 0 0;
+  }
+
+  .card-benefits {
+    display: none;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin: 0.75rem 0 0;
+    font-size: 0.78rem;
+    color: var(--text-soft);
+  }
+  .card-benefits li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+  .card-benefits svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+    color: var(--salvia);
+  }
+  @media (min-width: 640px) {
+    .card-benefits {
+      display: flex;
+    }
+  }
+
   .card-price {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 0.85rem 0;
+  }
+  .card-price-now {
     font-family: var(--font-serif);
     font-size: 1.375rem;
     font-weight: 500;
     color: var(--verde);
-    margin: 0.85rem 0;
     font-variation-settings: 'opsz' 40;
   }
-
-  .card-add-wrap {
-    margin-top: auto;
+  .card-price-old {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-decoration: line-through;
   }
+
   .card-add {
     display: block;
     margin-top: auto;
@@ -209,5 +283,39 @@ const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--text-muted);
+  }
+
+  .card-cta {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+  }
+  .card-cta-add {
+    flex: 1;
+  }
+  .card-view {
+    display: none;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--verde);
+    border-radius: var(--r-btn);
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--verde);
+    transition: background var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+  }
+  .card-view:hover {
+    background: var(--verde);
+    color: var(--crema);
+  }
+  @media (min-width: 640px) {
+    .card-view {
+      display: inline-flex;
+    }
   }
 </style>
