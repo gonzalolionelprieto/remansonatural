@@ -322,6 +322,13 @@
   .cart-body :global(.ci-qty button:hover) {
     background: rgba(47, 74, 58, 0.08);
   }
+  .cart-body :global(.ci-qty button:disabled) {
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
+  .cart-body :global(.ci-qty button:disabled:hover) {
+    background: none;
+  }
   .cart-body :global(.ci-qty span) {
     min-width: 26px;
     text-align: center;
@@ -451,6 +458,9 @@
   import { ENVIO_GRATIS_DESDE } from '../lib/cart';
 
   const fmt = (n: number) => `$${n.toLocaleString('es-AR')}`;
+  // Mismo criterio que la ficha de producto: si no tenemos stock conocido,
+  // no capeamos (99 es el tope general del carrito).
+  const maxQty = (stock: number) => (stock > 0 ? Math.min(99, stock) : 99);
   const lineColors: Record<string, string> = {
     alquimia: '#2F4A3A',
     bach: '#9A86A6',
@@ -638,8 +648,9 @@
     if (foot) foot.hidden = n === 0;
 
     list.innerHTML = items
-      .map(
-        (i) => `
+      .map((i) => {
+        const atMax = i.qty >= maxQty(i.stock);
+        return `
       <li class="cart-item" data-slug="${i.slug}">
         <span class="ci-thumb"><span class="dot" style="background:${lineColors[i.linea] ?? 'var(--salvia)'}"></span></span>
         <div>
@@ -649,14 +660,14 @@
             <span class="ci-qty">
               <button type="button" data-cart-dec data-slug="${i.slug}" aria-label="Quitar uno">−</button>
               <span>${i.qty}</span>
-              <button type="button" data-cart-inc data-slug="${i.slug}" aria-label="Agregar uno">+</button>
+              <button type="button" data-cart-inc data-slug="${i.slug}" aria-label="Agregar uno"${atMax ? ' disabled' : ''}>+</button>
             </span>
             <button class="ci-remove" type="button" data-cart-remove data-slug="${i.slug}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>Quitar</button>
           </div>
         </div>
         <span class="ci-line">${fmt(i.precio * i.qty)}</span>
-      </li>`
-      )
+      </li>`;
+      })
       .join('');
 
     const totalEl = document.querySelector<HTMLElement>('[data-cart-total]');
@@ -708,6 +719,7 @@
             nombre: addBtn.dataset.nombre!,
             precio: Number(addBtn.dataset.precio),
             linea: addBtn.dataset.linea ?? '',
+            stock: Number(addBtn.dataset.stock) || 0,
           },
           qty
         );
@@ -730,7 +742,7 @@
       const inc = el.closest<HTMLElement>('[data-cart-inc]');
       if (inc) {
         const it = cart.getItems().find((i) => i.slug === inc.dataset.slug);
-        if (it) cart.setQty(it.slug, it.qty + 1);
+        if (it && it.qty < maxQty(it.stock)) cart.setQty(it.slug, it.qty + 1);
         return;
       }
       const dec = el.closest<HTMLElement>('[data-cart-dec]');

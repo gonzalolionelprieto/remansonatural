@@ -7,7 +7,7 @@
 import type { Product } from '../lib/types';
 
 interface Props {
-  product: Pick<Product, 'slug' | 'nombre' | 'precio' | 'linea'>;
+  product: Pick<Product, 'slug' | 'nombre' | 'precio' | 'linea' | 'stock'>;
   variant?: 'outline' | 'solid';
   label?: string;
   block?: boolean;
@@ -28,6 +28,7 @@ const {
   data-nombre={product.nombre}
   data-precio={product.precio}
   data-linea={product.linea}
+  data-stock={product.stock ?? 0}
 >
   <span class="ba-face ba-idle">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12l-1 11H7L6 8z"></path><path d="M9 8a3 3 0 0 1 6 0"></path><path d="M12 12v4M10 14h4"></path></svg>

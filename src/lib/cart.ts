@@ -8,6 +8,8 @@ export interface CartItem {
   nombre: string;
   precio: number;
   linea: string;
+  /** Stock disponible al momento de agregar (tope suave en la UI del carrito). */
+  stock: number;
   qty: number;
 }
 
@@ -48,10 +50,20 @@ export const getItems = (): CartItem[] => items;
 export const count = (): number => items.reduce((s, i) => s + i.qty, 0);
 export const total = (): number => items.reduce((s, i) => s + i.precio * i.qty, 0);
 
+/** Tope de cantidad: el stock real del producto (si lo conocemos), si no 99. */
+function maxFor(stock: number): number {
+  return stock > 0 ? Math.min(99, stock) : 99;
+}
+
 export function add(item: Omit<CartItem, 'qty'>, qty = 1): void {
   const found = items.find((i) => i.slug === item.slug);
-  if (found) found.qty += qty;
-  else items.push({ ...item, qty });
+  const max = maxFor(item.stock);
+  if (found) {
+    found.stock = item.stock; // refrescar con el stock más reciente
+    found.qty = Math.min(max, found.qty + qty);
+  } else {
+    items.push({ ...item, qty: Math.min(max, qty) });
+  }
   persist();
 }
 
@@ -59,7 +71,7 @@ export function setQty(slug: string, qty: number): void {
   if (qty <= 0) return remove(slug);
   const found = items.find((i) => i.slug === slug);
   if (found) {
-    found.qty = Math.min(99, qty);
+    found.qty = Math.min(maxFor(found.stock), qty);
     persist();
   }
 }
