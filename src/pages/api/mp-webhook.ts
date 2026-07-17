@@ -13,15 +13,33 @@ const env = (k: string) =>
 
 const fmt = (n: number) => `$${Number(n).toLocaleString('es-AR')}`;
 
+/** Compara dos hex en tiempo constante, sin romperse si uno no es hex válido. */
+function hexIguales(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  const ba = Buffer.from(a, 'hex');
+  const bb = Buffer.from(b, 'hex');
+  return ba.length > 0 && ba.length === bb.length && timingSafeEqual(ba, bb);
+}
+
 /**
  * Valida la firma `x-signature` que manda Mercado Pago.
  *
- * MP arma el manifest `id:<data.id>;request-id:<x-request-id>;ts:<ts>;` y lo
- * firma con HMAC-SHA256 usando la clave secreta del webhook. Si todavía no
- * cargaste MP_WEBHOOK_SECRET devolvemos `true` (útil en pruebas): el endpoint
- * igual re-consulta el pago real contra la API de MP antes de tocar nada.
+ * MP firma con HMAC-SHA256 el manifiesto
+ *   id:<data.id>;request-id:<x-request-id>;ts:<ts>;
+ * PERO su documentación aclara que si alguno de esos valores no viene en la
+ * notificación, hay que quitar ese segmento del manifiesto. Además, el
+ * `data.id` puede llegar por la query o por el cuerpo según el tipo de aviso
+ * (el simulador del panel, por ejemplo, no manda query ni x-request-id).
+ *
+ * Por eso probamos las variantes documentadas y aceptamos si alguna coincide.
+ * Esto NO afluja la seguridad: cualquier variante exige igual la clave secreta
+ * para producir un HMAC válido; sin el secreto no se puede falsificar ninguna.
+ *
+ * Si MP_WEBHOOK_SECRET no está cargado devolvemos `true` (útil en pruebas):
+ * el endpoint igual re-consulta el pago real contra la API de MP antes de
+ * tocar la base.
  */
-function firmaValida(request: Request, dataId: string): boolean {
+function firmaValida(request: Request, ids: string[]): boolean {
   const secret = env('MP_WEBHOOK_SECRET');
   if (!secret) {
     console.warn('[mp-webhook] MP_WEBHOOK_SECRET sin configurar: no se verifica la firma.');
@@ -29,7 +47,7 @@ function firmaValida(request: Request, dataId: string): boolean {
   }
 
   const signature = request.headers.get('x-signature') ?? '';
-  const requestId = request.headers.get('x-request-id') ?? '';
+  const requestId = (request.headers.get('x-request-id') ?? '').trim();
 
   const partes = Object.fromEntries(
     signature.split(',').map((p) => {
@@ -39,14 +57,30 @@ function firmaValida(request: Request, dataId: string): boolean {
   );
   const ts = partes.ts;
   const v1 = partes.v1;
-  if (!ts || !v1) return false;
+  if (!ts || !v1) {
+    console.error('[mp-webhook] x-signature ausente o sin ts/v1:', signature || '(vacío)');
+    return false;
+  }
 
-  const manifest = `id:${dataId.toLowerCase()};request-id:${requestId};ts:${ts};`;
-  const esperado = createHmac('sha256', secret).update(manifest).digest('hex');
+  // Candidatos: cada id posible, con y sin el segmento request-id.
+  const candidatos: string[] = [];
+  for (const id of [...new Set(ids.filter(Boolean))]) {
+    const low = String(id).toLowerCase();
+    if (requestId) candidatos.push(`id:${low};request-id:${requestId};ts:${ts};`);
+    candidatos.push(`id:${low};ts:${ts};`);
+  }
 
-  const a = Buffer.from(esperado, 'hex');
-  const b = Buffer.from(v1, 'hex');
-  return a.length === b.length && timingSafeEqual(a, b);
+  for (const manifiesto of candidatos) {
+    const esperado = createHmac('sha256', secret).update(manifiesto).digest('hex');
+    if (hexIguales(esperado, v1)) return true;
+  }
+
+  console.error(
+    '[mp-webhook] Firma inválida. Probamos:',
+    JSON.stringify(candidatos),
+    '| x-request-id:', requestId || '(ausente)'
+  );
+  return false;
 }
 
 /** Envía un email con Resend (si no está configurado, no rompe nada). */
@@ -76,23 +110,27 @@ export const POST: APIRoute = async ({ request, url }) => {
     const admin = supabaseAdmin();
     if (!token || !admin) return new Response('ok', { status: 200 });
 
-    // El id del pago puede venir por query o por body.
-    let paymentId = url.searchParams.get('data.id') ?? url.searchParams.get('id') ?? '';
+    // El id del pago puede venir por query o por body, y MP firma uno u otro
+    // según el tipo de aviso: guardamos ambos para poder validar la firma.
+    const idUrl = url.searchParams.get('data.id') ?? url.searchParams.get('id') ?? '';
+    let idBody = '';
     let tipo = url.searchParams.get('type') ?? url.searchParams.get('topic') ?? '';
     try {
       const body = await request.json();
-      paymentId = String(body?.data?.id ?? paymentId);
+      idBody = String(body?.data?.id ?? '');
       tipo = String(body?.type ?? body?.topic ?? tipo);
     } catch {
       /* algunos avisos vienen sin body */
     }
+
+    const paymentId = idBody || idUrl;
 
     if (!tipo.includes('payment') || !paymentId) {
       return new Response('ok', { status: 200 });
     }
 
     // 0. Rechazar avisos que no vengan firmados por Mercado Pago.
-    if (!firmaValida(request, paymentId)) {
+    if (!firmaValida(request, [idUrl, idBody])) {
       console.error('[mp-webhook] Firma inválida para el pago', paymentId);
       return new Response('firma inválida', { status: 401 });
     }
