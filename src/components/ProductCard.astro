@@ -81,14 +81,22 @@ const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
     )}
     {sub && <p class="card-sub">{sub}</p>}
     {!sinStock && beneficios.length > 0 && (
-      <ul class="card-benefits" role="list">
-        {beneficios.slice(0, 3).map((b) => (
-          <li>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 6"></path></svg>
-            <span>{b}</span>
-          </li>
-        ))}
-      </ul>
+      <>
+        <button type="button" class="card-more" data-card-more aria-expanded="false">
+          <span>Más</span>
+          <svg class="card-more-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+        </button>
+        <div class="card-benefits-wrap">
+          <ul class="card-benefits" role="list">
+            {beneficios.slice(0, 3).map((b) => (
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 6"></path></svg>
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </>
     )}
     <p class="card-price">
       {precioAnterior && precioAnterior > precio && (
@@ -99,10 +107,7 @@ const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
     {sinStock ? (
       <a class="card-add is-disabled" href={href}>Ver producto</a>
     ) : (
-      <div class="card-cta">
-        <a class="card-view" href={href}>Ver Detalles</a>
-        <div class="card-cta-add"><AddToCartButton product={product} variant="solid" /></div>
-      </div>
+      <AddToCartButton product={product} variant="solid" />
     )}
   </div>
 </article>
@@ -227,11 +232,47 @@ const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
     margin: 0.3rem 0 0;
   }
 
+  /* Toggle "Más" (solo mobile): despliega los beneficios ahí mismo, sin
+     salir de la card. Desde tablet los beneficios ya están siempre visibles,
+     así que el toggle se oculta y el bloque queda forzado abierto. */
+  .card-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    align-self: flex-start;
+    margin-top: 0.4rem;
+    padding: 0;
+    border: none;
+    background: none;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--tierra);
+    cursor: pointer;
+  }
+  .card-more-ic {
+    width: 14px;
+    height: 14px;
+    transition: transform var(--dur) var(--ease-out);
+  }
+  .card.is-expanded .card-more-ic {
+    transform: rotate(180deg);
+  }
+
+  .card-benefits-wrap {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height var(--dur) var(--ease-out);
+  }
+  .card.is-expanded .card-benefits-wrap {
+    max-height: 220px; /* margen amplio: hasta 3 bullets de 2 líneas */
+  }
+
   .card-benefits {
-    display: none;
+    display: flex;
     flex-direction: column;
     gap: 0.35rem;
-    margin: 0.75rem 0 0;
+    margin: 0.6rem 0 0;
     font-size: 0.78rem;
     color: var(--text-soft);
   }
@@ -248,8 +289,12 @@ const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
     color: var(--salvia);
   }
   @media (min-width: 640px) {
-    .card-benefits {
-      display: flex;
+    .card-more {
+      display: none;
+    }
+    .card-benefits-wrap {
+      max-height: none;
+      overflow: visible;
     }
   }
 
@@ -285,37 +330,24 @@ const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
     color: var(--text-muted);
   }
 
-  .card-cta {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: auto;
-  }
-  .card-cta-add {
-    flex: 1;
-  }
-  .card-view {
-    display: none;
-    flex: 1;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 0.8rem 1rem;
-    border: 1px solid var(--verde);
-    border-radius: var(--r-btn);
-    font-size: 0.82rem;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--verde);
-    transition: background var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
-  }
-  .card-view:hover {
-    background: var(--verde);
-    color: var(--crema);
-  }
-  @media (min-width: 640px) {
-    .card-view {
-      display: inline-flex;
-    }
-  }
 </style>
+
+<script>
+  // Toggle "Más" (mobile): despliega los beneficios dentro de la misma card.
+  // Delegación en document + flag para no duplicar el listener entre
+  // navegaciones con ClientRouter (mismo patrón que CartDrawer.astro).
+  let cardMoreBound = false;
+  function initCardMore() {
+    if (cardMoreBound) return;
+    cardMoreBound = true;
+    document.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-card-more]');
+      if (!btn) return;
+      const card = btn.closest('.card');
+      if (!card) return;
+      const expanded = card.classList.toggle('is-expanded');
+      btn.setAttribute('aria-expanded', String(expanded));
+    });
+  }
+  document.addEventListener('astro:page-load', initCardMore);
+</script>
