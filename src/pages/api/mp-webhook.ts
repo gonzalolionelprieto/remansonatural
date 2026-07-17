@@ -75,10 +75,18 @@ function firmaValida(request: Request, ids: string[]): boolean {
     if (hexIguales(esperado, v1)) return true;
   }
 
+  // Diagnóstico: logueamos la firma recibida y la esperada para poder
+  // comparar. v1 es la firma, NO el secreto: es inútil sin la clave, así que
+  // es seguro dejarla en el log. Si ninguna coincide, casi siempre es que la
+  // clave cargada en el servidor no es la misma con la que MP firmó.
   console.error(
-    '[mp-webhook] Firma inválida. Probamos:',
-    JSON.stringify(candidatos),
-    '| x-request-id:', requestId || '(ausente)'
+    '[mp-webhook] Firma inválida.',
+    '| recibida v1:', v1,
+    '| esperada[0]:', createHmac('sha256', secret).update(candidatos[0] ?? '').digest('hex'),
+    '| ts:', ts,
+    '| x-request-id:', requestId || '(ausente)',
+    '| candidatos:', JSON.stringify(candidatos),
+    '| largo del secreto cargado:', secret.length
   );
   return false;
 }
