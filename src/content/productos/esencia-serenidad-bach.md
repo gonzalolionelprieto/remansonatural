@@ -6,6 +6,10 @@ objetivos: [calma]
 precio: 25000
 volumen: 30 ml
 descripcionCorta: Flores de Bach para el estrés
+beneficios:
+  - Sistema tradicional de Flores de Bach
+  - Gotero práctico para llevar a donde vayas
+  - Elaborada de forma artesanal, por lote
 paraQueMomento: >-
   Para los momentos de tensión del día: antes de una reunión, en un viaje, o
   cuando necesitás un respiro. Cuatro gotas y una respiración profunda.

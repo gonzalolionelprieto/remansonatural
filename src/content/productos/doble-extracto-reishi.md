@@ -7,6 +7,10 @@ precio: 49500
 volumen: 50 ml
 graduacion: ~25% Alc./Vol.
 descripcionCorta: Para tus momentos de calma
+beneficios:
+  - Doble extracción real, alcohol y agua
+  - Gotero pensado para tu ritual nocturno
+  - Hecho a mano en pequeños lotes
 paraQueMomento: >-
   Para esos días en que la mente no baja un cambio. Unas gotas en tu infusión de
   la noche, como un pequeño ritual para soltar el día y volver a tu remanso.

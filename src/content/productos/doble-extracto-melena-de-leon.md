@@ -7,6 +7,10 @@ precio: 49500
 volumen: 50 ml
 graduacion: ~25% Alc./Vol.
 descripcionCorta: Para el enfoque y la claridad
+beneficios:
+  - Doble extracción real, alcohol y agua
+  - Hecho a mano en pequeños lotes
+  - Sin azúcares, sin conservantes, sin saborizantes
 paraQueMomento: >-
   Para las mañanas de trabajo o estudio en las que querés estar presente y
   concentrado. Un aliado para tu ritual de arranque, sin sobresaltos.

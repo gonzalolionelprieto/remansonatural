@@ -5,6 +5,10 @@ tipo: kit
 objetivos: [ritual]
 precio: 78000
 descripcionCorta: Extracto + Bach + sahumerio
+beneficios:
+  - Incluye extracto, esencia y sahumerio
+  - Packaging pensado para regalar
+  - Todo lo que necesitás en una sola caja
 paraQueMomento: >-
   Para armar tu rincón de calma en casa. Pensado como regalo o como el primer
   paso para quien quiere empezar un ritual de bienestar de la noche.
