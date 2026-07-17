@@ -15,9 +15,15 @@ const productos = defineCollection({
     tipo: z.enum(['extracto', 'esencia', 'sahumerio', 'cristal', 'kit']),
     objetivos: z.array(z.enum(['calma', 'sueno', 'enfoque', 'ritual'])).min(1),
     precio: z.number().int().positive(),
+    // Precio de lista antes de un descuento puntual. Si está y es mayor a
+    // `precio`, la UI lo muestra tachado. Si no está, no cambia nada.
+    precioAnterior: z.number().int().positive().optional(),
     volumen: z.string().optional(),
     graduacion: z.string().optional(),
     descripcionCorta: z.string(),
+    // Hasta 3 frases cortas de venta para la card y la ficha (ej. "500mg de
+    // extracto por cápsula"). Opcional: si está vacío no se muestra nada.
+    beneficios: z.array(z.string()).default([]),
     // Lenguaje ANMAT-seguro: bienestar y momento, nunca claims médicos.
     paraQueMomento: z.string(),
     ingredientes: z.string().optional(),

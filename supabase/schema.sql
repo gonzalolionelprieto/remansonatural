@@ -129,3 +129,11 @@ $$ language sql;
 -- Las órdenes no son legibles de forma anónima pública por privacidad.
 -- Solo service_role (usado por el panel) puede acceder para lectura y escritura.
 
+-- ============================================================
+-- Migración: beneficios (bullets de venta) y precio anterior
+-- (para mostrar precio tachado cuando hay una promoción puntual).
+-- `add column if not exists` es idempotente: se puede correr de nuevo
+-- sin romper nada si ya se aplicó.
+-- ============================================================
+alter table productos add column if not exists beneficios text[] not null default '{}';
+alter table productos add column if not exists precio_anterior integer;

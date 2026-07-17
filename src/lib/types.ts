@@ -10,9 +10,13 @@ export interface Product {
   tipo: Tipo;
   objetivos: Objetivo[];
   precio: number;
+  /** Precio de lista antes de un descuento puntual (se muestra tachado si es mayor a `precio`). */
+  precioAnterior?: number;
   volumen?: string;
   graduacion?: string;
   descripcionCorta: string;
+  /** Hasta 3 frases cortas de venta (card + ficha). */
+  beneficios?: string[];
   paraQueMomento?: string;
   ingredientes?: string;
   modoDeUso?: string;
