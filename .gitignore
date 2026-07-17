@@ -26,3 +26,6 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# scratch state for the subagent-driven-development skill
+.superpowers/
