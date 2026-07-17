@@ -232,25 +232,23 @@ const jsonLd = {
           <li>Envío protegido en 24–72 h</li>
           <li>Atención humana por WhatsApp</li>
         </ul>
-      </div>
-    </div>
-  </section>
 
-  <!-- Descripción + acordeones -->
-  <section class="section pdp-detail">
-    <div class="wrap pdp-detail-grid">
-      <div class="descripcion" data-reveal="rise">
-        <h2>Sobre este ritual</h2>
-        <div class="prose-body">
-          {descripcionParrafos.map((p) => <p>{p}</p>)}
+        <!-- Descripción + acordeones: viven acá (junto al botón de compra)
+             en vez de en una sección aparte más abajo, para que la info
+             quede a un scroll corto y la ficha no se sienta interminable. -->
+        <div class="descripcion">
+          <h2>Sobre este ritual</h2>
+          <div class="prose-body">
+            {descripcionParrafos.map((p) => <p>{p}</p>)}
+          </div>
         </div>
-      </div>
-      <div class="acordeones" data-reveal="rise">
-        {acordeones.map((a, i) => (
-          <Accordion title={a.title} open={i === 0}>
-            <p>{a.body}</p>
-          </Accordion>
-        ))}
+        <div class="acordeones">
+          {acordeones.map((a, i) => (
+            <Accordion title={a.title} open={i === 0}>
+              <p>{a.body}</p>
+            </Accordion>
+          ))}
+        </div>
       </div>
     </div>
   </section>
@@ -634,15 +632,11 @@ const jsonLd = {
     border: 1.5px solid var(--salvia);
   }
 
-  /* ---- Detalle: descripción + acordeones ---- */
-  .pdp-detail {
-    background: var(--bg-alt);
-  }
-  .pdp-detail-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: clamp(2rem, 5vw, 3.5rem);
-    align-items: start;
+  /* ---- Descripción + acordeones (dentro de la columna de compra) ---- */
+  .descripcion {
+    margin-top: 2rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--border);
   }
   .descripcion h2,
   .cross .section-head h2,
@@ -657,6 +651,9 @@ const jsonLd = {
   .prose-body :global(strong) {
     color: var(--verde);
     font-weight: 600;
+  }
+  .acordeones {
+    margin-top: 0.5rem;
   }
 
   /* ---- Disclaimer ---- */
@@ -761,8 +758,7 @@ const jsonLd = {
   }
 
   @media (max-width: 860px) {
-    .pdp-grid,
-    .pdp-detail-grid {
+    .pdp-grid {
       grid-template-columns: 1fr;
     }
     .gallery {
