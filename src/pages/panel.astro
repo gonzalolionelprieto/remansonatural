@@ -260,6 +260,7 @@
               <div><label>Línea</label><select id="f-linea"><option value="alquimia">Alquimia</option><option value="bach">Flores de Bach</option><option value="humos">Humos & Ritual</option><option value="cristales">Cristales</option></select></div>
               <div><label>Tipo</label><select id="f-tipo"><option value="extracto">Extracto de hongos</option><option value="esencia">Esencia floral</option><option value="sahumerio">Sahumerio</option><option value="cristal">Cristal</option><option value="kit">Kit</option></select></div>
               <div><label>Precio (ARS)</label><input id="f-precio" type="number" /></div>
+              <div><label>Precio anterior (opcional, se muestra tachado)</label><input id="f-precio-anterior" type="number" /></div>
               <div><label>Stock</label><input id="f-stock" type="number" /></div>
               <div><label>Volumen / medidas</label><input id="f-volumen" placeholder="50 ml" /></div>
               <div><label>Graduación</label><input id="f-graduacion" /></div>
@@ -273,6 +274,8 @@
             </div>
             <label>Imágenes</label><div class="imgw" id="w-prod"></div>
             <label>Descripción corta</label><input id="f-descCorta" />
+            <label>Beneficios (uno por línea, hasta 3 — se usan en la card y la ficha)</label>
+            <textarea id="f-beneficios" placeholder="500mg de extracto por cápsula&#10;Hecho a mano en pequeños lotes&#10;Sin conservantes"></textarea>
             <label>Para qué momento</label><textarea id="f-momento"></textarea>
             <label>Descripción larga</label><textarea id="f-descLarga"></textarea>
             <div class="grid2">
@@ -535,10 +538,12 @@
         $('#editorTitle').textContent = isDup ? 'Duplicar producto' : (p.slug ? 'Editar producto' : 'Nuevo producto');
         $('#f-nombre').value = p.nombre || ''; $('#f-slug').value = p.slug || '';
         $('#f-linea').value = p.linea || 'alquimia'; $('#f-tipo').value = p.tipo || 'extracto';
-        $('#f-precio').value = p.precio ?? ''; $('#f-stock').value = p.stock ?? 0;
+        $('#f-precio').value = p.precio ?? ''; $('#f-precio-anterior').value = p.precio_anterior ?? '';
+        $('#f-stock').value = p.stock ?? 0;
         $('#f-volumen').value = p.volumen || ''; $('#f-graduacion').value = p.graduacion || '';
         $('#f-orden').value = p.orden ?? ''; $('#f-destacado').checked = !!p.destacado;
-        $('#f-descCorta').value = p.descripcion_corta || ''; $('#f-momento').value = p.para_que_momento || '';
+        $('#f-descCorta').value = p.descripcion_corta || ''; $('#f-beneficios').value = (p.beneficios || []).join('\n');
+        $('#f-momento').value = p.para_que_momento || '';
         $('#f-descLarga').value = p.descripcion_larga || ''; $('#f-ingredientes').value = p.ingredientes || '';
         $('#f-modo').value = p.modo_de_uso || ''; $('#f-proceso').value = p.nuestro_proceso || '';
         $('#f-envio').value = p.envio_y_cuidado || ''; $('#f-advertencias').value = p.advertencias || '';
@@ -572,10 +577,14 @@
       $('#guardar').addEventListener('click', async () => {
         const product = {
           slug: $('#f-slug').value.trim(), nombre: $('#f-nombre').value.trim(), linea: $('#f-linea').value, tipo: $('#f-tipo').value,
-          objetivos: [...objSel], precio: parseInt($('#f-precio').value, 10) || 0, stock: parseInt($('#f-stock').value, 10) || 0,
+          objetivos: [...objSel], precio: parseInt($('#f-precio').value, 10) || 0,
+          precio_anterior: $('#f-precio-anterior').value ? parseInt($('#f-precio-anterior').value, 10) : null,
+          stock: parseInt($('#f-stock').value, 10) || 0,
           volumen: $('#f-volumen').value.trim() || null, graduacion: $('#f-graduacion').value.trim() || null,
           orden: $('#f-orden').value ? parseInt($('#f-orden').value, 10) : null, destacado: $('#f-destacado').checked,
-          descripcion_corta: $('#f-descCorta').value.trim(), para_que_momento: $('#f-momento').value.trim(), descripcion_larga: $('#f-descLarga').value.trim(),
+          descripcion_corta: $('#f-descCorta').value.trim(),
+          beneficios: $('#f-beneficios').value.split('\n').map((s) => s.trim()).filter(Boolean).slice(0, 3),
+          para_que_momento: $('#f-momento').value.trim(), descripcion_larga: $('#f-descLarga').value.trim(),
           ingredientes: $('#f-ingredientes').value.trim(), modo_de_uso: $('#f-modo').value.trim(), nuestro_proceso: $('#f-proceso').value.trim(),
           envio_y_cuidado: $('#f-envio').value.trim(), advertencias: $('#f-advertencias').value.trim(),
           combina_con: $('#f-combina').value.split(',').map((s) => s.trim()).filter(Boolean), imagenes: prodImgs, activo: true,

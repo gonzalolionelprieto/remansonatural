@@ -20,11 +20,11 @@ function checkAuth(pass: string | null): boolean {
 
 // Campos permitidos de la tabla productos (evita inyección de columnas).
 const CAMPOS = [
-  'slug', 'nombre', 'linea', 'tipo', 'objetivos', 'precio', 'volumen',
-  'graduacion', 'descripcion_corta', 'para_que_momento', 'ingredientes',
-  'modo_de_uso', 'nuestro_proceso', 'envio_y_cuidado', 'advertencias',
-  'descripcion_larga', 'imagenes', 'destacado', 'stock', 'orden',
-  'combina_con', 'resenas', 'activo',
+  'slug', 'nombre', 'linea', 'tipo', 'objetivos', 'precio', 'precio_anterior',
+  'volumen', 'graduacion', 'descripcion_corta', 'beneficios',
+  'para_que_momento', 'ingredientes', 'modo_de_uso', 'nuestro_proceso',
+  'envio_y_cuidado', 'advertencias', 'descripcion_larga', 'imagenes',
+  'destacado', 'stock', 'orden', 'combina_con', 'resenas', 'activo',
 ];
 
 function cleanProduct(input: Record<string, any>): Record<string, any> {
