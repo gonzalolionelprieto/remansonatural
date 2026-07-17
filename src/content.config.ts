@@ -21,7 +21,7 @@ const productos = defineCollection({
     volumen: z.string().optional(),
     graduacion: z.string().optional(),
     descripcionCorta: z.string(),
-    // Hasta 3 frases cortas de venta para la card y la ficha (ej. "500mg de
+    // Hasta 3 frases cortas de venta para la card de producto (ej. "500mg de
     // extracto por cápsula"). Opcional: si está vacío no se muestra nada.
     beneficios: z.array(z.string()).default([]),
     // Lenguaje ANMAT-seguro: bienestar y momento, nunca claims médicos.

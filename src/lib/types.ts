@@ -15,7 +15,7 @@ export interface Product {
   volumen?: string;
   graduacion?: string;
   descripcionCorta: string;
-  /** Hasta 3 frases cortas de venta (card + ficha). */
+  /** Hasta 3 frases cortas de venta (solo en la card). */
   beneficios?: string[];
   paraQueMomento?: string;
   ingredientes?: string;
