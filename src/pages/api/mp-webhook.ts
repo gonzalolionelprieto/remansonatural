@@ -6,8 +6,10 @@ import { supabaseAdmin } from '../../lib/supabase';
 // Mercado Pago llama a este endpoint cuando cambia el estado de un pago.
 export const prerender = false;
 
+// .trim(): al copiar claves de un panel suele colarse un espacio o un salto
+// de línea, y eso rompería la firma (o el token) sin dar ninguna pista.
 const env = (k: string) =>
-  (import.meta.env[k] as string | undefined) ?? process.env[k] ?? '';
+  ((import.meta.env[k] as string | undefined) ?? process.env[k] ?? '').trim();
 
 const fmt = (n: number) => `$${Number(n).toLocaleString('es-AR')}`;
 
@@ -198,4 +200,16 @@ export const POST: APIRoute = async ({ request, url }) => {
   }
 };
 
-export const GET: APIRoute = () => new Response('ok', { status: 200 });
+/**
+ * Diagnóstico. Informa si el servidor tiene cargadas las claves, para poder
+ * verificar un deploy sin adivinar. Devuelve sólo booleanos: nunca el valor.
+ */
+export const GET: APIRoute = () =>
+  new Response(
+    JSON.stringify({
+      ok: true,
+      firmaConfigurada: Boolean(env('MP_WEBHOOK_SECRET')),
+      mpConfigurado: Boolean(env('MP_ACCESS_TOKEN')),
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } }
+  );
