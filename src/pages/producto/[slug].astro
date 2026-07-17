@@ -31,6 +31,7 @@ const {
   linea,
   tipo,
   precio,
+  precioAnterior,
   volumen,
   graduacion,
   objetivos,
@@ -167,6 +168,9 @@ const jsonLd = {
         <!-- Precio -->
         <div class="price-block">
           <div class="price-main">
+            {precioAnterior && precioAnterior > precio && (
+              <span class="price-old">{formatPrice(precioAnterior)}</span>
+            )}
             <span class="price">{formatPrice(precio)}</span>
             {(volumen || graduacion) && (
               <span class="price-meta">{[volumen, graduacion].filter(Boolean).join(' · ')}</span>
@@ -478,6 +482,11 @@ const jsonLd = {
     gap: 0.75rem;
     flex-wrap: wrap;
     margin-bottom: 0.85rem;
+  }
+  .price-old {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    text-decoration: line-through;
   }
   .price {
     font-family: var(--font-serif);
