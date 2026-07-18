@@ -315,6 +315,24 @@
             <label>Foto de fondo (opcional)</label><div class="imgw" id="w-hero"></div>
             <div class="grid2">
               <div>
+                <label>Posición de la foto</label>
+                <select id="h-posicion">
+                  <option value="center">Centrada</option>
+                  <option value="top">Arriba</option>
+                  <option value="bottom">Abajo</option>
+                  <option value="left">Izquierda</option>
+                  <option value="right">Derecha</option>
+                  <option value="left top">Arriba a la izquierda</option>
+                  <option value="right top">Arriba a la derecha</option>
+                  <option value="left bottom">Abajo a la izquierda</option>
+                  <option value="right bottom">Abajo a la derecha</option>
+                </select>
+              </div>
+              <div>
+                <label>Color del velo</label>
+                <input id="h-overlay-color" type="color" value="#f4f1ea" style="height:42px;padding:4px;" />
+              </div>
+              <div>
                 <label>Velo sobre la foto (0–100)</label>
                 <input id="h-overlay" type="number" min="0" max="100" placeholder="60" />
               </div>
@@ -323,7 +341,7 @@
                 <input id="h-blur" type="number" min="0" max="30" placeholder="3" />
               </div>
             </div>
-            <p class="muted" style="margin-top:6px;">Más velo = foto más suave detrás del texto. Recomendado: velo 60, desenfoque 3.</p>
+            <p class="muted" style="margin-top:6px;">Más velo = foto más suave detrás del texto. Recomendado: velo 60, desenfoque 3. El color del velo por defecto es el crema de la marca; cambialo si tu foto necesita más contraste con el texto.</p>
           </div>
 
           <div class="card">
@@ -605,6 +623,8 @@
         $('#h-eyebrow').value = home.hero.eyebrow || ''; $('#h-titulo').value = home.hero.titulo || '';
         $('#h-destacada').value = home.hero.destacada || ''; $('#h-lead').value = home.hero.lead || '';
         $('#h-overlay').value = home.hero.overlay ?? ''; $('#h-blur').value = home.hero.blur ?? '';
+        $('#h-overlay-color').value = home.hero.overlayColor || '#f4f1ea';
+        $('#h-posicion').value = home.hero.imagenPosicion || 'center';
         $('#s-aspecto').value = home.imagenAspecto || '1:1';
         imgWidget($('#w-hero'), () => (home.hero.imagen ? [home.hero.imagen] : []), (a) => (home.hero.imagen = a[0] || ''), false, 16 / 9, 'Panorámica (16:9)');
         $('#e-eyebrow').value = home.estrella.eyebrow || ''; $('#e-titulo').value = home.estrella.titulo || ''; $('#e-desc').value = home.estrella.desc || '';
@@ -632,6 +652,8 @@
         home.imagenAspecto = $('#s-aspecto').value;
         home.hero.overlay = $('#h-overlay').value === '' ? undefined : Number($('#h-overlay').value);
         home.hero.blur = $('#h-blur').value === '' ? undefined : Number($('#h-blur').value);
+        home.hero.overlayColor = $('#h-overlay-color').value;
+        home.hero.imagenPosicion = $('#h-posicion').value;
         home.estrella.eyebrow = $('#e-eyebrow').value; home.estrella.titulo = $('#e-titulo').value; home.estrella.desc = $('#e-desc').value;
         const { ok, data } = await api({ action: 'saveHome', data: home });
         if (ok) { toast('Sitio guardado'); reloadPreview(); } else $('#sitioErr').textContent = data.error || 'Error';
