@@ -14,10 +14,16 @@ const reishi = productos.find((p) => p.slug === slug) ?? productos[0];
 
 const eyebrow = c.eyebrow || 'Producto estrella · Línea Alquimia';
 const titulo = c.titulo || reishi.nombre;
-const desc =
-  c.desc ||
-  'El hongo de la calma. Doble extracción (agua + alcohol) para aprovechar todo el espectro del Reishi, elaborado a mano en pequeños lotes.';
+const desc = c.desc || reishi.paraQueMomento || '';
 const imagen = c.imagen || reishi.imagenes?.[0] || '';
+
+// Los detalles salen de los beneficios del producto (los mismos que cargás en
+// el panel y se ven en la card). Si todavía no tiene, mostramos su ficha
+// técnica en vez de texto fijo que podría no corresponder al producto.
+const detalles =
+  reishi.beneficios && reishi.beneficios.length > 0
+    ? reishi.beneficios
+    : [reishi.volumen, reishi.graduacion].filter(Boolean);
 ---
 
 <section class="section star">
@@ -39,11 +45,16 @@ const imagen = c.imagen || reishi.imagenes?.[0] || '';
       <span class="eyebrow">{eyebrow}</span>
       <h2>{titulo}</h2>
       <p class="star-desc">{desc}</p>
-      <ul class="star-list" data-reveal-group data-reveal-step="70">
-        <li data-reveal="rise">Tradicionalmente usado para acompañar la calma y el descanso</li>
-        <li data-reveal="rise">Materia prima seleccionada, hongo entero</li>
-        <li data-reveal="rise">Gotero de {reishi.volumen} · {reishi.graduacion}</li>
-      </ul>
+      {detalles.length > 0 && (
+        <ul class="star-list" data-reveal-group data-reveal-step="70">
+          {detalles.map((d) => (
+            <li data-reveal="rise">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 6"></path></svg>
+              <span>{d}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       <p class="star-price">{formatPrice(reishi.precio)}</p>
       <button
         class="btn btn-solid"
@@ -53,6 +64,7 @@ const imagen = c.imagen || reishi.imagenes?.[0] || '';
         data-nombre={reishi.nombre}
         data-precio={reishi.precio}
         data-linea={reishi.linea}
+        data-stock={reishi.stock ?? 0}
       >
         Agregar al carrito
       </button>
@@ -113,21 +125,20 @@ const imagen = c.imagen || reishi.imagenes?.[0] || '';
     display: grid;
     gap: 0.5rem;
   }
+  /* Mismo tilde que las cards, para que el lenguaje visual sea uno solo. */
   .star-list li {
-    position: relative;
-    padding-left: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
     font-size: 0.95rem;
     color: var(--text-soft);
   }
-  .star-list li::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0.6em;
-    width: 9px;
-    height: 9px;
-    border-radius: var(--r-full);
-    background: var(--salvia);
+  .star-list li svg {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+    color: var(--salvia);
   }
   .star-price {
     font-family: var(--font-serif);

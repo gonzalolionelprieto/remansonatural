@@ -73,12 +73,6 @@ const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
   <div class="card-body">
     <span class="card-line">{lineaLabel[linea]}</span>
     <h3><a href={href}>{nombre}</a></h3>
-    {reseñas.length > 0 && (
-      <p class="card-rating">
-        <Stars value={avgRating} size={13} />
-        <span>({reseñas.length})</span>
-      </p>
-    )}
     {sub && <p class="card-sub">{sub}</p>}
     {!sinStock && beneficios.length > 0 && (
       <>
@@ -98,16 +92,32 @@ const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
         </div>
       </>
     )}
-    <p class="card-price">
-      {precioAnterior && precioAnterior > precio && (
-        <span class="card-price-old">{formatPrice(precioAnterior)}</span>
+
+    <!-- Fila inferior: reseñas a la izquierda, precio a la derecha (como la referencia) -->
+    <div class="card-meta">
+      {reseñas.length > 0 ? (
+        <span class="card-rating">
+          <Stars value={avgRating} size={14} />
+          <span class="card-rating-n">{reseñas.length} {reseñas.length === 1 ? 'reseña' : 'reseñas'}</span>
+        </span>
+      ) : (
+        <span class="card-rating card-rating-empty">
+          <Stars value={0} size={14} />
+          <span class="card-rating-n">Sin reseñas aún</span>
+        </span>
       )}
-      <span class="card-price-now">{formatPrice(precio)}</span>
-    </p>
+      <p class="card-price">
+        {precioAnterior && precioAnterior > precio && (
+          <span class="card-price-old">{formatPrice(precioAnterior)}</span>
+        )}
+        <span class="card-price-now">{formatPrice(precio)}</span>
+      </p>
+    </div>
+
     {sinStock ? (
       <a class="card-add is-disabled" href={href}>Ver producto</a>
     ) : (
-      <AddToCartButton product={product} variant="solid" />
+      <AddToCartButton product={product} variant="solid" label="Agregar al carrito" />
     )}
   </div>
 </article>
@@ -224,12 +234,14 @@ const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
     color: var(--text-muted);
   }
   .card-rating {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    font-size: 0.75rem;
+    gap: 0.4rem;
+    font-size: 0.72rem;
     color: var(--text-muted);
-    margin: 0.3rem 0 0;
+  }
+  .card-rating-empty {
+    opacity: 0.7;
   }
 
   /* Toggle "Más" (solo mobile): despliega los beneficios ahí mismo, sin
@@ -259,13 +271,13 @@ const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
     transform: rotate(180deg);
   }
 
+  /* En mobile arranca colapsado; el JS anima la altura real del contenido
+     (scrollHeight) al tocar "Más". En desktop el media query de abajo lo
+     fuerza abierto con !important, ganándole a cualquier estilo inline. */
   .card-benefits-wrap {
     max-height: 0;
     overflow: hidden;
     transition: max-height var(--dur) var(--ease-out);
-  }
-  .card.is-expanded .card-benefits-wrap {
-    max-height: 220px; /* margen amplio: hasta 3 bullets de 2 líneas */
   }
 
   .card-benefits {
@@ -293,16 +305,25 @@ const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
       display: none;
     }
     .card-benefits-wrap {
-      max-height: none;
+      max-height: none !important;
       overflow: visible;
     }
   }
 
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: auto;
+    margin-bottom: 0.9rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+  }
   .card-price {
     display: flex;
     align-items: baseline;
-    gap: 0.5rem;
-    margin: 0.85rem 0;
+    gap: 0.4rem;
+    margin-left: auto;
   }
   .card-price-now {
     font-family: var(--font-serif);
@@ -317,9 +338,17 @@ const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
     text-decoration: line-through;
   }
 
+  /* La card es angosta (hasta 4 por fila): achicamos el CTA lo justo para que
+     "Agregar al carrito" entre en una sola línea. La ficha de producto usa el
+     botón en su tamaño original. */
+  .card-body :global(.btn-add.is-solid) {
+    font-size: 0.8rem;
+    padding: 0.95rem 0.7rem;
+    white-space: nowrap;
+  }
+
   .card-add {
     display: block;
-    margin-top: auto;
     text-align: center;
     padding: 0.72rem;
     border: 1px solid var(--border-strong);
@@ -343,10 +372,13 @@ const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
     document.addEventListener('click', (e) => {
       const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-card-more]');
       if (!btn) return;
-      const card = btn.closest('.card');
+      const card = btn.closest<HTMLElement>('.card');
       if (!card) return;
+      const wrap = card.querySelector<HTMLElement>('.card-benefits-wrap');
       const expanded = card.classList.toggle('is-expanded');
       btn.setAttribute('aria-expanded', String(expanded));
+      // Animar hasta la altura real del contenido (no un tope fijo).
+      if (wrap) wrap.style.maxHeight = expanded ? `${wrap.scrollHeight}px` : '0';
     });
   }
   document.addEventListener('astro:page-load', initCardMore);
