@@ -315,6 +315,13 @@
             <label>Foto de fondo (opcional)</label><div class="imgw" id="w-hero"></div>
             <div class="grid2">
               <div>
+                <label>Alineación del texto</label>
+                <select id="h-align">
+                  <option value="left">Izquierda</option>
+                  <option value="center">Centro</option>
+                </select>
+              </div>
+              <div>
                 <label>Posición de la foto</label>
                 <select id="h-posicion">
                   <option value="center">Centrada</option>
@@ -625,6 +632,7 @@
         $('#h-overlay').value = home.hero.overlay ?? ''; $('#h-blur').value = home.hero.blur ?? '';
         $('#h-overlay-color').value = home.hero.overlayColor || '#f4f1ea';
         $('#h-posicion').value = home.hero.imagenPosicion || 'center';
+        $('#h-align').value = home.hero.textAlign || 'left';
         $('#s-aspecto').value = home.imagenAspecto || '1:1';
         imgWidget($('#w-hero'), () => (home.hero.imagen ? [home.hero.imagen] : []), (a) => (home.hero.imagen = a[0] || ''), false, 16 / 9, 'Panorámica (16:9)');
         $('#e-eyebrow').value = home.estrella.eyebrow || ''; $('#e-titulo').value = home.estrella.titulo || ''; $('#e-desc').value = home.estrella.desc || '';
@@ -654,6 +662,7 @@
         home.hero.blur = $('#h-blur').value === '' ? undefined : Number($('#h-blur').value);
         home.hero.overlayColor = $('#h-overlay-color').value;
         home.hero.imagenPosicion = $('#h-posicion').value;
+        home.hero.textAlign = $('#h-align').value;
         home.estrella.eyebrow = $('#e-eyebrow').value; home.estrella.titulo = $('#e-titulo').value; home.estrella.desc = $('#e-desc').value;
         const { ok, data } = await api({ action: 'saveHome', data: home });
         if (ok) { toast('Sitio guardado'); reloadPreview(); } else $('#sitioErr').textContent = data.error || 'Error';
