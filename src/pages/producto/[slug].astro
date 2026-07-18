@@ -56,6 +56,12 @@ const avgRating =
   reseñas.length > 0
     ? reseñas.reduce((s, r) => s + r.estrellas, 0) / reseñas.length
     : 0;
+// Duplicamos la lista para el loop del carrusel de reseñas (la segunda mitad
+// se oculta a lectores de pantalla, es sólo continuidad visual). La duración
+// escala con la cantidad real de reseñas para que la velocidad se sienta
+// pareja sin importar cuántas haya.
+const reseñasLoop = reseñas.length > 0 ? [...reseñas, ...reseñas] : [];
+const resenasDuracion = Math.max(18, reseñas.length * 5);
 
 const acordeones = [
   { title: 'Modo de uso y dosis', body: modoDeUso },
@@ -287,24 +293,26 @@ const jsonLd = {
           </div>
           <span class="eyebrow">Lo que dicen</span>
         </div>
-        <div class="resenas-grid" data-reveal-group data-reveal-step="90">
-          {reseñas.map((r) => (
-            <figure class="resena" data-reveal="rise">
-              <div class="resena-top">
-                <Stars value={r.estrellas} />
-                {r.verificada && (
-                  <span class="verificada">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 6"></path></svg>
-                    Compra verificada
-                  </span>
-                )}
-              </div>
-              <blockquote>“{r.texto}”</blockquote>
-              <figcaption>
-                <b>{r.autor}</b>{r.fecha && <span> · {r.fecha}</span>}
-              </figcaption>
-            </figure>
-          ))}
+        <div class="resenas-marquee" data-reveal="rise">
+          <div class="resenas-track" style={`--resenas-dur:${resenasDuracion}s`}>
+            {reseñasLoop.map((r, i) => (
+              <figure class="resena" aria-hidden={i >= reseñas.length ? 'true' : undefined}>
+                <div class="resena-top">
+                  <Stars value={r.estrellas} />
+                  {r.verificada && (
+                    <span class="verificada">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 6"></path></svg>
+                      Compra verificada
+                    </span>
+                  )}
+                </div>
+                <blockquote>“{r.texto}”</blockquote>
+                <figcaption>
+                  <b>{r.autor}</b>{r.fecha && <span> · {r.fecha}</span>}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -711,12 +719,40 @@ const jsonLd = {
     color: var(--text-muted);
     margin-top: 0.25rem;
   }
-  .resenas-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  /* Carrusel en loop infinito: la lista se duplica en el markup y la
+     animación se desliza exactamente la mitad del ancho total, así el punto
+     de reinicio es invisible. El difuminado en los costados usa mask-image
+     (no un color fijo) para calzar siempre con el fondo de la sección,
+     sea cual sea. */
+  .resenas-marquee {
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+  .resenas-track {
+    display: flex;
     gap: 1.15rem;
+    width: max-content;
+    animation: resenas-scroll var(--resenas-dur, 24s) linear infinite;
+  }
+  .resenas-marquee:hover .resenas-track {
+    animation-play-state: paused;
+  }
+  @keyframes resenas-scroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .resenas-track {
+      animation: none;
+    }
   }
   .resena {
+    flex: 0 0 clamp(260px, 32vw, 320px);
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--r-md);

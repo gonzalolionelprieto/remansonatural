@@ -1,5 +1,6 @@
 ---
 import Logo from './Logo.astro';
+import AddToCartButton from './AddToCartButton.astro';
 import { formatPrice } from '../lib/format';
 import { getCatalog } from '../lib/catalog';
 
@@ -11,6 +12,7 @@ const slug = c.slug || 'doble-extracto-reishi';
 
 const productos = await getCatalog();
 const reishi = productos.find((p) => p.slug === slug) ?? productos[0];
+const href = `/producto/${reishi.slug}`;
 
 const eyebrow = c.eyebrow || 'Producto estrella · Línea Alquimia';
 const titulo = c.titulo || reishi.nombre;
@@ -28,7 +30,7 @@ const detalles =
 
 <section class="section star">
   <div class="wrap star-row">
-    <div class="star-visual" data-reveal="scale">
+    <a class="star-visual" href={href} aria-label={`Ver ${titulo}`} data-reveal="scale">
       {imagen ? (
         <img class="star-photo" src={imagen} alt={titulo} />
       ) : (
@@ -39,11 +41,11 @@ const detalles =
           <span class="star-tag">Foto del gotero</span>
         </>
       )}
-    </div>
+    </a>
 
     <div class="star-content" data-reveal="rise">
       <span class="eyebrow">{eyebrow}</span>
-      <h2>{titulo}</h2>
+      <h2><a href={href}>{titulo}</a></h2>
       <p class="star-desc">{desc}</p>
       {detalles.length > 0 && (
         <ul class="star-list" data-reveal-group data-reveal-step="70">
@@ -56,18 +58,9 @@ const detalles =
         </ul>
       )}
       <p class="star-price">{formatPrice(reishi.precio)}</p>
-      <button
-        class="btn btn-solid"
-        type="button"
-        data-add-to-cart
-        data-slug={reishi.slug}
-        data-nombre={reishi.nombre}
-        data-precio={reishi.precio}
-        data-linea={reishi.linea}
-        data-stock={reishi.stock ?? 0}
-      >
-        Agregar al carrito
-      </button>
+      <div class="star-cta">
+        <AddToCartButton product={reishi} variant="solid" label="Agregar al carrito" />
+      </div>
     </div>
   </div>
 </section>
@@ -81,6 +74,7 @@ const detalles =
   }
 
   .star-visual {
+    display: block;
     position: relative;
     aspect-ratio: 4 / 5;
     border-radius: var(--r-lg);
@@ -113,6 +107,14 @@ const detalles =
 
   .star h2 {
     margin-top: 0.5rem;
+  }
+  .star h2 a {
+    color: inherit;
+    text-decoration: none;
+    transition: color var(--dur) var(--ease-out);
+  }
+  .star h2 a:hover {
+    color: var(--tierra);
   }
   .star-desc {
     color: var(--text-soft);
@@ -147,6 +149,11 @@ const detalles =
     color: var(--tierra);
     margin-bottom: 1.15rem;
     font-variation-settings: 'opsz' 40;
+  }
+  /* AddToCartButton es 100% ancho por diseño (para las cards); acá lo
+     achicamos a su contenido, como el botón original de esta sección. */
+  .star-cta {
+    display: inline-block;
   }
 
   @media (max-width: 860px) {
