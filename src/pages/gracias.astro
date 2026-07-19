@@ -2,10 +2,15 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProductCard from '../components/ProductCard.astro';
 import Logo from '../components/Logo.astro';
-import { getFeatured } from '../lib/products';
+import { getCatalogFeatured } from '../lib/catalog';
 import { site } from '../lib/site';
 
-const relacionados = (await getFeatured()).slice(0, 3);
+// SSR: mismos datos en vivo que el resto del sitio (antes usaba el catálogo
+// local estático, que puede tener precios/stock desactualizados respecto a
+// lo que realmente hay cargado en Supabase).
+export const prerender = false;
+
+const relacionados = (await getCatalogFeatured()).slice(0, 3);
 const waHref = `https://wa.me/${site.whatsapp}?text=${encodeURIComponent('Hola 🌿 acabo de hacer un pedido y quería consultar')}`;
 
 const pasos = [
