@@ -1,6 +1,6 @@
 ---
-/** Captura de email. El submit real se conecta en el paso de integración;
- *  por ahora valida y muestra confirmación amable sin recargar. */
+/** Captura de email: valida y guarda en Supabase (tabla
+ *  newsletter_subscribers) vía /api/newsletter, sin recargar la página. */
 ---
 
 <section class="section news">
@@ -86,9 +86,10 @@
     const msg = document.querySelector<HTMLElement>('[data-newsletter-msg]');
     if (!form || form.dataset.bound) return;
     form.dataset.bound = '1';
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const input = form.querySelector<HTMLInputElement>('input[type="email"]');
+      const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
       if (!input || !msg) return;
       if (!input.checkValidity()) {
         msg.textContent = 'Ingresá un email válido 🌿';
@@ -96,10 +97,22 @@
         input.focus();
         return;
       }
-      // TODO: conectar a proveedor de email (paso de integración).
-      msg.textContent = '¡Gracias! Te sumamos al remanso 🌿';
-      msg.classList.add('show');
-      form.reset();
+      if (button) button.disabled = true;
+      try {
+        const res = await fetch('/api/newsletter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: input.value.trim() }),
+        });
+        if (!res.ok) throw new Error();
+        msg.textContent = '¡Gracias! Te sumamos al remanso 🌿';
+        form.reset();
+      } catch {
+        msg.textContent = 'No pudimos guardarlo. Probá de nuevo en un rato.';
+      } finally {
+        msg.classList.add('show');
+        if (button) button.disabled = false;
+      }
     });
   }
 

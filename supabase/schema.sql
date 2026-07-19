@@ -137,3 +137,17 @@ $$ language sql;
 -- ============================================================
 alter table productos add column if not exists beneficios text[] not null default '{}';
 alter table productos add column if not exists precio_anterior integer;
+
+-- ============================================================
+-- Migración: suscriptores del newsletter (footer de la Home).
+-- El form ya validaba y mostraba "¡Gracias!" pero no guardaba nada en
+-- ningún lado — este es el primer paso real: quedan acá, listos para
+-- exportar o conectar a un proveedor de email más adelante.
+-- ============================================================
+create table if not exists newsletter_subscribers (
+  id bigint generated always as identity primary key,
+  email text not null unique,
+  created_at timestamptz not null default now()
+);
+alter table newsletter_subscribers enable row level security;
+-- Sólo service_role (usado por el endpoint /api/newsletter) puede leer/escribir.
