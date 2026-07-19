@@ -1,6 +1,6 @@
 ---
 import Logo from './Logo.astro';
-import { mainNav, site } from '../lib/site';
+import { mainNav, site, objetivos, lineas, tipos } from '../lib/site';
 
 const path = Astro.url.pathname;
 const isActive = (href: string) =>
@@ -15,15 +15,68 @@ const isActive = (href: string) =>
     </a>
 
     <nav class="menu" aria-label="Navegación principal">
-      {mainNav.map((item) => (
-        <a
-          href={item.href}
-          class="menu-link"
-          aria-current={isActive(item.href) ? 'page' : undefined}
-        >
-          {item.label}
-        </a>
-      ))}
+      {mainNav.map((item) =>
+        item.href === '/tienda' ? (
+          <div class="menu-item has-mega">
+            <a
+              href={item.href}
+              class="menu-link"
+              aria-current={isActive(item.href) ? 'page' : undefined}
+              aria-haspopup="true"
+            >
+              {item.label}
+              <svg class="menu-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+            </a>
+
+            <div class="mega">
+              <div class="mega-col">
+                <span class="mega-head">Por objetivo</span>
+                <ul>
+                  {objetivos.map((o) => (
+                    <li><a href={`/tienda?objetivo=${o.slug}`}>{o.label}</a></li>
+                  ))}
+                </ul>
+              </div>
+              <div class="mega-col">
+                <span class="mega-head">Por línea</span>
+                <ul>
+                  {lineas.map((l) => (
+                    <li>
+                      <a href={`/tienda?linea=${l.slug}`}>
+                        <span class="mega-dot" style={`background:${l.color}`} aria-hidden="true"></span>
+                        {l.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div class="mega-col">
+                <span class="mega-head">Por tipo</span>
+                <ul>
+                  {tipos.map((t) => (
+                    <li><a href={`/tienda?tipo=${t.slug}`}>{t.label}</a></li>
+                  ))}
+                </ul>
+              </div>
+              <a class="mega-feature" href="/tienda">
+                <span class="mega-feature-eyebrow">Explorá</span>
+                <span class="mega-feature-title">Ver toda<br />la tienda</span>
+                <span class="mega-feature-arrow" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                </span>
+              </a>
+            </div>
+          </div>
+        ) : (
+          <a
+            href={item.href}
+            class="menu-link"
+            aria-current={isActive(item.href) ? 'page' : undefined}
+          >
+            {item.label}
+          </a>
+        )
+      )}
     </nav>
 
     <div class="nav-actions">
@@ -147,6 +200,144 @@ const isActive = (href: string) =>
   .menu-link:hover::after,
   .menu-link[aria-current='page']::after {
     transform: scaleX(1);
+  }
+
+  /* Mega-menú de "Tienda": se abre con hover/foco, sin JS. El panel es
+     descendiente del mismo contenedor relativo que el link disparador, así
+     que mover el mouse del link al panel no "corta" el :hover. */
+  .menu-item {
+    position: relative;
+  }
+  .menu-item .menu-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .menu-caret {
+    width: 13px;
+    height: 13px;
+    transition: transform var(--dur) var(--ease-out);
+  }
+  .menu-item:hover .menu-caret,
+  .menu-item:focus-within .menu-caret {
+    transform: rotate(180deg);
+  }
+
+  .mega {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translate(-50%, 8px);
+    width: min(660px, 88vw);
+    margin-top: 0.7rem;
+    padding: 1.75rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) auto;
+    gap: 1.75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity var(--dur) var(--ease-out),
+      transform var(--dur) var(--ease-out), visibility var(--dur) var(--ease-out);
+    z-index: 5;
+  }
+  .menu-item:hover .mega,
+  .menu-item:focus-within .mega {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate(-50%, 0);
+  }
+
+  .mega-head {
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--tierra);
+    margin-bottom: 0.8rem;
+  }
+  .mega-col ul {
+    display: grid;
+    gap: 0.6rem;
+  }
+  .mega-col a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.86rem;
+    color: var(--text-soft);
+    transition: color var(--dur) var(--ease-out);
+  }
+  .mega-col a:hover {
+    color: var(--verde);
+  }
+  .mega-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--r-full);
+    flex-shrink: 0;
+  }
+
+  .mega-feature {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 148px;
+    padding: 1.1rem;
+    border-radius: var(--r-md);
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    transition: background var(--dur) var(--ease-out),
+      transform var(--dur) var(--ease-out);
+  }
+  .mega-feature:hover {
+    background: var(--verde);
+    transform: translateY(-2px);
+  }
+  .mega-feature-eyebrow,
+  .mega-feature-title,
+  .mega-feature-arrow {
+    transition: color var(--dur) var(--ease-out);
+  }
+  .mega-feature-eyebrow {
+    font-size: 0.65rem;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--tierra);
+  }
+  .mega-feature-title {
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    color: var(--verde);
+    line-height: 1.25;
+    margin-top: 0.5rem;
+  }
+  .mega-feature-arrow {
+    display: block;
+    margin-top: 0.75rem;
+    color: var(--verde);
+  }
+  .mega-feature-arrow svg {
+    width: 18px;
+    height: 18px;
+  }
+  .mega-feature:hover .mega-feature-eyebrow,
+  .mega-feature:hover .mega-feature-title,
+  .mega-feature:hover .mega-feature-arrow {
+    color: var(--crema);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mega,
+    .menu-caret,
+    .mega-feature {
+      transition: none;
+    }
   }
 
   .nav-actions {

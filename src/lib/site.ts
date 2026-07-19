@@ -45,6 +45,15 @@ export const lineas = [
   { slug: 'cristales', label: 'Cristales', color: 'var(--linea-cristales)' },
 ] as const;
 
+/** Tipos de producto (navegación por formato). */
+export const tipos = [
+  { slug: 'extracto', label: 'Extractos de hongos' },
+  { slug: 'esencia', label: 'Esencias florales' },
+  { slug: 'sahumerio', label: 'Sahumerios' },
+  { slug: 'cristal', label: 'Cristales' },
+  { slug: 'kit', label: 'Kits & sets' },
+] as const;
+
 /** Columnas del footer. */
 export const footerNav = {
   tienda: {
