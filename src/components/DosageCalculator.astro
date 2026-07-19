@@ -216,7 +216,7 @@ const { tipo, nombre } = Astro.props;
   }
 </style>
 
-<script define:vars={{ tipo }}>
+<script define:vars={{ tipo }} is:inline>
   // Calculadora lógica
   function initCalculator() {
     const slider = document.getElementById('dc-weight');

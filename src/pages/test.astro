@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCatalog } from '../lib/catalog';
-import ProductCard from '../components/ProductCard.astro';
 
 // SSR: Leemos catálogo para pasar la base de datos de recomendación al cliente
 export const prerender = false;
@@ -264,7 +263,7 @@ const products = await getCatalog();
   }
 </style>
 
-<script define:vars={{ products }}>
+<script define:vars={{ products }} is:inline>
   // Guardamos las preguntas del test
   const QUESTIONS = [
     {
@@ -434,7 +433,7 @@ const products = await getCatalog();
             <p class="qp-desc">${p.descripcionCorta || ''}</p>
             <div class="qp-bottom">
               <span class="qp-price">$${Number(p.precio).toLocaleString('es-AR')}</span>
-              <button class="btn btn-solid sm qp-add" data-add="${p.slug}" data-nombre="${p.nombre}" data-precio="${p.precio}" data-linea="${p.linea}">
+              <button class="btn btn-solid sm qp-add" data-add="${p.slug}" data-nombre="${p.nombre}" data-precio="${p.precio}" data-linea="${p.linea}" data-stock="${p.stock ?? 0}">
                 Agregar al Carrito
               </button>
             </div>
@@ -533,6 +532,7 @@ const products = await getCatalog();
         addBtn.dataset.nombre = target.dataset.nombre;
         addBtn.dataset.precio = target.dataset.precio;
         addBtn.dataset.linea = target.dataset.linea;
+        addBtn.dataset.stock = target.dataset.stock;
         addBtn.dataset.addToCart = "";
         
         // Simular click en un botón add to cart para que el script global lo detecte y procese
