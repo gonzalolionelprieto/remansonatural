@@ -365,6 +365,12 @@
             <label>Foto</label><div class="imgw" id="w-estrella"></div>
           </div>
 
+          <div class="card">
+            <h2>Mega-menú (Tienda)</h2>
+            <p class="muted">Foto opcional del bloque destacado que aparece al pasar el mouse por "Tienda" en el menú. Sin foto, queda el fondo verde con textura.</p>
+            <label>Foto</label><div class="imgw" id="w-mega"></div>
+          </div>
+
           <div class="err" id="sitioErr"></div>
           <button class="btn" id="guardarSitio">Guardar sitio</button>
         </section>
@@ -395,7 +401,7 @@
       let editSlugOriginal = null;
       let prodImgs = [];
       const objSel = new Set();
-      let home = { hero: {}, bento: [{}, {}, {}, {}], estrella: {} };
+      let home = { hero: {}, bento: [{}, {}, {}, {}], estrella: {}, mega: {} };
       const BENTO_LABELS = ['Bloque 1 (grande, izquierda)', 'Bloque 2 (arriba)', 'Bloque 3', 'Bloque 4'];
 
       // Relación de aspecto de las fotos de producto (elegida en el panel).
@@ -624,7 +630,8 @@
       // ---- Sitio ----
       async function loadSitio() {
         const { ok, data } = await api({ action: 'getHome' });
-        if (ok && data.data) home = Object.assign({ hero: {}, bento: [{}, {}, {}, {}], estrella: {} }, data.data);
+        if (ok && data.data) home = Object.assign({ hero: {}, bento: [{}, {}, {}, {}], estrella: {}, mega: {} }, data.data);
+        if (!home.mega) home.mega = {};
         if (!Array.isArray(home.bento)) home.bento = [{}, {}, {}, {}];
         while (home.bento.length < 4) home.bento.push({});
         $('#h-eyebrow').value = home.hero.eyebrow || ''; $('#h-titulo').value = home.hero.titulo || '';
@@ -637,6 +644,7 @@
         imgWidget($('#w-hero'), () => (home.hero.imagen ? [home.hero.imagen] : []), (a) => (home.hero.imagen = a[0] || ''), false, 16 / 9, 'Panorámica (16:9)');
         $('#e-eyebrow').value = home.estrella.eyebrow || ''; $('#e-titulo').value = home.estrella.titulo || ''; $('#e-desc').value = home.estrella.desc || '';
         imgWidget($('#w-estrella'), () => (home.estrella.imagen ? [home.estrella.imagen] : []), (a) => (home.estrella.imagen = a[0] || ''), false, 4 / 5, 'Vertical (4:5)');
+        imgWidget($('#w-mega'), () => (home.mega.imagen ? [home.mega.imagen] : []), (a) => (home.mega.imagen = a[0] || ''), false, 5 / 4, 'Horizontal suave (5:4)');
         // Bento blocks
         const cont = $('#bento-blocks'); cont.innerHTML = '';
         home.bento.forEach((b, i) => {
