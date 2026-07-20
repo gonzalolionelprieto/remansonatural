@@ -285,8 +285,17 @@ const megaTagTipo: string = mega.tagTipo || 'Extractos, esencias, sahumerios';
   /* El panel cuelga de .site-header (el ancestro posicionado más cercano,
      por su `position: sticky`), no de .menu-item — así `left:0; right:0`
      lo estira al ancho completo del header en vez de a una card angosta
-     centrada bajo el link. Efecto "cortina": clip-path en vez de
-     opacity/translate, para un despliegue más sólido y menos "flotante". */
+     centrada bajo el link.
+
+     Antes esto animaba con clip-path (efecto "cortina"), pero clip-path
+     también recorta el área que recibe hover/click mientras dura la
+     transición: si bajabas el mouse más rápido que la animación, salías
+     de la porción todavía-no-revelada (que no cuenta como hover) antes de
+     llegar al contenido, y el panel se cerraba solo a mitad de camino.
+     Con opacity/visibility el tamaño real del panel está disponible para
+     hover desde el primer frame, sin importar en qué punto va la
+     transición visual — se puede "cortar camino" con el mouse sin que se
+     cierre. */
   .mega {
     position: absolute;
     top: 100%;
@@ -295,17 +304,20 @@ const megaTagTipo: string = mega.tagTipo || 'Extractos, esencias, sahumerios';
     background: var(--crema);
     border-top: 1px solid var(--border);
     box-shadow: var(--shadow-lg);
-    clip-path: inset(0 0 100% 0);
+    opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: clip-path 0.5s var(--ease-out), visibility 0.5s;
+    transform: translateY(-6px);
+    transition: opacity 0.28s var(--ease-out), transform 0.28s var(--ease-out),
+      visibility 0.28s;
     z-index: 5;
   }
   .menu-item:hover .mega,
   .menu-item:focus-within .mega {
-    clip-path: inset(0 0 0% 0);
+    opacity: 1;
     visibility: visible;
     pointer-events: auto;
+    transform: translateY(0);
   }
 
   .mega-inner {
@@ -316,7 +328,9 @@ const megaTagTipo: string = mega.tagTipo || 'Extractos, esencias, sahumerios';
     grid-template-columns: minmax(220px, 300px) repeat(3, 1fr);
     gap: clamp(1.75rem, 3vw, 3rem);
     /* Stagger sutil de entrada: el contenido sube+aparece un toque después
-       de que la cortina empieza a bajar, no todo junto de golpe. */
+       de que el panel empieza a aparecer, no todo junto de golpe. Esta
+       opacidad NO afecta el hover (a diferencia de clip-path, no recorta
+       el área hovereable mientras anima). */
     opacity: 0;
     transform: translateY(-6px);
     transition: opacity 0.35s var(--ease-out) 0.05s,

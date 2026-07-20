@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../lib/supabase';
+import { invalidateCatalogCache, invalidateHomeConfigCache } from '../../lib/catalog';
 
 export const prerender = false;
 
@@ -88,6 +89,7 @@ export const POST: APIRoute = async ({ request }) => {
         .select()
         .single();
       if (error) return json({ error: error.message }, 502);
+      invalidateCatalogCache();
       return json({ producto: data });
     }
 
@@ -96,6 +98,7 @@ export const POST: APIRoute = async ({ request }) => {
       if (!slug) return json({ error: 'Falta slug' }, 400);
       const { error } = await admin.from('productos').delete().eq('slug', slug);
       if (error) return json({ error: error.message }, 502);
+      invalidateCatalogCache();
       return json({ ok: true });
     }
 
@@ -115,6 +118,7 @@ export const POST: APIRoute = async ({ request }) => {
         .from('home_config')
         .upsert({ id: 1, data: body.data ?? {} });
       if (error) return json({ error: error.message }, 502);
+      invalidateHomeConfigCache();
       return json({ ok: true });
     }
 
