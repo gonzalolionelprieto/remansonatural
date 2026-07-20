@@ -50,6 +50,23 @@ function initReveal() {
   items.forEach((el) => observer.observe(el));
 }
 
+/**
+ * Recorrer TODOS los [data-reveal] de la página y armar el
+ * IntersectionObserver es trabajo que no necesita el usuario ver de
+ * inmediato (los elementos ya arrancan en opacity:0 por CSS). Corriéndolo
+ * en el mismo tick que astro:page-load compite por el hilo principal justo
+ * cuando el usuario puede estar haciendo click en algo (por eso el "Input
+ * delay" alto en el INP) — se aplaza a un momento ocioso del navegador, o
+ * como máximo 200ms después, para no atrasar el primer click.
+ */
+function scheduleIdle(fn: () => void) {
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(fn, { timeout: 200 });
+  } else {
+    setTimeout(fn, 1);
+  }
+}
+
 // astro:page-load corre en la carga inicial y tras cada navegación con
 // View Transitions, así que alcanza con el listener (sin llamada directa).
-document.addEventListener('astro:page-load', initReveal);
+document.addEventListener('astro:page-load', () => scheduleIdle(initReveal));
