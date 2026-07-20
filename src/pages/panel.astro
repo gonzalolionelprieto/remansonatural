@@ -367,8 +367,16 @@
 
           <div class="card">
             <h2>Mega-menú (Tienda)</h2>
-            <p class="muted">Foto opcional del bloque destacado que aparece al pasar el mouse por "Tienda" en el menú. Sin foto, queda el fondo verde con textura.</p>
-            <label>Foto</label><div class="imgw" id="w-mega"></div>
+            <p class="muted">El bloque destacado que aparece al pasar el mouse por "Tienda" en el menú. Los links de las 3 columnas (por objetivo, línea y tipo) no se editan acá: son las mismas categorías reales que filtran la tienda, para que nunca queden desincronizadas.</p>
+            <label>Foto (opcional; sin foto, queda el fondo verde con textura)</label><div class="imgw" id="w-mega"></div>
+            <label>Título (podés usar un salto de línea)</label><textarea id="mg-titulo" rows="2"></textarea>
+            <label>Descripción</label><textarea id="mg-desc"></textarea>
+            <label>Texto del botón</label><input id="mg-cta" />
+            <div class="grid2">
+              <div><label>Bajada — Por objetivo</label><input id="mg-tag-objetivo" /></div>
+              <div><label>Bajada — Por línea</label><input id="mg-tag-linea" /></div>
+              <div><label>Bajada — Por tipo</label><input id="mg-tag-tipo" /></div>
+            </div>
           </div>
 
           <div class="err" id="sitioErr"></div>
@@ -645,6 +653,12 @@
         $('#e-eyebrow').value = home.estrella.eyebrow || ''; $('#e-titulo').value = home.estrella.titulo || ''; $('#e-desc').value = home.estrella.desc || '';
         imgWidget($('#w-estrella'), () => (home.estrella.imagen ? [home.estrella.imagen] : []), (a) => (home.estrella.imagen = a[0] || ''), false, 4 / 5, 'Vertical (4:5)');
         imgWidget($('#w-mega'), () => (home.mega.imagen ? [home.mega.imagen] : []), (a) => (home.mega.imagen = a[0] || ''), false, 5 / 4, 'Horizontal suave (5:4)');
+        $('#mg-titulo').value = home.mega.titulo || 'Encontrá\ntu ritual';
+        $('#mg-desc').value = home.mega.desc || 'Rituales completos, armados a mano en pequeños lotes.';
+        $('#mg-cta').value = home.mega.cta || 'Ver toda la tienda';
+        $('#mg-tag-objetivo').value = home.mega.tagObjetivo || 'Según cómo te querés sentir';
+        $('#mg-tag-linea').value = home.mega.tagLinea || 'Cada línea, su propio carácter';
+        $('#mg-tag-tipo').value = home.mega.tagTipo || 'Extractos, esencias, sahumerios';
         // Bento blocks
         const cont = $('#bento-blocks'); cont.innerHTML = '';
         home.bento.forEach((b, i) => {
@@ -672,6 +686,8 @@
         home.hero.imagenPosicion = $('#h-posicion').value;
         home.hero.textAlign = $('#h-align').value;
         home.estrella.eyebrow = $('#e-eyebrow').value; home.estrella.titulo = $('#e-titulo').value; home.estrella.desc = $('#e-desc').value;
+        home.mega.titulo = $('#mg-titulo').value; home.mega.desc = $('#mg-desc').value; home.mega.cta = $('#mg-cta').value;
+        home.mega.tagObjetivo = $('#mg-tag-objetivo').value; home.mega.tagLinea = $('#mg-tag-linea').value; home.mega.tagTipo = $('#mg-tag-tipo').value;
         const { ok, data } = await api({ action: 'saveHome', data: home });
         if (ok) { toast('Sitio guardado'); reloadPreview(); } else $('#sitioErr').textContent = data.error || 'Error';
       });

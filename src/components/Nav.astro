@@ -7,10 +7,20 @@ const path = Astro.url.pathname;
 const isActive = (href: string) =>
   href === '/' ? path === '/' : path.startsWith(href);
 
-// Foto opcional del bloque destacado del mega-menú, editable desde el panel
-// (Sitio → Mega-menú). Sin foto, queda el fondo verde con la textura.
+// Contenido del mega-menú, editable desde el panel (Sitio → Mega-menú):
+// foto del bloque destacado, su texto, y las bajadas de cada columna.
+// Los links en sí (Por objetivo/línea/tipo) siguen saliendo de site.ts, no
+// del panel: son las mismas categorías reales que filtran /tienda, y
+// dejarlas como texto libre editable podría desincronizarlas del filtro.
 const home = await getHomeConfig();
-const megaImagen: string = home?.mega?.imagen || '';
+const mega = home?.mega ?? {};
+const megaImagen: string = mega.imagen || '';
+const megaTitulo: string = mega.titulo || 'Encontrá\ntu ritual';
+const megaDesc: string = mega.desc || 'Rituales completos, armados a mano en pequeños lotes.';
+const megaCta: string = mega.cta || 'Ver toda la tienda';
+const megaTagObjetivo: string = mega.tagObjetivo || 'Según cómo te querés sentir';
+const megaTagLinea: string = mega.tagLinea || 'Cada línea, su propio carácter';
+const megaTagTipo: string = mega.tagTipo || 'Extractos, esencias, sahumerios';
 ---
 
 <header class="site-header" data-header>
@@ -45,11 +55,18 @@ const megaImagen: string = home?.mega?.imagen || '';
                   <span class="mega-feature-scrim" aria-hidden="true"></span>
                   <div class="mega-feature-body">
                     <span class="eyebrow">Explorá</span>
-                    <h3>Encontrá<br />tu ritual</h3>
-                    <p>Rituales completos, armados a mano en pequeños lotes.</p>
+                    <h3>
+                      {megaTitulo.split('\n').map((linea, i) => (
+                        <>
+                          {i > 0 && <br />}
+                          {linea}
+                        </>
+                      ))}
+                    </h3>
+                    <p>{megaDesc}</p>
                   </div>
                   <span class="mega-feature-cta">
-                    Ver toda la tienda
+                    {megaCta}
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
                   </span>
                 </a>
@@ -60,7 +77,7 @@ const megaImagen: string = home?.mega?.imagen || '';
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 8.2l1.7 3.6 3.6.5-2.6 2.5.6 3.6-3.3-1.8-3.3 1.8.6-3.6-2.6-2.5 3.6-.5z"></path></svg>
                       <span>Por objetivo</span>
                     </div>
-                    <p class="mega-tag">Según cómo te querés sentir</p>
+                    <p class="mega-tag">{megaTagObjetivo}</p>
                     <ul>
                       {objetivos.map((o) => (
                         <li><a href={`/tienda?objetivo=${o.slug}`}>{o.label}</a></li>
@@ -72,7 +89,7 @@ const megaImagen: string = home?.mega?.imagen || '';
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21c-4-2.5-7-6-7-10.5A7 7 0 0 1 12 3a7 7 0 0 1 7 7.5C19 15 16 18.5 12 21z"></path><path d="M12 21V9"></path></svg>
                       <span>Por línea</span>
                     </div>
-                    <p class="mega-tag">Cada línea, su propio carácter</p>
+                    <p class="mega-tag">{megaTagLinea}</p>
                     <ul>
                       {lineas.map((l) => (
                         <li>
@@ -89,7 +106,7 @@ const megaImagen: string = home?.mega?.imagen || '';
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5h6l-.5 5.5 3.8 8a2 2 0 0 1-1.8 2.9H7.5a2 2 0 0 1-1.8-2.9l3.8-8z"></path><path d="M8.3 15h7.4"></path></svg>
                       <span>Por tipo</span>
                     </div>
-                    <p class="mega-tag">Extractos, esencias, sahumerios</p>
+                    <p class="mega-tag">{megaTagTipo}</p>
                     <ul>
                       {tipos.map((t) => (
                         <li><a href={`/tienda?tipo=${t.slug}`}>{t.label}</a></li>
@@ -204,6 +221,8 @@ const megaImagen: string = home?.mega?.imagen || '';
 
   .menu {
     display: flex;
+    align-items: center;
+    align-self: stretch;
     gap: clamp(1rem, 2vw, 1.9rem);
     margin-inline: auto;
   }
@@ -237,7 +256,17 @@ const megaImagen: string = home?.mega?.imagen || '';
 
   /* Mega-menú de "Tienda": se abre con hover/foco, sin JS. `.menu-item`
      NO es el contenedor posicional del panel (a propósito, ver `.mega`
-     más abajo) — sigue siendo el disparador del :hover, nada más. */
+     más abajo) — sigue siendo el disparador del :hover, nada más.
+     Ojo acá: `.menu-item` se estira a la altura completa del header
+     (align-self: stretch, igual que `.menu`) para que no quede una franja
+     sin hover entre el link y el panel — si no, al bajar el mouse en
+     línea recta hacia `.mega` se sale del área hovereable antes de
+     llegar, y el panel se cierra solo. */
+  .menu-item {
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+  }
   .menu-item .menu-link {
     display: inline-flex;
     align-items: center;
@@ -421,8 +450,10 @@ const megaImagen: string = home?.mega?.imagen || '';
   .mega-col ul {
     display: grid;
     gap: 0.65rem;
+    list-style: none;
+    margin: 0;
+    padding: 0.9rem 0 0;
     border-top: 1px solid var(--border);
-    padding-top: 0.9rem;
   }
   .mega-col a {
     display: flex;
