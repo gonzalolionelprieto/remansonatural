@@ -29,42 +29,64 @@ const isActive = (href: string) =>
             </a>
 
             <div class="mega">
-              <div class="mega-col">
-                <span class="mega-head">Por objetivo</span>
-                <ul>
-                  {objetivos.map((o) => (
-                    <li><a href={`/tienda?objetivo=${o.slug}`}>{o.label}</a></li>
-                  ))}
-                </ul>
+              <div class="mega-inner">
+                <a class="mega-feature" href="/tienda">
+                  <span class="mega-feature-pattern" aria-hidden="true"></span>
+                  <div class="mega-feature-body">
+                    <span class="eyebrow">Explorá</span>
+                    <h3>Encontrá<br />tu ritual</h3>
+                    <p>Rituales completos, armados a mano en pequeños lotes.</p>
+                  </div>
+                  <span class="mega-feature-cta">
+                    Ver toda la tienda
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                  </span>
+                </a>
+
+                <div class="mega-cols">
+                  <div class="mega-col">
+                    <div class="mega-head">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 8.2l1.7 3.6 3.6.5-2.6 2.5.6 3.6-3.3-1.8-3.3 1.8.6-3.6-2.6-2.5 3.6-.5z"></path></svg>
+                      <span>Por objetivo</span>
+                    </div>
+                    <p class="mega-tag">Según cómo te querés sentir</p>
+                    <ul>
+                      {objetivos.map((o) => (
+                        <li><a href={`/tienda?objetivo=${o.slug}`}>{o.label}</a></li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div class="mega-col">
+                    <div class="mega-head">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21c-4-2.5-7-6-7-10.5A7 7 0 0 1 12 3a7 7 0 0 1 7 7.5C19 15 16 18.5 12 21z"></path><path d="M12 21V9"></path></svg>
+                      <span>Por línea</span>
+                    </div>
+                    <p class="mega-tag">Cada línea, su propio carácter</p>
+                    <ul>
+                      {lineas.map((l) => (
+                        <li>
+                          <a href={`/tienda?linea=${l.slug}`}>
+                            <span class="mega-dot" style={`background:${l.color}`} aria-hidden="true"></span>
+                            {l.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div class="mega-col">
+                    <div class="mega-head">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5h6l-.5 5.5 3.8 8a2 2 0 0 1-1.8 2.9H7.5a2 2 0 0 1-1.8-2.9l3.8-8z"></path><path d="M8.3 15h7.4"></path></svg>
+                      <span>Por tipo</span>
+                    </div>
+                    <p class="mega-tag">Extractos, esencias, sahumerios</p>
+                    <ul>
+                      {tipos.map((t) => (
+                        <li><a href={`/tienda?tipo=${t.slug}`}>{t.label}</a></li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               </div>
-              <div class="mega-col">
-                <span class="mega-head">Por línea</span>
-                <ul>
-                  {lineas.map((l) => (
-                    <li>
-                      <a href={`/tienda?linea=${l.slug}`}>
-                        <span class="mega-dot" style={`background:${l.color}`} aria-hidden="true"></span>
-                        {l.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div class="mega-col">
-                <span class="mega-head">Por tipo</span>
-                <ul>
-                  {tipos.map((t) => (
-                    <li><a href={`/tienda?tipo=${t.slug}`}>{t.label}</a></li>
-                  ))}
-                </ul>
-              </div>
-              <a class="mega-feature" href="/tienda">
-                <span class="mega-feature-eyebrow">Explorá</span>
-                <span class="mega-feature-title">Ver toda<br />la tienda</span>
-                <span class="mega-feature-arrow" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
-                </span>
-              </a>
             </div>
           </div>
         ) : (
@@ -202,12 +224,9 @@ const isActive = (href: string) =>
     transform: scaleX(1);
   }
 
-  /* Mega-menú de "Tienda": se abre con hover/foco, sin JS. El panel es
-     descendiente del mismo contenedor relativo que el link disparador, así
-     que mover el mouse del link al panel no "corta" el :hover. */
-  .menu-item {
-    position: relative;
-  }
+  /* Mega-menú de "Tienda": se abre con hover/foco, sin JS. `.menu-item`
+     NO es el contenedor posicional del panel (a propósito, ver `.mega`
+     más abajo) — sigue siendo el disparador del :hover, nada más. */
   .menu-item .menu-link {
     display: inline-flex;
     align-items: center;
@@ -223,58 +242,168 @@ const isActive = (href: string) =>
     transform: rotate(180deg);
   }
 
+  /* El panel cuelga de .site-header (el ancestro posicionado más cercano,
+     por su `position: sticky`), no de .menu-item — así `left:0; right:0`
+     lo estira al ancho completo del header en vez de a una card angosta
+     centrada bajo el link. Efecto "cortina": clip-path en vez de
+     opacity/translate, para un despliegue más sólido y menos "flotante". */
   .mega {
     position: absolute;
     top: 100%;
-    left: 50%;
-    transform: translate(-50%, 8px);
-    width: min(660px, 88vw);
-    margin-top: 0.7rem;
-    padding: 1.75rem;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr) auto;
-    gap: 1.75rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r-lg);
-    box-shadow: var(--shadow-md);
-    opacity: 0;
+    left: 0;
+    right: 0;
+    background: var(--crema);
+    border-top: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    clip-path: inset(0 0 100% 0);
     visibility: hidden;
     pointer-events: none;
-    transition: opacity var(--dur) var(--ease-out),
-      transform var(--dur) var(--ease-out), visibility var(--dur) var(--ease-out);
+    transition: clip-path 0.5s var(--ease-out), visibility 0.5s;
     z-index: 5;
   }
   .menu-item:hover .mega,
   .menu-item:focus-within .mega {
-    opacity: 1;
+    clip-path: inset(0 0 0% 0);
     visibility: visible;
     pointer-events: auto;
-    transform: translate(-50%, 0);
   }
 
+  .mega-inner {
+    max-width: var(--maxw);
+    margin-inline: auto;
+    padding: 2.5rem var(--gutter) 2.75rem;
+    display: grid;
+    grid-template-columns: minmax(220px, 300px) repeat(3, 1fr);
+    gap: clamp(1.75rem, 3vw, 3rem);
+    /* Stagger sutil de entrada: el contenido sube+aparece un toque después
+       de que la cortina empieza a bajar, no todo junto de golpe. */
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 0.35s var(--ease-out) 0.05s,
+      transform 0.35s var(--ease-out) 0.05s;
+  }
+  .menu-item:hover .mega-inner,
+  .menu-item:focus-within .mega-inner {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* -- Bloque destacado -- */
+  .mega-feature {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    padding: 1.6rem;
+    border-radius: var(--r-lg);
+    background: var(--verde);
+    color: var(--crema);
+    transition: transform var(--dur) var(--ease-out);
+  }
+  .mega-feature:hover {
+    transform: translateY(-3px);
+  }
+  .mega-feature-pattern {
+    position: absolute;
+    inset: -20% -30% auto auto;
+    width: 70%;
+    aspect-ratio: 1;
+    background-image: repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--crema) 14%, transparent) 0 1px,
+      transparent 1px 14px
+    );
+    border-radius: var(--r-full);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  .mega-feature-body {
+    position: relative;
+  }
+  .mega-feature .eyebrow {
+    color: var(--tierra);
+  }
+  .mega-feature-body h3 {
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1.15;
+    margin-top: 0.5rem;
+    font-variation-settings: 'opsz' 40;
+  }
+  .mega-feature-body p {
+    margin-top: 0.6rem;
+    font-size: 0.85rem;
+    color: color-mix(in srgb, var(--crema) 80%, transparent);
+    max-width: 24ch;
+  }
+  .mega-feature-cta {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 1.5rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .mega-feature-cta svg {
+    width: 16px;
+    height: 16px;
+    transition: transform var(--dur) var(--ease-out);
+  }
+  .mega-feature:hover .mega-feature-cta svg {
+    transform: translateX(4px);
+  }
+
+  /* -- Columnas -- */
+  .mega-cols {
+    display: contents;
+  }
+  .mega-col {
+    padding-top: 0.1rem;
+  }
   .mega-head {
-    display: block;
-    font-size: 0.68rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 500;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
+    color: var(--verde);
+  }
+  .mega-head svg {
+    width: 17px;
+    height: 17px;
     color: var(--tierra);
-    margin-bottom: 0.8rem;
+    flex-shrink: 0;
+  }
+  .mega-tag {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin: 0.4rem 0 1.1rem;
   }
   .mega-col ul {
     display: grid;
-    gap: 0.6rem;
+    gap: 0.65rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.9rem;
   }
   .mega-col a {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.86rem;
+    font-size: 0.89rem;
     color: var(--text-soft);
-    transition: color var(--dur) var(--ease-out);
+    transition: color var(--dur) var(--ease-out),
+      transform var(--dur) var(--ease-out);
   }
   .mega-col a:hover {
     color: var(--verde);
+    transform: translateX(3px);
   }
   .mega-dot {
     width: 8px;
@@ -283,59 +412,13 @@ const isActive = (href: string) =>
     flex-shrink: 0;
   }
 
-  .mega-feature {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    width: 148px;
-    padding: 1.1rem;
-    border-radius: var(--r-md);
-    background: var(--bg-alt);
-    border: 1px solid var(--border);
-    transition: background var(--dur) var(--ease-out),
-      transform var(--dur) var(--ease-out);
-  }
-  .mega-feature:hover {
-    background: var(--verde);
-    transform: translateY(-2px);
-  }
-  .mega-feature-eyebrow,
-  .mega-feature-title,
-  .mega-feature-arrow {
-    transition: color var(--dur) var(--ease-out);
-  }
-  .mega-feature-eyebrow {
-    font-size: 0.65rem;
-    letter-spacing: var(--tracking-caps);
-    text-transform: uppercase;
-    color: var(--tierra);
-  }
-  .mega-feature-title {
-    font-family: var(--font-serif);
-    font-size: 1.05rem;
-    color: var(--verde);
-    line-height: 1.25;
-    margin-top: 0.5rem;
-  }
-  .mega-feature-arrow {
-    display: block;
-    margin-top: 0.75rem;
-    color: var(--verde);
-  }
-  .mega-feature-arrow svg {
-    width: 18px;
-    height: 18px;
-  }
-  .mega-feature:hover .mega-feature-eyebrow,
-  .mega-feature:hover .mega-feature-title,
-  .mega-feature:hover .mega-feature-arrow {
-    color: var(--crema);
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .mega,
+    .mega-inner,
     .menu-caret,
-    .mega-feature {
+    .mega-feature,
+    .mega-feature-cta svg,
+    .mega-col a {
       transition: none;
     }
   }
