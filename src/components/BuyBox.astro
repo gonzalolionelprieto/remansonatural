@@ -17,15 +17,15 @@ import {
   precioTransferencia,
   FRECUENCIAS,
   FRECUENCIA_LABEL,
-  SUSCRIPCION_OFF,
-  TRANSFERENCIA_OFF,
+  suscripcionOff,
+  transferenciaOff,
   porcentajeOff,
 } from '../lib/pricing';
 import {
-  ENVIO_MIN,
-  ENVIO_MAX,
-  ENVIO_GRATIS_UNIDADES,
-  ZONA_GRATIS_LABEL,
+  envioMin,
+  envioMax,
+  envioGratisUnidades,
+  zonaGratisLabel,
 } from '../lib/shipping';
 
 interface Props {
@@ -80,9 +80,13 @@ const transferencia = precioTransferencia(precio);
 
           <!-- El ahorro va acá, pegado al precio que lo produce. Arriba de la
                foto era una promesa suelta que no se podía verificar. -->
+          <!-- Habla del DESCUENTO, no del precio. "Tu precio, todo el año"
+               decía que el precio no cambia, y con inflación eso es falso:
+               si aumenta la lista, la suscripción también aumenta. Lo que se
+               mantiene es el porcentaje. -->
           <span class="bb-save">
-            Tu precio de socio: {porcentajeOff(SUSCRIPCION_OFF)}% menos en cada
-            envío, todo el año
+            Tu precio de socio: {porcentajeOff(suscripcionOff())}% menos en cada
+            envío, mientras seas socio
           </span>
           <!-- El número que hay que comparar es el FINAL. Contra el precio de
                transferencia ($22.000 + envío), la suscripción sale más barata
@@ -102,8 +106,8 @@ const transferencia = precioTransferencia(precio);
           </span>
 
           <ul class="bb-perks" role="list">
-            <li>No es una promo que se vence: es tu precio, todo el año</li>
-            <li>Envío gratis a {ZONA_GRATIS_LABEL}, aunque lleves una sola</li>
+            <li>El descuento no se vence: se aplica en cada envío</li>
+            <li>Envío gratis a {zonaGratisLabel()}, aunque lleves una sola</li>
             <li>Salteás un envío o cancelás cuando quieras, sin permanencia</li>
             <li>Te llega solo, sin que tengas que acordarte</li>
             <li>Se cobra con tarjeta, en débito automático</li>
@@ -134,7 +138,7 @@ const transferencia = precioTransferencia(precio);
              que cuestan la comisión de MP y las 3 cuotas sin interés. -->
         <span class="bb-alt">
           o <b data-precio-transferencia>{formatPrice(transferencia)}</b> pagando
-          por transferencia ({porcentajeOff(TRANSFERENCIA_OFF)}% off)
+          por transferencia ({porcentajeOff(transferenciaOff())}% off)
         </span>
 
         <!-- Selector de cantidad simple. No hay descuento por llevar varias
@@ -169,7 +173,7 @@ const transferencia = precioTransferencia(precio);
       3 cuotas sin interés de {cuota(unica.unitario, 3)}
     </li>
     <li class="ok" data-note-envio hidden={!suscribible}>
-      Envío gratis a {ZONA_GRATIS_LABEL}, aunque lleves una sola
+      Envío gratis a {zonaGratisLabel()}, aunque lleves una sola
     </li>
     <!-- El costo del envío se dice acá, antes de agregar al carrito. Que
          aparezca recién al pagar es la forma más rápida de perder a alguien
@@ -177,8 +181,8 @@ const transferencia = precioTransferencia(precio);
     <li data-note-envio-falta hidden={suscribible}>
       {!suscribible && (
         <Fragment>
-          Envío de {formatPrice(ENVIO_MIN)} a {formatPrice(ENVIO_MAX)} según zona ·
-          gratis a {ZONA_GRATIS_LABEL} llevando {ENVIO_GRATIS_UNIDADES} o más
+          Envío de {formatPrice(envioMin())} a {formatPrice(envioMax())} según zona ·
+          gratis a {zonaGratisLabel()} llevando {envioGratisUnidades()} o más
         </Fragment>
       )}
     </li>
@@ -199,14 +203,14 @@ const transferencia = precioTransferencia(precio);
   import {
     calcularPrecio,
     precioTransferencia,
-    TRANSFERENCIA_OFF,
+    transferenciaOff,
     porcentajeOff,
   } from '../lib/pricing';
   import {
-    ENVIO_MIN,
-    ENVIO_MAX,
-    ENVIO_GRATIS_UNIDADES,
-    ZONA_GRATIS_LABEL,
+    envioMin,
+    envioMax,
+    envioGratisUnidades,
+    zonaGratisLabel,
     tieneEnvioGratis,
   } from '../lib/shipping';
   import { formatPrice, cuota } from '../lib/format';
@@ -311,14 +315,14 @@ const transferencia = precioTransferencia(precio);
           noteEnvio.hidden = !gratis;
           noteEnvio.textContent =
             m === 'suscripcion'
-              ? `Envío gratis a ${ZONA_GRATIS_LABEL}, aunque lleves una sola`
-              : `Envío gratis a ${ZONA_GRATIS_LABEL} por llevar más de una`;
+              ? `Envío gratis a ${zonaGratisLabel()}, aunque lleves una sola`
+              : `Envío gratis a ${zonaGratisLabel()} por llevar más de una`;
         }
         if (noteFalta) {
           noteFalta.hidden = gratis;
           if (!gratis) {
-            const falta = ENVIO_GRATIS_UNIDADES - cantidad;
-            noteFalta.innerHTML = `Envío de ${formatPrice(ENVIO_MIN)} a ${formatPrice(ENVIO_MAX)} según zona · sumá <b>${falta} más</b> y es gratis a ${ZONA_GRATIS_LABEL}`;
+            const falta = envioGratisUnidades() - cantidad;
+            noteFalta.innerHTML = `Envío de ${formatPrice(envioMin())} a ${formatPrice(envioMax())} según zona · sumá <b>${falta} más</b> y es gratis a ${zonaGratisLabel()}`;
           }
         }
 
@@ -326,7 +330,7 @@ const transferencia = precioTransferencia(precio);
         if (noteTransf) {
           noteTransf.hidden = p.off > 0;
           if (p.off === 0) {
-            noteTransf.innerHTML = `<b>${formatPrice(precioTransferencia(precio) * cantidad)}</b> pagando por transferencia (${porcentajeOff(TRANSFERENCIA_OFF)}% off)`;
+            noteTransf.innerHTML = `<b>${formatPrice(precioTransferencia(precio) * cantidad)}</b> pagando por transferencia (${porcentajeOff(transferenciaOff())}% off)`;
           }
         }
       }

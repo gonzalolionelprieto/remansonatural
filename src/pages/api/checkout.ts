@@ -31,6 +31,7 @@ import {
 } from '../../lib/pricing';
 
 import { costoEnvio, zonaPorId } from '../../lib/shipping';
+import { aplicarComercial } from '../../lib/comercial';
 
 export const POST: APIRoute = async ({ request, url }) => {
   const token =
@@ -74,6 +75,11 @@ export const POST: APIRoute = async ({ request, url }) => {
 
   const admin = supabaseAdmin();
   if (!admin) return json({ error: 'Servidor no configurado.' }, 503);
+
+  // Este endpoint no pasa por BaseLayout, así que tiene que cargar la config
+  // comercial por su cuenta: es el que efectivamente cobra, y tiene que usar
+  // exactamente los mismos descuentos y tarifas que mostró la ficha.
+  await aplicarComercial();
 
   // SEGURIDAD: nunca confiar en el precio que manda el navegador.
   // Sólo tomamos slug + cantidad; el precio, el nombre y el stock salen de la base.

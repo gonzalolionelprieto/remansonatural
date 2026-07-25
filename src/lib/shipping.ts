@@ -4,8 +4,11 @@
  * Antes esto vivía copiado en tres lugares con números distintos: la
  * calculadora de la ficha decía $2.500 para CABA y el checkout cobraba
  * $5.000. Un comprador nuevo que ve un precio en la ficha y otro al pagar
- * no vuelve, y con razón. Ahora la ficha, el carrito y el checkout leen de
- * acá, así que no pueden discrepar.
+ * no vuelve, y con razón.
+ *
+ * Los valores de acá son el DEFAULT y el fallback. Los reales se editan
+ * desde el panel (tabla config_comercial) y llegan por `setConfigEnvios`,
+ * así cambiar una tarifa no necesita un deploy.
  */
 
 export interface ZonaEnvio {
@@ -22,40 +25,79 @@ export interface ZonaEnvio {
   gratisElegible: boolean;
 }
 
-/**
- * Tres zonas, no cuatro.
- *
- * Antes había una tarifa de "Zona Sur" a $3.500 que era la mitad del costo
- * real: la competencia cobra entre $6.045 y $9.036 para despachar a ese mismo
- * CP. Con envío gratis desde 2 unidades, cada pedido perdía plata. Quien está
- * en Zona Sur ya tiene la opción de retiro en persona a $0, así que no hace
- * falta además una tarifa propia más barata.
- *
- * Los montos siguen siendo estimados sobre dos datos observados ($6.045 lo
- * más barato a domicilio en GBA Sur, $6.500 en el día) y hay que contrastarlos
- * con una cotización propia por peso: ~500 g un frasco, ~1,5 kg tres.
- */
-export const ZONAS: ZonaEnvio[] = [
-  { id: 'retiro', label: 'Retiro en persona (Zona Sur)', costo: 0, demora: 'coordinamos por WhatsApp', gratisElegible: true },
-  { id: 'caba_gba', label: 'CABA y GBA', costo: 6500, demora: '1 a 3 días hábiles', gratisElegible: true },
-  { id: 'interior', label: 'Interior del país', costo: 12000, demora: '3 a 7 días hábiles', gratisElegible: false },
-];
-
-/** Cómo se nombra la cobertura de la promo en el copy del sitio. */
-export const ZONA_GRATIS_LABEL = 'CABA y GBA';
-
-export const ZONA_DEFAULT = 'caba_gba';
+export interface ConfigEnvios {
+  zonas: ZonaEnvio[];
+  /** Unidades a partir de las cuales el envío es gratis. */
+  envioGratisUnidades: number;
+  /** Cómo se nombra la cobertura de la promo en el copy del sitio. */
+  zonaGratisLabel: string;
+}
 
 /**
- * Unidades a partir de las cuales el envío es gratis.
+ * Tres zonas, no cuatro. Había una tarifa de "Zona Sur" a $3.500 que era la
+ * mitad del costo real: la competencia cobra entre $6.045 y $9.036 para
+ * despachar a ese mismo CP. Quien está en Zona Sur ya tiene la opción de
+ * retiro en persona a $0.
  *
- * Es por CANTIDAD y no por monto a propósito. Con umbral en pesos ($80.000)
- * y productos de ~$22.000, hacían falta 5 unidades para alcanzarlo: la
- * promesa estaba escrita en toda la tienda y no la cobraba nadie. Por
- * unidades es alcanzable, se entiende sin hacer cuentas ("llevando 2 o más")
- * y empuja justo hacia donde conviene, que es el pack.
+ * El envío gratis se gana por CANTIDAD y no por monto: con umbral en pesos
+ * ($80.000) y productos de ~$22.000 hacían falta 5 unidades, así que la
+ * promesa estaba escrita en toda la tienda y no la cobraba nadie.
  */
-export const ENVIO_GRATIS_UNIDADES = 2;
+export const DEFAULTS_ENVIOS: ConfigEnvios = {
+  zonas: [
+    { id: 'retiro', label: 'Retiro en persona (Zona Sur)', costo: 0, demora: 'coordinamos por WhatsApp', gratisElegible: true },
+    { id: 'caba_gba', label: 'CABA y GBA', costo: 6500, demora: '1 a 3 días hábiles', gratisElegible: true },
+    { id: 'interior', label: 'Interior del país', costo: 12000, demora: '3 a 7 días hábiles', gratisElegible: false },
+  ],
+  envioGratisUnidades: 2,
+  zonaGratisLabel: 'CABA y GBA',
+};
+
+let cfg: ConfigEnvios | null = null;
+
+/** Igual que en pricing.ts: en el navegador la config viene embebida. */
+function leerConfig(): ConfigEnvios {
+  if (cfg) return cfg;
+  if (typeof document !== 'undefined') {
+    const el = document.querySelector('[data-config-comercial]');
+    if (el?.textContent) {
+      try {
+        const raw = JSON.parse(el.textContent) as Partial<ConfigEnvios>;
+        cfg = normalizar(raw);
+        return cfg;
+      } catch {
+        /* config rota: seguimos con los defaults */
+      }
+    }
+  }
+  cfg = { ...DEFAULTS_ENVIOS };
+  return cfg;
+}
+
+/** Nunca dejamos la lista de zonas vacía: sin zonas no se puede vender. */
+function normalizar(p: Partial<ConfigEnvios>): ConfigEnvios {
+  const zonas = Array.isArray(p.zonas) && p.zonas.length > 0 ? p.zonas : DEFAULTS_ENVIOS.zonas;
+  return {
+    zonas,
+    envioGratisUnidades: Number(p.envioGratisUnidades) > 0
+      ? Number(p.envioGratisUnidades)
+      : DEFAULTS_ENVIOS.envioGratisUnidades,
+    zonaGratisLabel: p.zonaGratisLabel || DEFAULTS_ENVIOS.zonaGratisLabel,
+  };
+}
+
+/** La usa el servidor (BaseLayout y el checkout) con lo que hay en la base. */
+export function setConfigEnvios(p: Partial<ConfigEnvios> | null | undefined): void {
+  cfg = normalizar(p ?? {});
+}
+
+export const zonas = (): ZonaEnvio[] => leerConfig().zonas;
+export const envioGratisUnidades = (): number => leerConfig().envioGratisUnidades;
+export const zonaGratisLabel = (): string => leerConfig().zonaGratisLabel;
+
+/** La zona preseleccionada: la primera que tiene costo (no el retiro). */
+export const zonaDefault = (): string =>
+  zonas().find((z) => z.costo > 0)?.id ?? zonas()[0].id;
 
 export interface ContextoEnvio {
   /** Total de unidades en el pedido. */
@@ -73,11 +115,12 @@ export interface ContextoEnvio {
  * por lo mismo.
  */
 export function tieneEnvioGratis({ unidades, haySuscripcion }: ContextoEnvio): boolean {
-  return haySuscripcion || unidades >= ENVIO_GRATIS_UNIDADES;
+  return haySuscripcion || unidades >= envioGratisUnidades();
 }
 
 export function zonaPorId(id: string): ZonaEnvio {
-  return ZONAS.find((z) => z.id === id) ?? ZONAS[1];
+  const lista = zonas();
+  return lista.find((z) => z.id === id) ?? lista[0];
 }
 
 /** Si un pedido concreto, a una zona concreta, viaja gratis. */
@@ -93,7 +136,10 @@ export function costoEnvio(ctx: ContextoEnvio, zonaId: string): number {
 }
 
 /** Envíos con costo (excluye el retiro), para comunicar el rango en la ficha. */
-const conCosto = ZONAS.filter((z) => z.costo > 0).map((z) => z.costo);
+function conCosto(): number[] {
+  const v = zonas().filter((z) => z.costo > 0).map((z) => z.costo);
+  return v.length > 0 ? v : [0];
+}
 
-export const ENVIO_MIN = Math.min(...conCosto);
-export const ENVIO_MAX = Math.max(...conCosto);
+export const envioMin = (): number => Math.min(...conCosto());
+export const envioMax = (): number => Math.max(...conCosto());

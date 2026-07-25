@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../lib/supabase';
 import { invalidateCatalogCache, invalidateHomeConfigCache } from '../../lib/catalog';
+import { invalidateComercialCache, DEFAULTS_COMERCIAL } from '../../lib/comercial';
 
 export const prerender = false;
 
@@ -120,6 +121,41 @@ export const POST: APIRoute = async ({ request }) => {
         .upsert({ id: 1, data: body.data ?? {} });
       if (error) return json({ error: error.message }, 502);
       invalidateHomeConfigCache();
+      return json({ ok: true });
+    }
+
+    case 'getComercial': {
+      const { data, error } = await admin
+        .from('config_comercial')
+        .select('data')
+        .eq('id', 1)
+        .single();
+      // Si la tabla todavía no existe devolvemos los defaults en vez de un
+      // error: el panel tiene que poder abrirse igual.
+      if (error) return json({ data: DEFAULTS_COMERCIAL });
+      return json({ data: { ...DEFAULTS_COMERCIAL, ...(data?.data ?? {}) } });
+    }
+
+    case 'saveComercial': {
+      const d = body.data ?? {};
+      // Validación: un porcentaje fuera de rango o una lista de zonas vacía
+      // rompen los precios de toda la tienda. Mejor rechazar que guardar.
+      const pct = (v: unknown) => Number(v) >= 0 && Number(v) < 1;
+      if (!pct(d.suscripcionOff) || !pct(d.transferenciaOff)) {
+        return json({ error: 'Los descuentos tienen que estar entre 0 y 99%.' }, 400);
+      }
+      if (!Array.isArray(d.zonas) || d.zonas.length === 0) {
+        return json({ error: 'Tiene que haber al menos una zona de envío.' }, 400);
+      }
+      if (!(Number(d.envioGratisUnidades) > 0)) {
+        return json({ error: 'Las unidades para el envío gratis tienen que ser 1 o más.' }, 400);
+      }
+
+      const { error } = await admin
+        .from('config_comercial')
+        .upsert({ id: 1, data: d, updated_at: new Date().toISOString() });
+      if (error) return json({ error: error.message }, 502);
+      invalidateComercialCache();
       return json({ ok: true });
     }
 

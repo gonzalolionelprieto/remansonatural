@@ -8,10 +8,10 @@
  * exactamente lo que se va a pagar.
  */
 import {
-  ZONAS,
-  ZONA_DEFAULT,
-  ENVIO_GRATIS_UNIDADES,
-  ZONA_GRATIS_LABEL,
+  zonas,
+  zonaDefault,
+  envioGratisUnidades,
+  zonaGratisLabel,
 } from '../lib/shipping';
 ---
 
@@ -23,14 +23,14 @@ import {
 
   <label class="visually-hidden" for="envio-zona">Zona de entrega</label>
   <select id="envio-zona" data-envio-zona>
-    {ZONAS.map((z) => (
-      <option value={z.id} selected={z.id === ZONA_DEFAULT}>{z.label}</option>
+    {zonas().map((z) => (
+      <option value={z.id} selected={z.id === zonaDefault()}>{z.label}</option>
     ))}
   </select>
 
   <p class="envio-result" data-envio-result role="status" aria-live="polite"></p>
   <p class="envio-nota">
-    Gratis a {ZONA_GRATIS_LABEL} llevando {ENVIO_GRATIS_UNIDADES} productos o más,
+    Gratis a {zonaGratisLabel()} llevando {envioGratisUnidades()} productos o más,
     y siempre gratis si te suscribís, aunque lleves uno solo. Al interior se
     cobra siempre.
   </p>

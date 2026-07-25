@@ -170,4 +170,24 @@ alter table productos add column if not exists suscribible boolean not null defa
 -- obliga a decidirlo producto por producto en vez de ofrecerla donde no tiene
 -- sentido. Los productos ya cargados conservan el valor que tengan.
 alter table productos alter column suscribible set default false;
+
+-- ============================================================
+-- Configuración comercial: descuentos y envíos, editables en vivo.
+-- Estaban escritos a mano en el código, así que cambiar un porcentaje o el
+-- precio de una zona pedía un deploy. Acá se editan desde el panel y el
+-- sitio los toma en el siguiente render.
+-- Singleton igual que home_config.
+-- ============================================================
+create table if not exists config_comercial (
+  id smallint primary key default 1,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now(),
+  constraint config_comercial_singleton check (id = 1)
+);
+insert into config_comercial (id, data) values (1, '{}'::jsonb) on conflict do nothing;
+
+alter table config_comercial enable row level security;
+drop policy if exists "config_comercial lectura pública" on config_comercial;
+create policy "config_comercial lectura pública" on config_comercial for select using (true);
+-- La escritura queda sólo para service_role (el endpoint /api/panel).
 alter table productos add column if not exists badge text;

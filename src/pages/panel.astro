@@ -299,6 +299,37 @@
         <!-- Sitio -->
         <section id="tab-sitio" class="hidden">
           <div class="card">
+            <h2>Descuentos y envíos</h2>
+            <p class="muted">Estos números los usa toda la tienda: la ficha, el carrito y lo que efectivamente cobra Mercado Pago. Se aplican apenas guardás, sin republicar el sitio.</p>
+            <div class="grid2">
+              <div>
+                <label>Descuento por suscripción (%)</label>
+                <input id="c-suscripcion" type="number" min="0" max="99" step="1" />
+              </div>
+              <div>
+                <label>Descuento por transferencia (%)</label>
+                <input id="c-transferencia" type="number" min="0" max="99" step="0.5" />
+              </div>
+              <div>
+                <label>Envío gratis desde (unidades)</label>
+                <input id="c-unidades" type="number" min="1" step="1" />
+              </div>
+              <div>
+                <label>Cómo se llama la zona con envío gratis</label>
+                <input id="c-zonalabel" placeholder="CABA y GBA" />
+              </div>
+            </div>
+            <p class="muted" style="margin-top:6px;">El descuento por transferencia tiene que cubrir lo que te cuesta cobrar con tarjeta: la comisión de Mercado Pago más las 3 cuotas sin interés, que las financiás vos.</p>
+
+            <label style="margin-top:14px;">Zonas de envío</label>
+            <p class="muted" style="margin:-4px 0 8px;">Destildá "entra en el envío gratis" en las zonas donde despachar te sale caro: ahí el envío se cobra siempre, aun con suscripción.</p>
+            <div id="w-zonas"></div>
+
+            <div class="err" id="comercialErr"></div>
+            <div class="row" style="margin-top:12px;"><button class="btn" id="guardarComercial">Guardar descuentos y envíos</button></div>
+          </div>
+
+          <div class="card">
             <h2>Fotos de producto</h2>
             <p class="muted">Relación de aspecto de TODAS las fotos de producto (miniaturas y ficha). Al subir una imagen se recorta sola a esta proporción.</p>
             <label>Formato</label>
@@ -589,6 +620,71 @@
         render();
       }
 
+      /* ---- Descuentos y envíos ----
+         Los porcentajes se editan en enteros (15) y se guardan en fracción
+         (0.15), que es como los usa el motor de precios. */
+      let comercial = null;
+
+      function renderZonas() {
+        const el = $('#w-zonas');
+        el.innerHTML = comercial.zonas.map((z, i) => `
+          <div style="border:1.5px solid #3a4c40;border-radius:9px;padding:12px;margin-bottom:10px;">
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
+              <strong style="font-size:12.5px;opacity:.7;">Zona ${i + 1}</strong>
+              <span style="flex:1;"></span>
+              ${comercial.zonas.length > 1 ? `<button type="button" data-rmz="${i}" title="Quitar" style="background:transparent;color:#c65b4e;border:1.5px solid #c65b4e;border-radius:7px;padding:4px 10px;cursor:pointer;font-family:inherit;">×</button>` : ''}
+            </div>
+            <div class="grid2">
+              <div><label>Nombre</label><input data-zl="${i}" value="${(z.label || '').replace(/"/g, '&quot;')}" placeholder="CABA y GBA" /></div>
+              <div><label>Costo (ARS)</label><input data-zc="${i}" type="number" min="0" value="${z.costo ?? 0}" /></div>
+              <div><label>Demora</label><input data-zd="${i}" value="${(z.demora || '').replace(/"/g, '&quot;')}" placeholder="1 a 3 días hábiles" /></div>
+              <div style="display:flex;align-items:flex-end;"><label style="margin:0;display:flex;gap:8px;align-items:center;cursor:pointer;"><input type="checkbox" data-zg="${i}" style="width:auto;" ${z.gratisElegible ? 'checked' : ''} /> Entra en el envío gratis</label></div>
+            </div>
+            <label>Identificador interno</label><input data-zi="${i}" value="${(z.id || '').replace(/"/g, '&quot;')}" placeholder="caba_gba" />
+          </div>`).join('') +
+          `<button type="button" id="addZona" style="background:transparent;color:#eef2ec;border:1.5px dashed #3a4c40;border-radius:9px;padding:9px 14px;cursor:pointer;font-family:inherit;font-size:12.5px;">+ Agregar zona</button>`;
+
+        el.querySelectorAll('[data-zl]').forEach((i) => i.addEventListener('input', () => { comercial.zonas[+i.dataset.zl].label = i.value; }));
+        el.querySelectorAll('[data-zc]').forEach((i) => i.addEventListener('input', () => { comercial.zonas[+i.dataset.zc].costo = parseInt(i.value, 10) || 0; }));
+        el.querySelectorAll('[data-zd]').forEach((i) => i.addEventListener('input', () => { comercial.zonas[+i.dataset.zd].demora = i.value; }));
+        el.querySelectorAll('[data-zi]').forEach((i) => i.addEventListener('input', () => { comercial.zonas[+i.dataset.zi].id = i.value.trim(); }));
+        el.querySelectorAll('[data-zg]').forEach((i) => i.addEventListener('change', () => { comercial.zonas[+i.dataset.zg].gratisElegible = i.checked; }));
+        el.querySelectorAll('[data-rmz]').forEach((b) => b.addEventListener('click', () => { comercial.zonas.splice(+b.dataset.rmz, 1); renderZonas(); }));
+        const add = el.querySelector('#addZona');
+        if (add) add.addEventListener('click', () => {
+          comercial.zonas.push({ id: 'zona-' + (comercial.zonas.length + 1), label: '', costo: 0, demora: '', gratisElegible: false });
+          renderZonas();
+        });
+      }
+
+      async function loadComercial() {
+        const { ok, data } = await api({ action: 'getComercial' });
+        if (!ok) return;
+        comercial = data.data;
+        if (!Array.isArray(comercial.zonas)) comercial.zonas = [];
+        $('#c-suscripcion').value = Math.round(comercial.suscripcionOff * 1000) / 10;
+        $('#c-transferencia').value = Math.round(comercial.transferenciaOff * 1000) / 10;
+        $('#c-unidades').value = comercial.envioGratisUnidades;
+        $('#c-zonalabel').value = comercial.zonaGratisLabel || '';
+        renderZonas();
+      }
+
+      $('#guardarComercial').addEventListener('click', async () => {
+        const err = $('#comercialErr');
+        err.textContent = '';
+        const payload = {
+          suscripcionOff: (parseFloat($('#c-suscripcion').value) || 0) / 100,
+          transferenciaOff: (parseFloat($('#c-transferencia').value) || 0) / 100,
+          envioGratisUnidades: parseInt($('#c-unidades').value, 10) || 1,
+          zonaGratisLabel: $('#c-zonalabel').value.trim(),
+          zonas: comercial.zonas.filter((z) => z.id && z.label),
+        };
+        if (!payload.zonas.length) { err.textContent = 'Cada zona necesita nombre e identificador.'; return; }
+        const { ok, data } = await api({ action: 'saveComercial', data: payload });
+        if (ok) { toast('Descuentos y envíos guardados'); reloadPreview(); }
+        else err.textContent = data.error || 'Error';
+      });
+
       // ---- Login ----
       async function tryLogin(p) {
         const r = await fetch('/api/panel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: p, action: 'login' }) });
@@ -600,7 +696,7 @@
       $('#logout').addEventListener('click', () => { sessionStorage.removeItem(KEY); location.reload(); });
       $('#pvReload').addEventListener('click', reloadPreview);
 
-      function showApp() { $('#login').classList.add('hidden'); $('#app').classList.remove('hidden'); loadProductos(); loadSitio(); loadVentas(); }
+      function showApp() { $('#login').classList.add('hidden'); $('#app').classList.remove('hidden'); loadProductos(); loadSitio(); loadComercial(); loadVentas(); }
 
       document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach((x) => x.classList.remove('active')); t.classList.add('active');

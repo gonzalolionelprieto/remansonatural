@@ -8,6 +8,12 @@ import WhatsAppFab from '../components/WhatsAppFab.astro';
 import CartDrawer from '../components/CartDrawer.astro';
 import { site } from '../lib/site';
 import { getHomeConfig } from '../lib/catalog';
+import { aplicarComercial } from '../lib/comercial';
+
+// Descuentos y envíos, desde la base. Se aplica ACÁ, una vez por render:
+// todas las páginas pasan por este layout, así que a partir de este punto
+// pricing.ts y shipping.ts devuelven los valores configurados en el panel.
+const comercial = await aplicarComercial();
 
 // Relación de aspecto de las fotos de producto, elegida desde el panel.
 const ASPECTOS: Record<string, string> = {
@@ -84,6 +90,19 @@ const ogImageUrl = new URL(ogImage, site.url).href;
   </head>
 
   <body>
+    <!--
+      La config comercial para el navegador. Los scripts del cliente (caja de
+      compra, carrito) la leen de acá en vez de traerla compilada, así un
+      cambio de porcentaje en el panel se ve sin volver a buildear. Va primero
+      en el body para que ya esté en el DOM cuando corra cualquier módulo.
+    -->
+    <script
+      type="application/json"
+      data-config-comercial
+      is:inline
+      set:html={JSON.stringify(comercial)}
+    />
+
     <AnnounceBar />
     <Nav />
 

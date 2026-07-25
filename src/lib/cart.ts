@@ -5,7 +5,7 @@
  */
 import {
   calcularPrecio,
-  SUSCRIPCION_OFF,
+  suscripcionOff,
   type Modalidad,
   type Frecuencia,
 } from './pricing';
@@ -35,7 +35,7 @@ const KEY = 'remanso-cart-v2';
 
 // La regla de envío gratis vive en lib/shipping.ts (la comparten ficha,
 // carrito, checkout y el copy del sitio).
-export { ENVIO_GRATIS_UNIDADES, tieneEnvioGratis } from './shipping';
+export { envioGratisUnidades, tieneEnvioGratis } from './shipping';
 
 type Listener = (items: CartItem[]) => void;
 const listeners = new Set<Listener>();
@@ -131,7 +131,7 @@ export const esMixto = (): boolean =>
 export function ahorroSiSuscribe(key: string): number {
   const linea = items.find((i) => keyOf(i) === key);
   if (!linea) return 0;
-  return Math.round((linea.precio * SUSCRIPCION_OFF) / 100) * 100;
+  return Math.round((linea.precio * suscripcionOff()) / 100) * 100;
 }
 
 /** Frecuencias distintas presentes en el carrito. */

@@ -1,6 +1,6 @@
 ---
 /** Drawer del carrito. La UI se rellena en cliente desde lib/cart.ts. */
-import { ZONAS, ZONA_DEFAULT } from '../lib/shipping';
+import { zonas, zonaDefault } from '../lib/shipping';
 import { formatPrice } from '../lib/format';
 import { getCatalog } from '../lib/catalog';
 import { lineaColor } from '../lib/types';
@@ -114,8 +114,8 @@ const sugerencias = catalogo
         <div class="co-field">
           <label for="co-envio">Zona de entrega / Envío</label>
           <select id="co-envio">
-            {ZONAS.map((z) => (
-              <option value={z.id} selected={z.id === ZONA_DEFAULT}>
+            {zonas().map((z) => (
+              <option value={z.id} selected={z.id === zonaDefault()}>
                 {z.costo === 0 ? `${z.label} - Gratis` : `${z.label} - ${formatPrice(z.costo)}`}
               </option>
             ))}
@@ -723,9 +723,9 @@ const sugerencias = catalogo
   import {
     costoEnvio,
     tieneEnvioGratis,
-    ENVIO_GRATIS_UNIDADES,
-    ZONA_GRATIS_LABEL,
-    ZONA_DEFAULT,
+    envioGratisUnidades,
+    zonaGratisLabel,
+    zonaDefault,
   } from '../lib/shipping';
 
   const fmt = (n: number) => `$${n.toLocaleString('es-AR')}`;
@@ -779,7 +779,7 @@ const sugerencias = catalogo
 
   function updateCheckoutSummary() {
     const subtotal = cart.total();
-    const zone = document.querySelector<HTMLSelectElement>('#co-envio')?.value ?? ZONA_DEFAULT;
+    const zone = document.querySelector<HTMLSelectElement>('#co-envio')?.value ?? zonaDefault();
     const shipping = getShippingCost(cart.contextoEnvio(), zone);
     const total = subtotal + shipping;
 
@@ -837,7 +837,7 @@ const sugerencias = catalogo
     const tel = document.querySelector<HTMLInputElement>('#co-tel')?.value.trim();
     const direccion = document.querySelector<HTMLInputElement>('#co-direccion')?.value.trim();
     const localidad = document.querySelector<HTMLInputElement>('#co-localidad')?.value.trim();
-    const metodoEnvio = document.querySelector<HTMLSelectElement>('#co-envio')?.value ?? ZONA_DEFAULT;
+    const metodoEnvio = document.querySelector<HTMLSelectElement>('#co-envio')?.value ?? zonaDefault();
 
     const msg = document.querySelector<HTMLElement>('[data-checkout-msg]');
     if (msg) msg.textContent = '';
@@ -1004,13 +1004,13 @@ const sugerencias = catalogo
       const ctx = cart.contextoEnvio();
       if (tieneEnvioGratis(ctx)) {
         shipMsg.innerHTML = ctx.haySuscripcion
-          ? `🌿 <b>Envío gratis a ${ZONA_GRATIS_LABEL}</b> por tu suscripción`
-          : `🌿 <b>¡Tenés envío gratis a ${ZONA_GRATIS_LABEL}!</b>`;
+          ? `🌿 <b>Envío gratis a ${zonaGratisLabel()}</b> por tu suscripción`
+          : `🌿 <b>¡Tenés envío gratis a ${zonaGratisLabel()}!</b>`;
         shipFill.style.width = '100%';
       } else {
-        const falta = ENVIO_GRATIS_UNIDADES - ctx.unidades;
-        shipMsg.innerHTML = `Sumá <b>${falta} producto${falta === 1 ? '' : 's'}</b> más y el envío a ${ZONA_GRATIS_LABEL} es gratis`;
-        shipFill.style.width = `${Math.min(100, (ctx.unidades / ENVIO_GRATIS_UNIDADES) * 100)}%`;
+        const falta = envioGratisUnidades() - ctx.unidades;
+        shipMsg.innerHTML = `Sumá <b>${falta} producto${falta === 1 ? '' : 's'}</b> más y el envío a ${zonaGratisLabel()} es gratis`;
+        shipFill.style.width = `${Math.min(100, (ctx.unidades / envioGratisUnidades()) * 100)}%`;
       }
     }
 

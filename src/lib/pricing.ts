@@ -14,29 +14,65 @@ export type Modalidad = 'unica' | 'suscripcion';
    o por suscribirse. La regla vive en lib/shipping.ts. */
 
 /**
- * Descuento por suscribirse. Es 15% y NO 20% a propósito: la suscripción
- * además lleva envío gratis siempre, sin mínimo. Sumado, el beneficio real
- * es mayor que el 20% pelado, y se comunica entero ("15% + envío gratis")
- * en vez de esconder la mitad.
+ * Valores por defecto. Son el punto de partida y el fallback: si Supabase no
+ * responde o todavía no se configuró nada, la tienda sigue vendiendo con
+ * estos números en vez de romperse.
+ *
+ * Los de verdad se editan desde el panel (tabla config_comercial) y llegan
+ * acá por `setConfigPrecios`.
+ *
+ * Sobre el 18,5% de transferencia: no es generosidad, es lo que cuesta
+ * cobrar con tarjeta. Entre la comisión de Mercado Pago y las 3 cuotas sin
+ * interés —que en Argentina las financia el vendedor— la venta con tarjeta
+ * deja cerca de 18 puntos menos.
  */
-export const SUSCRIPCION_OFF = 0.15;
+export const DEFAULTS_PRECIOS = {
+  suscripcionOff: 0.15,
+  transferenciaOff: 0.185,
+};
+
+export type ConfigPrecios = typeof DEFAULTS_PRECIOS;
+
+let cfg: ConfigPrecios | null = null;
 
 /**
- * Descuento por pagar con transferencia.
- *
- * El 18,5% no es generosidad: es lo que cuesta cobrar con tarjeta. Entre la
- * comisión de Mercado Pago y las 3 cuotas sin interés —que en Argentina las
- * financia el vendedor, no el banco— la venta con tarjeta deja cerca de 18
- * puntos menos. El precio de lista absorbe ese costo y quien paga por
- * transferencia no lo paga.
- *
- * Con el extracto a $27.000 da exactamente $22.000.
- *
- * Es informativo: se comunica en la ficha pero se coordina fuera de Mercado
- * Pago. Y no compite con la suscripción, porque una suscripción necesita
- * débito automático con tarjeta: son excluyentes por naturaleza.
+ * En el navegador la config llega embebida en el HTML (BaseLayout la escribe
+ * como JSON). Se lee la primera vez que alguien la pide, así ningún script
+ * depende del orden en que se ejecutan los módulos.
  */
-export const TRANSFERENCIA_OFF = 0.185;
+function leerConfig(): ConfigPrecios {
+  if (cfg) return cfg;
+  if (typeof document !== 'undefined') {
+    const el = document.querySelector('[data-config-comercial]');
+    if (el?.textContent) {
+      try {
+        const raw = JSON.parse(el.textContent) as Partial<ConfigPrecios>;
+        cfg = { ...DEFAULTS_PRECIOS, ...raw };
+        return cfg;
+      } catch {
+        /* config rota: seguimos con los defaults */
+      }
+    }
+  }
+  cfg = { ...DEFAULTS_PRECIOS };
+  return cfg;
+}
+
+/** La usa el servidor (BaseLayout y el checkout) con lo que hay en la base. */
+export function setConfigPrecios(p: Partial<ConfigPrecios> | null | undefined): void {
+  cfg = { ...DEFAULTS_PRECIOS, ...(p ?? {}) };
+}
+
+/** Descuento por suscribirse. */
+export const suscripcionOff = (): number => leerConfig().suscripcionOff;
+
+/**
+ * Descuento por pagar con transferencia. Es informativo: se comunica en la
+ * ficha pero se coordina fuera de Mercado Pago. No compite con la
+ * suscripción, porque una suscripción necesita débito automático con
+ * tarjeta: son excluyentes por naturaleza.
+ */
+export const transferenciaOff = (): number => leerConfig().transferenciaOff;
 
 /** Frecuencias de suscripción ofrecidas (en días). La primera es la default. */
 export const FRECUENCIAS = [30, 45, 60] as const;
@@ -98,7 +134,7 @@ export function calcularPrecio({
   qty,
 }: PrecioInput): PrecioCalculado {
   const cantidad = Math.max(1, Math.floor(qty) || 1);
-  const off = modalidad === 'suscripcion' ? SUSCRIPCION_OFF : 0;
+  const off = modalidad === 'suscripcion' ? suscripcionOff() : 0;
   const origen: PrecioCalculado['origen'] =
     off === 0 ? 'ninguno' : 'suscripcion';
 
@@ -125,7 +161,7 @@ export function muestraTransferencia(p: PrecioCalculado): boolean {
 
 /** Precio pagando por transferencia (sólo tiene sentido si `muestraTransferencia`). */
 export function precioTransferencia(precio: number): number {
-  return redondear(precio * (1 - TRANSFERENCIA_OFF));
+  return redondear(precio * (1 - transferenciaOff()));
 }
 
 /**
