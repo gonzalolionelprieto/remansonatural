@@ -58,12 +58,24 @@
         -webkit-text-fill-color: #eef2ec !important;
         caret-color: #eef2ec;
       }
+      /* La regla de arriba pone appearance:none para los inputs de texto, y
+         eso también apaga el dibujo nativo del checkbox. Sumado a border:none
+         quedaban literalmente invisibles: se veía la etiqueta y nada para
+         tildar. Acá se restaura el control nativo y se le da tamaño. */
       input[type="checkbox"] {
+        appearance: auto;
+        -webkit-appearance: checkbox;
         display: inline-block;
-        width: auto;
+        width: 18px;
+        height: 18px;
+        min-width: 18px;
+        flex: none;
+        padding: 0;
+        margin: 0;
         accent-color: #6b8469;
         background: transparent !important;
         border: none !important;
+        cursor: pointer;
       }
       input:focus, select:focus, textarea:focus {
         outline: none;
@@ -311,8 +323,8 @@
                 <input id="c-transferencia" type="number" min="0" max="99" step="0.5" />
               </div>
               <div>
-                <label>Envío gratis desde (unidades)</label>
-                <input id="c-unidades" type="number" min="1" step="1" />
+                <label>Envío gratis desde (monto en $)</label>
+                <input id="c-unidades" type="number" min="0" step="1000" />
               </div>
               <div>
                 <label>Cómo se llama la zona con envío gratis</label>
@@ -664,7 +676,7 @@
         if (!Array.isArray(comercial.zonas)) comercial.zonas = [];
         $('#c-suscripcion').value = Math.round(comercial.suscripcionOff * 1000) / 10;
         $('#c-transferencia').value = Math.round(comercial.transferenciaOff * 1000) / 10;
-        $('#c-unidades').value = comercial.envioGratisUnidades;
+        $('#c-unidades').value = comercial.envioGratisDesde;
         $('#c-zonalabel').value = comercial.zonaGratisLabel || '';
         renderZonas();
       }
@@ -675,7 +687,7 @@
         const payload = {
           suscripcionOff: (parseFloat($('#c-suscripcion').value) || 0) / 100,
           transferenciaOff: (parseFloat($('#c-transferencia').value) || 0) / 100,
-          envioGratisUnidades: parseInt($('#c-unidades').value, 10) || 1,
+          envioGratisDesde: parseInt($('#c-unidades').value, 10) || 0,
           zonaGratisLabel: $('#c-zonalabel').value.trim(),
           zonas: comercial.zonas.filter((z) => z.id && z.label),
         };

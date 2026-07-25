@@ -27,8 +27,8 @@ export interface ZonaEnvio {
 
 export interface ConfigEnvios {
   zonas: ZonaEnvio[];
-  /** Unidades a partir de las cuales el envío es gratis. */
-  envioGratisUnidades: number;
+  /** Monto del pedido a partir del cual el envío es gratis. */
+  envioGratisDesde: number;
   /** Cómo se nombra la cobertura de la promo en el copy del sitio. */
   zonaGratisLabel: string;
 }
@@ -39,9 +39,15 @@ export interface ConfigEnvios {
  * despachar a ese mismo CP. Quien está en Zona Sur ya tiene la opción de
  * retiro en persona a $0.
  *
- * El envío gratis se gana por CANTIDAD y no por monto: con umbral en pesos
- * ($80.000) y productos de ~$22.000 hacían falta 5 unidades, así que la
- * promesa estaba escrita en toda la tienda y no la cobraba nadie.
+ * El envío se cobra SIEMPRE, con suscripción o sin ella, y se libera recién
+ * a partir de un monto. Es lo que hacen las dos marcas líderes del rubro, y
+ * la razón es doble: el envío gratis en la suscripción se comía casi todo su
+ * margen, y al no cobrarlo en un caso y sí en otro había que explicar en cada
+ * pantalla "mirá el total, no el precio del producto". Con la misma regla
+ * para todos, el descuento se compara solo.
+ *
+ * El umbral está en pesos y no en unidades: alcanzable (dos frascos) y no
+ * depende de cuántos productos distintos tenga el pedido.
  */
 export const DEFAULTS_ENVIOS: ConfigEnvios = {
   zonas: [
@@ -49,7 +55,7 @@ export const DEFAULTS_ENVIOS: ConfigEnvios = {
     { id: 'caba_gba', label: 'CABA y GBA', costo: 6500, demora: '1 a 3 días hábiles', gratisElegible: true },
     { id: 'interior', label: 'Interior del país', costo: 12000, demora: '3 a 7 días hábiles', gratisElegible: false },
   ],
-  envioGratisUnidades: 2,
+  envioGratisDesde: 50000,
   zonaGratisLabel: 'CABA y GBA',
 };
 
@@ -79,9 +85,9 @@ function normalizar(p: Partial<ConfigEnvios>): ConfigEnvios {
   const zonas = Array.isArray(p.zonas) && p.zonas.length > 0 ? p.zonas : DEFAULTS_ENVIOS.zonas;
   return {
     zonas,
-    envioGratisUnidades: Number(p.envioGratisUnidades) > 0
-      ? Number(p.envioGratisUnidades)
-      : DEFAULTS_ENVIOS.envioGratisUnidades,
+    envioGratisDesde: Number(p.envioGratisDesde) > 0
+      ? Number(p.envioGratisDesde)
+      : DEFAULTS_ENVIOS.envioGratisDesde,
     zonaGratisLabel: p.zonaGratisLabel || DEFAULTS_ENVIOS.zonaGratisLabel,
   };
 }
@@ -92,7 +98,7 @@ export function setConfigEnvios(p: Partial<ConfigEnvios> | null | undefined): vo
 }
 
 export const zonas = (): ZonaEnvio[] => leerConfig().zonas;
-export const envioGratisUnidades = (): number => leerConfig().envioGratisUnidades;
+export const envioGratisDesde = (): number => leerConfig().envioGratisDesde;
 export const zonaGratisLabel = (): string => leerConfig().zonaGratisLabel;
 
 /** La zona preseleccionada: la primera que tiene costo (no el retiro). */
@@ -100,22 +106,19 @@ export const zonaDefault = (): string =>
   zonas().find((z) => z.costo > 0)?.id ?? zonas()[0].id;
 
 export interface ContextoEnvio {
-  /** Total de unidades en el pedido. */
-  unidades: number;
-  /** Si hay al menos una suscripción: el envío es gratis desde 1 unidad. */
-  haySuscripcion: boolean;
+  /** Total del pedido, con los descuentos ya aplicados. */
+  subtotal: number;
 }
 
 /**
- * Si el pedido CALIFICA para el envío gratis por su composición. La zona se
- * chequea aparte: en la ficha todavía no sabemos a dónde va.
+ * Si el pedido CALIFICA para el envío gratis por su monto. La zona se chequea
+ * aparte: en la ficha todavía no sabemos a dónde va.
  *
- * La suscripción califica desde una sola unidad. Ese es el eje en el que se
- * diferencia de comprar suelto, y lo que evita que las dos ofertas compitan
- * por lo mismo.
+ * La modalidad NO entra en la cuenta: el envío se cobra igual con suscripción
+ * o sin ella.
  */
-export function tieneEnvioGratis({ unidades, haySuscripcion }: ContextoEnvio): boolean {
-  return haySuscripcion || unidades >= envioGratisUnidades();
+export function tieneEnvioGratis({ subtotal }: ContextoEnvio): boolean {
+  return subtotal >= envioGratisDesde();
 }
 
 export function zonaPorId(id: string): ZonaEnvio {

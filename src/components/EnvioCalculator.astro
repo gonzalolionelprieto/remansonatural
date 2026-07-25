@@ -10,9 +10,10 @@
 import {
   zonas,
   zonaDefault,
-  envioGratisUnidades,
+  envioGratisDesde,
   zonaGratisLabel,
 } from '../lib/shipping';
+import { formatPrice } from '../lib/format';
 ---
 
 <div class="envio" data-envio>
@@ -30,9 +31,8 @@ import {
 
   <p class="envio-result" data-envio-result role="status" aria-live="polite"></p>
   <p class="envio-nota">
-    Gratis a {zonaGratisLabel()} llevando {envioGratisUnidades()} productos o más,
-    y siempre gratis si te suscribís, aunque lleves uno solo. Al interior se
-    cobra siempre.
+    Gratis a {zonaGratisLabel()} en pedidos desde {formatPrice(envioGratisDesde())}.
+    Al interior se cobra siempre.
   </p>
 </div>
 

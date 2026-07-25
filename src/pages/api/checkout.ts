@@ -172,15 +172,9 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Subtotal calculado con los precios REALES de la base.
   const subtotal = items.reduce((sum, i) => sum + i.precio * i.qty, 0);
 
-  // El envío gratis se gana por cantidad o por suscribirse, no por monto.
-  // Se recalcula acá con los ítems ya validados contra la base.
-  const shippingCost = costoEnvio(
-    {
-      unidades: items.reduce((s, i) => s + i.qty, 0),
-      haySuscripcion: items.some((i) => i.modalidad === 'suscripcion'),
-    },
-    cliente.metodoEnvio
-  );
+  // El envío se cobra siempre y se libera por monto, con suscripción o sin
+  // ella. Se recalcula acá sobre el subtotal ya validado contra la base.
+  const shippingCost = costoEnvio({ subtotal }, cliente.metodoEnvio);
 
   const total = subtotal + shippingCost;
 

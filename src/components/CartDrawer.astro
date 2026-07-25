@@ -723,7 +723,7 @@ const sugerencias = catalogo
   import {
     costoEnvio,
     tieneEnvioGratis,
-    envioGratisUnidades,
+    envioGratisDesde,
     zonaGratisLabel,
     zonaDefault,
   } from '../lib/shipping';
@@ -998,19 +998,16 @@ const sugerencias = catalogo
     const shipFill = document.querySelector<HTMLElement>('[data-ship-fill]');
     if (ship && shipMsg && shipFill) {
       ship.hidden = n === 0 || currentStep === 2;
-      // El progreso se mide en UNIDADES, no en pesos: "te falta 1 producto"
-      // es una acción concreta, "te faltan $40.400" es una cuenta que la
-      // persona tiene que hacer sola para saber qué agregar.
+      // El envío depende del monto del pedido, no de la modalidad: con
+      // suscripción o sin ella se cobra igual hasta el mínimo.
       const ctx = cart.contextoEnvio();
       if (tieneEnvioGratis(ctx)) {
-        shipMsg.innerHTML = ctx.haySuscripcion
-          ? `🌿 <b>Envío gratis a ${zonaGratisLabel()}</b> por tu suscripción`
-          : `🌿 <b>¡Tenés envío gratis a ${zonaGratisLabel()}!</b>`;
+        shipMsg.innerHTML = `🌿 <b>¡Tenés envío gratis a ${zonaGratisLabel()}!</b>`;
         shipFill.style.width = '100%';
       } else {
-        const falta = envioGratisUnidades() - ctx.unidades;
-        shipMsg.innerHTML = `Sumá <b>${falta} producto${falta === 1 ? '' : 's'}</b> más y el envío a ${zonaGratisLabel()} es gratis`;
-        shipFill.style.width = `${Math.min(100, (ctx.unidades / envioGratisUnidades()) * 100)}%`;
+        const falta = envioGratisDesde() - ctx.subtotal;
+        shipMsg.innerHTML = `Sumá <b>${fmt(falta)}</b> y el envío a ${zonaGratisLabel()} es gratis`;
+        shipFill.style.width = `${Math.min(100, (ctx.subtotal / envioGratisDesde()) * 100)}%`;
       }
     }
 

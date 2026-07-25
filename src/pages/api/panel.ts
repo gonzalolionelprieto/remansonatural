@@ -147,8 +147,8 @@ export const POST: APIRoute = async ({ request }) => {
       if (!Array.isArray(d.zonas) || d.zonas.length === 0) {
         return json({ error: 'Tiene que haber al menos una zona de envío.' }, 400);
       }
-      if (!(Number(d.envioGratisUnidades) > 0)) {
-        return json({ error: 'Las unidades para el envío gratis tienen que ser 1 o más.' }, 400);
+      if (!(Number(d.envioGratisDesde) > 0)) {
+        return json({ error: 'El monto para el envío gratis tiene que ser mayor a 0.' }, 400);
       }
 
       const { error } = await admin

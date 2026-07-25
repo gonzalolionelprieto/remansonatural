@@ -35,7 +35,7 @@ const KEY = 'remanso-cart-v2';
 
 // La regla de envío gratis vive en lib/shipping.ts (la comparten ficha,
 // carrito, checkout y el copy del sitio).
-export { envioGratisUnidades, tieneEnvioGratis } from './shipping';
+export { envioGratisDesde, tieneEnvioGratis } from './shipping';
 
 type Listener = (items: CartItem[]) => void;
 const listeners = new Set<Listener>();
@@ -143,11 +143,12 @@ export const frecuenciasEnCarrito = (): number[] => [
   ),
 ];
 
-/** Contexto que necesita lib/shipping para decidir si el envío es gratis. */
-export const contextoEnvio = () => ({
-  unidades: count(),
-  haySuscripcion: tieneSuscripcion(),
-});
+/**
+ * Contexto que necesita lib/shipping para decidir si el envío es gratis.
+ * Sólo el monto: la modalidad no influye, el envío se cobra igual con
+ * suscripción o sin ella.
+ */
+export const contextoEnvio = () => ({ subtotal: total() });
 
 /** Tope de cantidad: el stock real del producto (si lo conocemos), si no 99. */
 function maxFor(stock: number): number {

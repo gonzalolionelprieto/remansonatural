@@ -4,14 +4,15 @@
  * respetan reduced-motion (se quedan quietos, mostrando el primero).
  */
 import { suscripcionOff, transferenciaOff, porcentajeOff } from '../lib/pricing';
-import { envioGratisUnidades, zonaGratisLabel } from '../lib/shipping';
+import { envioGratisDesde, zonaGratisLabel } from '../lib/shipping';
+import { formatPrice } from '../lib/format';
 
 // Los números salen de pricing.ts y shipping.ts: si mañana cambia un
 // descuento, la barra no puede quedar prometiendo el viejo.
 const messages = [
   'Envíos a todo el país · 3 cuotas sin interés',
-  `Envío gratis a ${zonaGratisLabel()} llevando ${envioGratisUnidades()} o más`,
-  `Suscribite: ${porcentajeOff(suscripcionOff())}% off + envío gratis siempre`,
+  `Envío gratis a ${zonaGratisLabel()} desde ${formatPrice(envioGratisDesde())}`,
+  `Suscribite y ahorrá ${porcentajeOff(suscripcionOff())}% en cada envío`,
   `${porcentajeOff(transferenciaOff())}% off pagando por transferencia`,
 ];
 ---
@@ -24,7 +25,10 @@ const messages = [
   </div>
 </div>
 
-<style define:vars={{ count: 3 }}>
+<!-- `count` sale de la cantidad real de mensajes. Estaba fijo en 3 y había 4:
+     el ciclo duraba 12s para 16s de contenido, así que el último mensaje se
+     superponía con el primero. Si se agrega o saca uno, se ajusta solo. -->
+<style define:vars={{ count: messages.length }}>
   .announce {
     background: var(--verde);
     color: var(--on-dark);
@@ -55,6 +59,9 @@ const messages = [
     animation-delay: calc(var(--i) * 4s);
   }
 
+  /* La ventana visible entra holgada dentro de un turno (100/count %): con
+     4 mensajes el turno es 25% y acá se apaga en 24%, así nunca se solapan
+     dos textos. */
   @keyframes announce-rotate {
     0%,
     2% {
@@ -62,11 +69,11 @@ const messages = [
       transform: translateY(60%);
     }
     6%,
-    30% {
+    19% {
       opacity: 1;
       transform: translateY(0);
     }
-    34%,
+    23%,
     100% {
       opacity: 0;
       transform: translateY(-60%);

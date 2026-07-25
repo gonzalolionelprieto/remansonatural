@@ -24,7 +24,7 @@ import {
 import {
   envioMin,
   envioMax,
-  envioGratisUnidades,
+  envioGratisDesde,
   zonaGratisLabel,
 } from '../lib/shipping';
 
@@ -84,16 +84,14 @@ const transferencia = precioTransferencia(precio);
                decía que el precio no cambia, y con inflación eso es falso:
                si aumenta la lista, la suscripción también aumenta. Lo que se
                mantiene es el porcentaje. -->
+          <!-- Habla del DESCUENTO, no del precio: si aumenta la lista, la
+               suscripción también. Lo que se mantiene es el porcentaje. -->
           <span class="bb-save">
             Tu precio de socio: {porcentajeOff(suscripcionOff())}% menos en cada
             envío, mientras seas socio
           </span>
-          <!-- El número que hay que comparar es el FINAL. Contra el precio de
-               transferencia ($22.000 + envío), la suscripción sale más barata
-               aunque el precio del frasco sea más alto: gana por el envío. Si
-               mostráramos sólo el precio del producto, se leería al revés. -->
           <span class="bb-final">
-            Te llega por <b>{formatPrice(sub.unitario)}</b>, envío incluido
+            Ahorrás <b>{formatPrice(precio - sub.unitario)}</b> por envío
           </span>
 
           <span class="bb-fields">
@@ -107,7 +105,6 @@ const transferencia = precioTransferencia(precio);
 
           <ul class="bb-perks" role="list">
             <li>El descuento no se vence: se aplica en cada envío</li>
-            <li>Envío gratis a {zonaGratisLabel()}, aunque lleves una sola</li>
             <li>Salteás un envío o cancelás cuando quieras, sin permanencia</li>
             <li>Te llega solo, sin que tengas que acordarte</li>
             <li>Se cobra con tarjeta, en débito automático</li>
@@ -172,19 +169,14 @@ const transferencia = precioTransferencia(precio);
     <li data-note-cuotas hidden={suscribible}>
       3 cuotas sin interés de {cuota(unica.unitario, 3)}
     </li>
-    <li class="ok" data-note-envio hidden={!suscribible}>
-      Envío gratis a {zonaGratisLabel()}, aunque lleves una sola
-    </li>
+    <li class="ok" data-note-envio hidden>Envío gratis: ya superaste el mínimo</li>
     <!-- El costo del envío se dice acá, antes de agregar al carrito. Que
          aparezca recién al pagar es la forma más rápida de perder a alguien
-         que compra por primera vez. -->
-    <li data-note-envio-falta hidden={suscribible}>
-      {!suscribible && (
-        <Fragment>
-          Envío de {formatPrice(envioMin())} a {formatPrice(envioMax())} según zona ·
-          gratis a {zonaGratisLabel()} llevando {envioGratisUnidades()} o más
-        </Fragment>
-      )}
+         que compra por primera vez. Se cobra igual con suscripción o sin
+         ella, así que la nota no depende de la modalidad. -->
+    <li data-note-envio-falta>
+      Envío de {formatPrice(envioMin())} a {formatPrice(envioMax())} según zona ·
+      gratis a {zonaGratisLabel()} desde {formatPrice(envioGratisDesde())}
     </li>
   </ul>
 
@@ -209,7 +201,7 @@ const transferencia = precioTransferencia(precio);
   import {
     envioMin,
     envioMax,
-    envioGratisUnidades,
+    envioGratisDesde,
     zonaGratisLabel,
     tieneEnvioGratis,
   } from '../lib/shipping';
@@ -304,25 +296,18 @@ const transferencia = precioTransferencia(precio);
           noteCuotas.textContent = `3 cuotas sin interés de ${cuota(p.total, 3)}`;
         }
 
-        // La suscripción tiene envío gratis desde una sola unidad; la compra
-        // única lo gana llevando 2 o más. Mientras no lo tenga, decimos
-        // cuánto sale y qué le falta para no pagarlo.
-        const gratis = tieneEnvioGratis({
-          unidades: cantidad,
-          haySuscripcion: m === 'suscripcion',
-        });
+        // El envío se cobra igual con suscripción o sin ella: sólo depende
+        // del monto del pedido. Se dice acá, antes de agregar al carrito.
+        const gratis = tieneEnvioGratis({ subtotal: p.total });
         if (noteEnvio) {
           noteEnvio.hidden = !gratis;
-          noteEnvio.textContent =
-            m === 'suscripcion'
-              ? `Envío gratis a ${zonaGratisLabel()}, aunque lleves una sola`
-              : `Envío gratis a ${zonaGratisLabel()} por llevar más de una`;
+          noteEnvio.textContent = `Envío gratis a ${zonaGratisLabel()}: ya superaste el mínimo`;
         }
         if (noteFalta) {
           noteFalta.hidden = gratis;
           if (!gratis) {
-            const falta = envioGratisUnidades() - cantidad;
-            noteFalta.innerHTML = `Envío de ${formatPrice(envioMin())} a ${formatPrice(envioMax())} según zona · sumá <b>${falta} más</b> y es gratis a ${zonaGratisLabel()}`;
+            const falta = envioGratisDesde() - p.total;
+            noteFalta.innerHTML = `Envío de ${formatPrice(envioMin())} a ${formatPrice(envioMax())} según zona · sumá <b>${formatPrice(falta)}</b> y es gratis a ${zonaGratisLabel()}`;
           }
         }
 

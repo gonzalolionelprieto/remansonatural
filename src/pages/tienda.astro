@@ -3,7 +3,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Catalog from '../components/Catalog.astro';
 import { getCatalog } from '../lib/catalog';
 import { suscripcionOff, transferenciaOff, porcentajeOff } from '../lib/pricing';
-import { envioGratisUnidades, zonaGratisLabel } from '../lib/shipping';
+import { envioGratisDesde, zonaGratisLabel } from '../lib/shipping';
+import { formatPrice } from '../lib/format';
 
 // SSR: el catálogo lee de Supabase (con fallback local), así los productos
 // que cargás/editás en el panel aparecen sin reconstruir.
@@ -13,12 +14,12 @@ const products = await getCatalog();
 
 const reassurance = [
   {
-    t: 'Envío gratis',
-    s: `A ${zonaGratisLabel()} llevando ${envioGratisUnidades()} o más`,
+    t: `${porcentajeOff(suscripcionOff())}% off`,
+    s: 'Suscribiéndote, en cada envío',
   },
   {
-    t: `${porcentajeOff(suscripcionOff())}% off + envío gratis`,
-    s: 'Suscribiéndote, aunque lleves una',
+    t: 'Envío gratis',
+    s: `A ${zonaGratisLabel()} desde ${formatPrice(envioGratisDesde())}`,
   },
   { t: `${porcentajeOff(transferenciaOff())}% off`, s: 'Pagando por transferencia' },
   { t: '3 cuotas sin interés', s: 'Con tarjeta' },

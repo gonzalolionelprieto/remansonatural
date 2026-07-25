@@ -21,14 +21,14 @@ export type Modalidad = 'unica' | 'suscripcion';
  * Los de verdad se editan desde el panel (tabla config_comercial) y llegan
  * acá por `setConfigPrecios`.
  *
- * Sobre el 18,5% de transferencia: no es generosidad, es lo que cuesta
- * cobrar con tarjeta. Entre la comisión de Mercado Pago y las 3 cuotas sin
- * interés —que en Argentina las financia el vendedor— la venta con tarjeta
- * deja cerca de 18 puntos menos.
+ * La suscripción es el descuento más grande de la tienda y tiene que
+ * seguir siéndolo: es la venta que asegura recurrencia y amortiza el costo
+ * de captación en varios envíos. Como el envío se cobra igual en todos los
+ * casos, los tres precios se comparan directo, sin explicaciones.
  */
 export const DEFAULTS_PRECIOS = {
-  suscripcionOff: 0.15,
-  transferenciaOff: 0.185,
+  suscripcionOff: 0.2,
+  transferenciaOff: 0.1,
 };
 
 export type ConfigPrecios = typeof DEFAULTS_PRECIOS;
