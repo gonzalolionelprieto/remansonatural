@@ -49,9 +49,10 @@ const productos = defineCollection({
         })
       )
       .default([]),
-    // Un cristal o un kit de regalo no se recompran cada 30 días: ahí la
-    // ficha muestra sólo compra única.
-    suscribible: z.boolean().default(true),
+    // La suscripción es para productos SELECCIONADOS: los que realmente se
+    // consumen mes a mes. Opt-in, para que haya que decidirlo producto por
+    // producto en vez de ofrecerla donde no tiene sentido.
+    suscribible: z.boolean().default(false),
     // Etiqueta sobre la galería ("Más vendido", "Nuevo").
     badge: z.string().optional(),
     reseñas: z

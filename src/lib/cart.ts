@@ -5,6 +5,7 @@
  */
 import {
   calcularPrecio,
+  SUSCRIPCION_OFF,
   type Modalidad,
   type Frecuencia,
 } from './pricing';
@@ -123,6 +124,16 @@ export const esMixto = (): boolean =>
   items.some((i) => i.modalidad === 'suscripcion') &&
   items.some((i) => i.modalidad === 'unica');
 
+/**
+ * Cuánto ahorraría una línea si pasara a suscripción. Es el número que hace
+ * concreta la pregunta del carrito: sin él, "suscribite" es una abstracción.
+ */
+export function ahorroSiSuscribe(key: string): number {
+  const linea = items.find((i) => keyOf(i) === key);
+  if (!linea) return 0;
+  return Math.round((linea.precio * SUSCRIPCION_OFF) / 100) * 100;
+}
+
 /** Frecuencias distintas presentes en el carrito. */
 export const frecuenciasEnCarrito = (): number[] => [
   ...new Set(
@@ -143,18 +154,64 @@ function maxFor(stock: number): number {
   return stock > 0 ? Math.min(99, stock) : 99;
 }
 
-export function add(item: Omit<CartItem, 'qty'>, qty = 1): void {
-  const key = lineKey(item.slug, item.modalidad);
+export type ResultadoAdd = 'ok' | 'suscripcion-ocupada';
+
+/**
+ * Una sola suscripción por carrito.
+ *
+ * Es una restricción, no una limitación técnica: evita de raíz que alguien
+ * termine con tres débitos automáticos de frecuencias distintas sin haberlo
+ * entendido. Si ya hay una, el producto entra igual pero como compra única —
+ * nunca se rechaza el agregado, que sería perder la venta por una regla
+ * nuestra. La UI avisa qué pasó.
+ */
+export function add(item: Omit<CartItem, 'qty'>, qty = 1): ResultadoAdd {
+  let resultado: ResultadoAdd = 'ok';
+  let modalidad = item.modalidad;
+
+  if (modalidad === 'suscripcion') {
+    const yaHay = items.find(
+      (i) => i.modalidad === 'suscripcion' && i.slug !== item.slug
+    );
+    if (yaHay) {
+      modalidad = 'unica';
+      resultado = 'suscripcion-ocupada';
+    }
+  }
+
+  const entrada: Omit<CartItem, 'qty'> = { ...item, modalidad };
+  const key = lineKey(entrada.slug, modalidad);
   const found = items.find((i) => keyOf(i) === key);
-  const max = maxFor(item.stock);
+  const max = maxFor(entrada.stock);
   if (found) {
-    found.stock = item.stock; // refrescar con el stock más reciente
+    found.stock = entrada.stock; // refrescar con el stock más reciente
     found.qty = Math.min(max, found.qty + qty);
-    found.frecuencia = item.frecuencia ?? found.frecuencia;
+    found.frecuencia = entrada.frecuencia ?? found.frecuencia;
   } else {
-    items.push({ ...item, qty: Math.min(max, qty) });
+    items.push({ ...entrada, qty: Math.min(max, qty) });
   }
   persist();
+  return resultado;
+}
+
+/**
+ * Pasa una línea de compra única a suscripción (el "doble upsell" del
+ * carrito). Sólo si no hay otra suscripción activa.
+ */
+export function convertirASuscripcion(key: string, frecuencia: Frecuencia = 30): boolean {
+  const linea = items.find((i) => keyOf(i) === key);
+  if (!linea || linea.modalidad === 'suscripcion') return false;
+  if (items.some((i) => i.modalidad === 'suscripcion')) return false;
+
+  // Al cambiar de modalidad cambia la clave: si ya existía una línea de
+  // suscripción del mismo producto habría que fusionarlas, pero eso no puede
+  // pasar acá porque recién descartamos que exista alguna suscripción.
+  linea.modalidad = 'suscripcion';
+  linea.frecuencia = frecuencia;
+  // Una suscripción es de a una unidad por envío.
+  linea.qty = 1;
+  persist();
+  return true;
 }
 
 export function setQty(key: string, qty: number): void {

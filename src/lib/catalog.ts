@@ -35,9 +35,9 @@ function rowToProduct(r: Record<string, any>): Product {
       verificada: x.verificada === true,
     })),
     ingredientesDestacados: r.ingredientes_destacados ?? [],
-    // `?? true`: las filas creadas antes de la migración no traen la columna
-    // en el payload cacheado, y el default del negocio es que sí se suscribe.
-    suscribible: r.suscribible ?? true,
+    // La suscripción es sólo para productos seleccionados: si la fila no lo
+    // dice explícitamente, no se ofrece.
+    suscribible: r.suscribible === true,
     badge: r.badge ?? undefined,
   };
 }

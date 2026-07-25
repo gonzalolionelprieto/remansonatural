@@ -63,6 +63,11 @@ const transferencia = precioTransferencia(precio);
         />
         <span class="bb-mark" aria-hidden="true"></span>
         <span class="bb-body">
+          <!-- Etiqueta de plan, no de oferta. Un "-15% OFF" en rojo pone a la
+               suscripción a competir con las promos y la abarata; lo que
+               queremos es que se lea como pertenecer a algo. -->
+          <span class="bb-plan">Plan de socio</span>
+
           <span class="bb-row">
             <span class="bb-title">
               Que no se te corte el ritual
@@ -76,7 +81,8 @@ const transferencia = precioTransferencia(precio);
           <!-- El ahorro va acá, pegado al precio que lo produce. Arriba de la
                foto era una promesa suelta que no se podía verificar. -->
           <span class="bb-save">
-            {porcentajeOff(SUSCRIPCION_OFF)}% off en cada envío + envío gratis
+            Tu precio de socio: {porcentajeOff(SUSCRIPCION_OFF)}% menos en cada
+            envío, todo el año
           </span>
           <!-- El número que hay que comparar es el FINAL. Contra el precio de
                transferencia ($22.000 + envío), la suscripción sale más barata
@@ -96,6 +102,7 @@ const transferencia = precioTransferencia(precio);
           </span>
 
           <ul class="bb-perks" role="list">
+            <li>No es una promo que se vence: es tu precio, todo el año</li>
             <li>Envío gratis a {ZONA_GRATIS_LABEL}, aunque lleves una sola</li>
             <li>Salteás un envío o cancelás cuando quieras, sin permanencia</li>
             <li>Te llega solo, sin que tengas que acordarte</li>
@@ -491,6 +498,20 @@ const transferencia = precioTransferencia(precio);
     font-weight: 600;
     color: var(--verde);
     font-variation-settings: 'opsz' 40;
+  }
+
+  /* Etiqueta de plan: verde de marca, no el rojo/naranja de una liquidación. */
+  .bb-plan {
+    display: inline-block;
+    margin-bottom: 0.5rem;
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--crema);
+    background: var(--verde);
+    border-radius: var(--r-pill);
+    padding: 0.24rem 0.7rem;
   }
 
   .bb-save {

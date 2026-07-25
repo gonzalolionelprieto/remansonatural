@@ -247,7 +247,7 @@ tachado cuando hay descuento.
 | Campo | Tipo | Para qué |
 |---|---|---|
 | `ingredientes_destacados` | jsonb | cards de «Por qué funciona»: `[{nombre, texto, imagen}]` |
-| `suscribible` | boolean, default true | oculta la opción de suscripción donde no tiene sentido |
+| `suscribible` | boolean, **default false** | la suscripción es para productos seleccionados, no para todo el catálogo. Opt-in, para que haya que decidirlo producto por producto |
 | `badge` | text | «Más vendido», «Nuevo», editable desde el panel |
 
 Migración idempotente con `add column if not exists`, siguiendo el patrón que
@@ -258,7 +258,33 @@ En el panel: editor repetible de ingredientes destacados reusando `imgWidget()`,
 checkbox de suscribible e input de badge. El tope de `beneficios` sube de 3 a 6,
 porque una grilla de dos columnas con tres ítems queda coja.
 
-## F · Upsell: un solo momento
+## F · Upsell: dos momentos, dos tamaños de decisión
+
+**Al agregar: un click, sin preguntas.** El `+` del cross-sell funciona porque
+es una micro-decisión. Si al tocarlo apareciera «¿lo querés en tu suscripción o
+solo esta vez?», dejaría de ser un click y pasaría a ser una decisión — y ahí
+se pierde la mitad de los que iban a sumarlo. Todo lo que se agrega desde una
+sugerencia entra como compra única.
+
+**En el carrito: una sola pregunta, grande.** Ya con todo elegido, se ofrece
+pasar una línea a suscripción. Ese es el momento en que una decisión más suma
+en vez de frenar, porque el compromiso con los productos ya está tomado. Habla
+en pesos («ahorrás $3.900 en cada envío y no pagás el envío»), no en
+porcentaje.
+
+**Nunca se suscribe solo.** Ni siquiera con productos preseleccionados: meter a
+alguien en un débito automático que no eligió expresamente termina en
+contracargo, y en Argentina el débito recurrente requiere consentimiento
+expreso. La preselección define qué *se puede* suscribir, no qué se suscribe
+por sí solo.
+
+**Una suscripción por carrito.** Si ya hay una y se intenta agregar otra, el
+producto entra igual pero como compra única y se avisa — nunca se rechaza el
+agregado, que sería perder la venta por una regla nuestra. Evita de raíz que
+alguien termine con tres débitos automáticos de frecuencias distintas sin
+haberlo entendido.
+
+## F2 · Upsell del carrito: un solo momento
 
 Las marcas líderes del rubro interrumpen cuatro veces: un modal al agregar al
 carrito, otro modal encima con más sugerencias, una fila en el carrito y otra

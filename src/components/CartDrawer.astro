@@ -21,6 +21,9 @@ const sugerencias = catalogo
     sub: [p.volumen, p.descripcionCorta].filter(Boolean).join(' · '),
     img: p.imagenes?.[0] ?? '',
     color: lineaColor[p.linea],
+    // El carrito necesita saber qué producto admite suscripción para poder
+    // ofrecerla sobre una línea que ya está adentro.
+    suscribible: p.suscribible === true,
   }));
 ---
 
@@ -63,6 +66,16 @@ const sugerencias = catalogo
           una pelea. Una fila que no tapa nada y que se puede ignorar hace
           casi lo mismo sin ese precio.
         -->
+        <!--
+          Doble upsell: la segunda pregunta, y la última.
+          Llega DESPUÉS de que ya eligió todo, que es cuando una decisión más
+          suma en vez de frenar. Al agregar un producto la decisión tiene que
+          ser de un click; acá, con el carrito armado, se puede pedir algo
+          más grande. Nunca se convierte solo: un débito automático que la
+          persona no eligió expresamente termina en contracargo.
+        -->
+        <div class="sub-offer" data-sub-offer hidden></div>
+
         <div class="upsell" data-upsell hidden>
           <p class="upsell-t" data-upsell-t>Sumá a tu ritual</p>
           <ul class="upsell-list" data-upsell-list role="list"></ul>
@@ -393,6 +406,62 @@ const sugerencias = catalogo
     font-size: 0.78rem;
     color: var(--text-muted);
   }
+  /* ---- Doble upsell: pasar a suscripción ----
+     Verde de marca y no el naranja de una promo: la suscripción se vende
+     como pertenecer a algo, no como una liquidación. */
+  .sub-offer {
+    margin-top: 1.2rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--verde);
+    border-radius: var(--r-md);
+    background: color-mix(in srgb, var(--salvia) 12%, transparent);
+  }
+  .sub-offer :global(.so-eyebrow) {
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--verde);
+    margin-bottom: 0.4rem;
+  }
+  .sub-offer :global(.so-t) {
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    color: var(--verde);
+    line-height: 1.3;
+  }
+  .sub-offer :global(.so-t b) {
+    font-weight: 600;
+  }
+  .sub-offer :global(.so-s) {
+    font-size: 0.8rem;
+    color: var(--text-soft);
+    margin-top: 0.35rem;
+    line-height: 1.5;
+  }
+  .sub-offer :global(.so-s b) {
+    color: var(--verde);
+    font-weight: 600;
+  }
+  .sub-offer :global(.so-btn) {
+    width: 100%;
+    margin-top: 0.8rem;
+    border: none;
+    border-radius: var(--r-btn);
+    background: var(--verde);
+    color: var(--crema);
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    transition: background var(--dur) var(--ease-out);
+  }
+  .sub-offer :global(.so-btn:hover) {
+    background: var(--verde-900);
+  }
+
   /* ---- Upsell del carrito ----
      Los .us-* se inyectan por innerHTML, así que Astro no les pone el
      atributo de scope: van con :global desde el contenedor. */
@@ -724,6 +793,21 @@ const sugerencias = catalogo
   }
 
   /**
+   * Aviso dentro del carrito. Reusa la caja del aviso de stock: es el mismo
+   * rol (contarle algo que pasó con su pedido) y no hace falta un segundo
+   * componente que compita por el mismo espacio.
+   */
+  function avisar(texto: string) {
+    const box = document.querySelector<HTMLElement>('[data-stock-alert]');
+    if (!box) return;
+    box.textContent = texto;
+    box.hidden = false;
+    window.setTimeout(() => {
+      if (box.textContent === texto) box.hidden = true;
+    }, 7000);
+  }
+
+  /**
    * Explica en el carrito qué producto se quedó sin stock y qué hicimos.
    * El carrito ya viene ajustado; esto sólo cuenta lo que pasó.
    */
@@ -930,6 +1014,7 @@ const sugerencias = catalogo
       }
     }
 
+    renderSubOffer();
     renderUpsell();
 
     if (currentStep === 2) {
@@ -947,6 +1032,46 @@ const sugerencias = catalogo
     sub: string;
     img: string;
     color: string;
+    suscribible: boolean;
+  }
+
+  /**
+   * La segunda pregunta del carrito: pasar una línea a suscripción.
+   *
+   * Sólo aparece si (a) no hay ninguna suscripción todavía y (b) algún
+   * producto del carrito la admite. Habla del beneficio en pesos, no en
+   * porcentaje: "ahorrás $3.900 y no pagás envío" mueve, "15% off" no.
+   */
+  function renderSubOffer() {
+    const box = document.querySelector<HTMLElement>('[data-sub-offer]');
+    if (!box) return;
+
+    const items = cart.getItems();
+    if (items.length === 0 || cart.tieneSuscripcion()) {
+      box.hidden = true;
+      return;
+    }
+
+    const catalogo = leerSugerencias();
+    const elegible = items.find(
+      (i) => catalogo.find((s) => s.slug === i.slug)?.suscribible
+    );
+    if (!elegible) {
+      box.hidden = true;
+      return;
+    }
+
+    const key = cart.keyOf(elegible);
+    const ahorro = cart.ahorroSiSuscribe(key);
+
+    box.hidden = false;
+    box.innerHTML = `
+      <p class="so-eyebrow">Plan de socio</p>
+      <p class="so-t">¿Y si <b>${elegible.nombre}</b> te llega solo todos los meses?</p>
+      <p class="so-s">Ahorrás <b>${fmt(ahorro)}</b> en cada envío y no pagás el envío. Cancelás cuando quieras.</p>
+      <button class="so-btn" type="button" data-sub-convert="${key}">
+        Sí, pasarlo a suscripción
+      </button>`;
   }
 
   let sugerencias: Sugerencia[] | null = null;
@@ -1056,7 +1181,7 @@ const sugerencias = catalogo
           (qtyInput ? parseInt(qtyInput.value, 10) || 1 : 1);
         const modalidad =
           addBtn.dataset.modalidad === 'suscripcion' ? 'suscripcion' : 'unica';
-        cart.add(
+        const resultado = cart.add(
           {
             slug: addBtn.dataset.slug!,
             nombre: addBtn.dataset.nombre!,
@@ -1070,10 +1195,27 @@ const sugerencias = catalogo
           },
           qty
         );
+
         // Feedback "✓ Agregado" en el botón + abrir el drawer
         addBtn.classList.add('is-added');
         window.setTimeout(() => addBtn.classList.remove('is-added'), 1300);
         openCart();
+
+        // El aviso va DESPUÉS de abrir: openCart() limpia la caja de avisos
+        // para que no quede uno viejo de la sesión anterior.
+        if (resultado === 'suscripcion-ocupada') {
+          avisar(
+            'Podés tener una sola suscripción por pedido. Lo agregamos como compra única — si preferís suscribirte a este, quitá primero la otra suscripción.'
+          );
+        }
+        return;
+      }
+
+      // Doble upsell: pasar una línea a suscripción desde el carrito.
+      const convBtn = el.closest<HTMLElement>('[data-sub-convert]');
+      if (convBtn) {
+        e.preventDefault();
+        cart.convertirASuscripcion(convBtn.dataset.subConvert!);
         return;
       }
 

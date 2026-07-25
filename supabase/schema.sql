@@ -165,4 +165,9 @@ alter table newsletter_subscribers enable row level security;
 -- ============================================================
 alter table productos add column if not exists ingredientes_destacados jsonb not null default '[]'::jsonb;
 alter table productos add column if not exists suscribible boolean not null default true;
+-- La suscripción es para productos SELECCIONADOS (típicamente kits y los que
+-- realmente se consumen mes a mes), no para todo el catálogo. Que sea opt-in
+-- obliga a decidirlo producto por producto en vez de ofrecerla donde no tiene
+-- sentido. Los productos ya cargados conservan el valor que tengan.
+alter table productos alter column suscribible set default false;
 alter table productos add column if not exists badge text;
