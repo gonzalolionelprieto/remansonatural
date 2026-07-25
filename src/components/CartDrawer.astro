@@ -1,5 +1,27 @@
 ---
 /** Drawer del carrito. La UI se rellena en cliente desde lib/cart.ts. */
+import { ZONAS, ZONA_DEFAULT } from '../lib/shipping';
+import { formatPrice } from '../lib/format';
+import { getCatalog } from '../lib/catalog';
+import { lineaColor } from '../lib/types';
+
+// Catálogo mínimo para el upsell del carrito, embebido como JSON. El drawer
+// vive en el layout, así que esto se resuelve una vez por render y sale del
+// cache de catalog.ts (no dispara una consulta por página).
+const catalogo = await getCatalog();
+const sugerencias = catalogo
+  .filter((p) => (p.stock ?? 0) > 0)
+  .map((p) => ({
+    slug: p.slug,
+    nombre: p.nombre,
+    precio: p.precio,
+    linea: p.linea,
+    tipo: p.tipo,
+    stock: p.stock ?? 0,
+    sub: [p.volumen, p.descripcionCorta].filter(Boolean).join(' · '),
+    img: p.imagenes?.[0] ?? '',
+    color: lineaColor[p.linea],
+  }));
 ---
 
 <div class="cart" data-cart>
@@ -33,6 +55,25 @@
 
         <ul class="cart-items" data-cart-list role="list"></ul>
 
+        <!--
+          Upsell. UN solo momento, y acá: el carrito es donde la persona ya
+          decidió comprar, así que sumar algo cuesta poco. Las marcas del
+          rubro interrumpen con un modal al agregar, otro después, y otro en
+          el checkout. Eso convierte, pero a costa de que la compra se sienta
+          una pelea. Una fila que no tapa nada y que se puede ignorar hace
+          casi lo mismo sin ese precio.
+        -->
+        <div class="upsell" data-upsell hidden>
+          <p class="upsell-t" data-upsell-t>Sumá a tu ritual</p>
+          <ul class="upsell-list" data-upsell-list role="list"></ul>
+        </div>
+        <script
+          type="application/json"
+          data-upsell-data
+          is:inline
+          set:html={JSON.stringify(sugerencias)}
+        />
+
         <div class="cart-empty" data-cart-empty>
           <p class="empty-t">Tu carrito está vacío</p>
           <p class="empty-s">Explorá la colección y armá tu ritual.</p>
@@ -60,10 +101,11 @@
         <div class="co-field">
           <label for="co-envio">Zona de entrega / Envío</label>
           <select id="co-envio">
-            <option value="sur">Zona Sur (GBA) - $3.500</option>
-            <option value="caba_gba">CABA / Resto de GBA - $5.000</option>
-            <option value="norte">Zona Norte (GBA) - $8.000</option>
-            <option value="retiro">Retiro Gratis (Zona Sur)</option>
+            {ZONAS.map((z) => (
+              <option value={z.id} selected={z.id === ZONA_DEFAULT}>
+                {z.costo === 0 ? `${z.label} - Gratis` : `${z.label} - ${formatPrice(z.costo)}`}
+              </option>
+            ))}
           </select>
         </div>
         <div class="co-field">
@@ -84,6 +126,10 @@
           <span>Subtotal</span>
           <b data-cart-total>$0</b>
         </div>
+        <!-- Con un carrito mixto, la pregunta que queda es "¿qué me van a
+             volver a cobrar?". Se responde acá, con números, antes de pagar. -->
+        <div class="cart-desglose" data-cart-desglose hidden></div>
+        <p class="cart-ahorro" data-cart-ahorro hidden></p>
         <p class="cart-note">El costo de envío se calculará en el siguiente paso.</p>
         <button class="btn btn-solid cart-checkout" type="button" data-next-step>
           Siguiente paso
@@ -295,6 +341,155 @@
     color: var(--text-muted);
     margin-top: 0.15rem;
   }
+  .cart-body :global(.ci-price s) {
+    opacity: 0.65;
+    margin-right: 0.2rem;
+  }
+  /* Etiquetas de modalidad: el cliente tiene que ver a simple vista qué
+     línea se le va a repetir y cuál no. */
+  .cart-body :global(.ci-sub),
+  .cart-body :global(.ci-once) {
+    display: inline-block;
+    margin-top: 0.3rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-radius: var(--r-pill);
+    padding: 0.2rem 0.55rem;
+  }
+  .cart-body :global(.ci-sub) {
+    color: var(--verde);
+    background: color-mix(in srgb, var(--salvia) 20%, transparent);
+  }
+  /* La de compra única es deliberadamente más apagada: informa sin competir
+     con la suscripción, que es lo que queremos que se elija. */
+  .cart-body :global(.ci-once) {
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid var(--border);
+  }
+
+  .cart-desglose {
+    display: grid;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--border);
+    font-size: 0.82rem;
+    color: var(--text-soft);
+  }
+  .cart-desglose :global(p) {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .cart-desglose :global(b) {
+    color: var(--verde);
+    font-weight: 600;
+  }
+
+  .upsell-t :global(em) {
+    font-style: normal;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+  /* ---- Upsell del carrito ----
+     Los .us-* se inyectan por innerHTML, así que Astro no les pone el
+     atributo de scope: van con :global desde el contenedor. */
+  .upsell {
+    margin-top: 1.4rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--border);
+  }
+  .upsell-t {
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    color: var(--verde);
+    margin-bottom: 0.7rem;
+  }
+  .upsell-list {
+    display: grid;
+    gap: 0.5rem;
+    list-style: none;
+  }
+  .cart-body :global(.us-item) {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    align-items: center;
+    gap: 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    padding: 0.5rem 0.6rem;
+  }
+  .cart-body :global(.us-thumb) {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    background: var(--crema-3);
+  }
+  .cart-body :global(.us-thumb img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .cart-body :global(.us-dot) {
+    width: 12px;
+    height: 12px;
+    border-radius: var(--r-full);
+  }
+  .cart-body :global(.us-name) {
+    font-size: 0.87rem;
+    color: var(--verde);
+    line-height: 1.25;
+  }
+  .cart-body :global(.us-name:hover) {
+    color: var(--tierra);
+  }
+  .cart-body :global(.us-sub) {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.05rem;
+  }
+  .cart-body :global(.us-price) {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--verde);
+    margin-top: 0.15rem;
+  }
+  .cart-body :global(.us-add) {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--verde);
+    border-radius: var(--r-btn);
+    background: transparent;
+    color: var(--verde);
+    cursor: pointer;
+    transition: background var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+  }
+  .cart-body :global(.us-add svg) {
+    width: 16px;
+    height: 16px;
+  }
+  .cart-body :global(.us-add:hover),
+  .cart-body :global(.us-add.is-added) {
+    background: var(--verde);
+    color: var(--crema);
+  }
+
+  .cart-ahorro {
+    font-size: 0.82rem;
+    color: var(--salvia);
+    margin-top: 0.35rem;
+  }
+  .cart-ahorro b {
+    color: var(--verde);
+    font-weight: 600;
+  }
   .cart-body :global(.ci-controls) {
     display: flex;
     align-items: center;
@@ -455,7 +650,14 @@
 
 <script>
   import * as cart from '../lib/cart';
-  import { ENVIO_GRATIS_DESDE } from '../lib/cart';
+  import { FRECUENCIA_LABEL } from '../lib/pricing';
+  import {
+    costoEnvio,
+    tieneEnvioGratis,
+    ENVIO_GRATIS_UNIDADES,
+    ZONA_GRATIS_LABEL,
+    ZONA_DEFAULT,
+  } from '../lib/shipping';
 
   const fmt = (n: number) => `$${n.toLocaleString('es-AR')}`;
   // Mismo criterio que la ficha de producto: si no tenemos stock conocido,
@@ -466,13 +668,6 @@
     bach: '#9A86A6',
     humos: '#A87C5A',
     cristales: '#789B8C',
-  };
-
-  const SHIPPING_RATES: Record<string, number> = {
-    sur: 3500,
-    caba_gba: 5000,
-    norte: 8000,
-    retiro: 0,
   };
 
   let globalBound = false;
@@ -490,11 +685,8 @@
     document.body.style.overflow = '';
   }
 
-  function getShippingCost(total: number, selectedZone: string): number {
-    if (selectedZone === 'retiro') return 0;
-    if (total >= ENVIO_GRATIS_DESDE) return 0;
-    return SHIPPING_RATES[selectedZone] ?? 3500;
-  }
+  // El costo sale de lib/shipping (el mismo que aplica el checkout).
+  const getShippingCost = costoEnvio;
 
   function setStep(step: number) {
     currentStep = step;
@@ -518,8 +710,8 @@
 
   function updateCheckoutSummary() {
     const subtotal = cart.total();
-    const zone = document.querySelector<HTMLSelectElement>('#co-envio')?.value ?? 'sur';
-    const shipping = getShippingCost(subtotal, zone);
+    const zone = document.querySelector<HTMLSelectElement>('#co-envio')?.value ?? ZONA_DEFAULT;
+    const shipping = getShippingCost(cart.contextoEnvio(), zone);
     const total = subtotal + shipping;
 
     const subtotalEl = document.querySelector('[data-checkout-subtotal]');
@@ -561,7 +753,7 @@
     const tel = document.querySelector<HTMLInputElement>('#co-tel')?.value.trim();
     const direccion = document.querySelector<HTMLInputElement>('#co-direccion')?.value.trim();
     const localidad = document.querySelector<HTMLInputElement>('#co-localidad')?.value.trim();
-    const metodoEnvio = document.querySelector<HTMLSelectElement>('#co-envio')?.value ?? 'sur';
+    const metodoEnvio = document.querySelector<HTMLSelectElement>('#co-envio')?.value ?? ZONA_DEFAULT;
 
     const msg = document.querySelector<HTMLElement>('[data-checkout-msg]');
     if (msg) msg.textContent = '';
@@ -580,11 +772,13 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          // El servidor recalcula precio y descuento con los datos de la base:
+          // acá sólo mandamos QUÉ se quiere comprar, nunca cuánto sale.
           items: items.map((i) => ({
             slug: i.slug,
-            nombre: i.nombre,
-            precio: i.precio,
             qty: i.qty,
+            modalidad: i.modalidad,
+            frecuencia: i.frecuencia,
           })),
           cliente: {
             nombre,
@@ -609,10 +803,7 @@
       // Ajustamos el carrito solo y le explicamos exactamente qué pasó,
       // en vez de dejarlo con un error genérico que no puede resolver.
       if (res.status === 409 && Array.isArray(data.sinStock)) {
-        for (const p of data.sinStock) {
-          if (p.disponible > 0) cart.setQty(p.slug, p.disponible);
-          else cart.remove(p.slug);
-        }
+        for (const p of data.sinStock) cart.ajustarPorStock(p.slug, p.disponible);
         setStep(1);
         if (msg) msg.textContent = '';
         mostrarAvisoStock(data.sinStock);
@@ -647,25 +838,38 @@
     if (empty) empty.hidden = n > 0;
     if (foot) foot.hidden = n === 0;
 
+    // Si el carrito mezcla modalidades hay que etiquetar TODAS las líneas.
+    // Marcando sólo la suscripción, las de al lado se leen como si también
+    // se repitieran todos los meses.
+    const mixto = cart.esMixto();
+
     list.innerHTML = items
       .map((i) => {
         const atMax = i.qty >= maxQty(i.stock);
+        const key = cart.keyOf(i);
+        const unit = cart.unitPrice(i);
+        const conDescuento = unit < i.precio;
         return `
-      <li class="cart-item" data-slug="${i.slug}">
+      <li class="cart-item" data-key="${key}">
         <span class="ci-thumb"><span class="dot" style="background:${lineColors[i.linea] ?? 'var(--salvia)'}"></span></span>
         <div>
           <p class="ci-name">${i.nombre}</p>
-          <p class="ci-price">${fmt(i.precio)} c/u</p>
+          ${i.modalidad === 'suscripcion'
+            ? `<p class="ci-sub">Se repite · ${(FRECUENCIA_LABEL[i.frecuencia ?? 30] ?? 'Cada 30 días').toLowerCase()}</p>`
+            : mixto
+              ? `<p class="ci-once">Solo esta vez</p>`
+              : ''}
+          <p class="ci-price">${conDescuento ? `<s>${fmt(i.precio)}</s> ` : ''}${fmt(unit)} c/u</p>
           <div class="ci-controls">
             <span class="ci-qty">
-              <button type="button" data-cart-dec data-slug="${i.slug}" aria-label="Quitar uno">−</button>
+              <button type="button" data-cart-dec data-key="${key}" aria-label="Quitar uno">−</button>
               <span>${i.qty}</span>
-              <button type="button" data-cart-inc data-slug="${i.slug}" aria-label="Agregar uno"${atMax ? ' disabled' : ''}>+</button>
+              <button type="button" data-cart-inc data-key="${key}" aria-label="Agregar uno"${atMax ? ' disabled' : ''}>+</button>
             </span>
-            <button class="ci-remove" type="button" data-cart-remove data-slug="${i.slug}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>Quitar</button>
+            <button class="ci-remove" type="button" data-cart-remove data-key="${key}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>Quitar</button>
           </div>
         </div>
-        <span class="ci-line">${fmt(i.precio * i.qty)}</span>
+        <span class="ci-line">${fmt(cart.lineTotal(i))}</span>
       </li>`;
       })
       .join('');
@@ -673,26 +877,157 @@
     const totalEl = document.querySelector<HTMLElement>('[data-cart-total]');
     if (totalEl) totalEl.textContent = fmt(cart.total());
 
+    // Desglose: qué se repite y qué se cobra una sola vez. Sin esto, alguien
+    // que sumó un kit desde las sugerencias no tiene forma de saber si se lo
+    // vamos a mandar todos los meses.
+    const desgloseEl = document.querySelector<HTMLElement>('[data-cart-desglose]');
+    if (desgloseEl) {
+      const sus = cart.totalSuscripcion();
+      desgloseEl.hidden = sus === 0;
+      if (sus > 0) {
+        const frecs = cart.frecuenciasEnCarrito();
+        const cadaCuanto =
+          frecs.length === 1
+            ? (FRECUENCIA_LABEL[frecs[0] as 30 | 45 | 60] ?? 'Cada 30 días').toLowerCase()
+            : 'según la frecuencia de cada uno';
+        const unica = cart.totalUnica();
+        desgloseEl.innerHTML =
+          `<p><span>Se repite ${cadaCuanto}</span><b>${fmt(sus)}</b></p>` +
+          (unica > 0
+            ? `<p><span>Solo esta vez</span><b>${fmt(unica)}</b></p>`
+            : '');
+      }
+    }
+
+    // Cuánto se está ahorrando: verlo en el carrito sostiene la decisión que
+    // ya tomó en la ficha justo antes de pagar.
+    const ahorroEl = document.querySelector<HTMLElement>('[data-cart-ahorro]');
+    if (ahorroEl) {
+      const a = cart.ahorro();
+      ahorroEl.hidden = a <= 0;
+      ahorroEl.innerHTML = `Estás ahorrando <b>${fmt(a)}</b>`;
+    }
+
     // Barra de envío gratis
     const ship = document.querySelector<HTMLElement>('[data-ship]');
     const shipMsg = document.querySelector<HTMLElement>('[data-ship-msg]');
     const shipFill = document.querySelector<HTMLElement>('[data-ship-fill]');
     if (ship && shipMsg && shipFill) {
       ship.hidden = n === 0 || currentStep === 2;
-      const t = cart.total();
-      if (t >= ENVIO_GRATIS_DESDE) {
-        shipMsg.innerHTML = '🌿 <b>¡Tenés envío gratis!</b>';
+      // El progreso se mide en UNIDADES, no en pesos: "te falta 1 producto"
+      // es una acción concreta, "te faltan $40.400" es una cuenta que la
+      // persona tiene que hacer sola para saber qué agregar.
+      const ctx = cart.contextoEnvio();
+      if (tieneEnvioGratis(ctx)) {
+        shipMsg.innerHTML = ctx.haySuscripcion
+          ? `🌿 <b>Envío gratis a ${ZONA_GRATIS_LABEL}</b> por tu suscripción`
+          : `🌿 <b>¡Tenés envío gratis a ${ZONA_GRATIS_LABEL}!</b>`;
         shipFill.style.width = '100%';
       } else {
-        const falta = ENVIO_GRATIS_DESDE - t;
-        shipMsg.innerHTML = `Te faltan <b>${fmt(falta)}</b> para el envío gratis`;
-        shipFill.style.width = `${Math.min(100, (t / ENVIO_GRATIS_DESDE) * 100)}%`;
+        const falta = ENVIO_GRATIS_UNIDADES - ctx.unidades;
+        shipMsg.innerHTML = `Sumá <b>${falta} producto${falta === 1 ? '' : 's'}</b> más y el envío a ${ZONA_GRATIS_LABEL} es gratis`;
+        shipFill.style.width = `${Math.min(100, (ctx.unidades / ENVIO_GRATIS_UNIDADES) * 100)}%`;
       }
     }
+
+    renderUpsell();
 
     if (currentStep === 2) {
       updateCheckoutSummary();
     }
+  }
+
+  interface Sugerencia {
+    slug: string;
+    nombre: string;
+    precio: number;
+    linea: string;
+    tipo: string;
+    stock: number;
+    sub: string;
+    img: string;
+    color: string;
+  }
+
+  let sugerencias: Sugerencia[] | null = null;
+
+  function leerSugerencias(): Sugerencia[] {
+    if (sugerencias) return sugerencias;
+    const el = document.querySelector('[data-upsell-data]');
+    try {
+      sugerencias = el ? (JSON.parse(el.textContent ?? '[]') as Sugerencia[]) : [];
+    } catch {
+      sugerencias = [];
+    }
+    return sugerencias;
+  }
+
+  /**
+   * Sugerencias del carrito: hasta tres productos que todavía no llevó.
+   *
+   * Los kits van primero — un combo de productos distintos es la venta que
+   * más conviene y la que más sentido tiene ofrecer a alguien que ya eligió
+   * un extracto. Después, lo que ese producto declara que combina bien.
+   */
+  function renderUpsell() {
+    const box = document.querySelector<HTMLElement>('[data-upsell]');
+    const list = document.querySelector<HTMLElement>('[data-upsell-list]');
+    const titulo = document.querySelector<HTMLElement>('[data-upsell-t]');
+    if (!box || !list) return;
+
+    const items = cart.getItems();
+    if (items.length === 0) {
+      box.hidden = true;
+      return;
+    }
+
+    const enCarrito = new Set(items.map((i) => i.slug));
+    const candidatos = leerSugerencias()
+      .filter((s) => !enCarrito.has(s.slug))
+      .sort((a, b) => Number(b.tipo === 'kit') - Number(a.tipo === 'kit'))
+      .slice(0, 3);
+
+    if (candidatos.length === 0) {
+      box.hidden = true;
+      return;
+    }
+
+    // Si lo que sugerimos primero es un kit, lo decimos: "completá tu ritual"
+    // explica mejor por qué le estamos mostrando eso.
+    // Si ya hay una suscripción en el carrito, aclaramos que lo que se suma
+    // desde acá NO entra en ella: es un agregado de una sola vez.
+    if (titulo) {
+      const base =
+        candidatos[0].tipo === 'kit' ? 'Completá tu ritual' : 'Sumá a tu ritual';
+      titulo.innerHTML = cart.tieneSuscripcion()
+        ? `${base} <em>· se cobra una sola vez</em>`
+        : base;
+    }
+
+    box.hidden = false;
+    list.innerHTML = candidatos
+      .map(
+        (s) => `
+      <li class="us-item">
+        <a class="us-thumb" href="/producto/${s.slug}" tabindex="-1" aria-hidden="true">
+          ${s.img
+            ? `<img src="${s.img}" alt="" width="96" height="96" loading="lazy">`
+            : `<span class="us-dot" style="background:${s.color}"></span>`}
+        </a>
+        <div class="us-info">
+          <a class="us-name" href="/producto/${s.slug}">${s.nombre}</a>
+          ${s.sub ? `<p class="us-sub">${s.sub}</p>` : ''}
+          <p class="us-price">${fmt(s.precio)}</p>
+        </div>
+        <button class="us-add" type="button" data-add-to-cart
+          data-slug="${s.slug}" data-nombre="${s.nombre}" data-precio="${s.precio}"
+          data-linea="${s.linea}" data-stock="${s.stock}"
+          aria-label="Agregar ${s.nombre} al carrito">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+        </button>
+      </li>`
+      )
+      .join('');
   }
 
   function initCart() {
@@ -709,10 +1044,18 @@
       const addBtn = el.closest<HTMLElement>('[data-add-to-cart]');
       if (addBtn) {
         e.preventDefault();
-        const qtyInput = addBtn
-          .closest('.buy, .info, [data-product], article')
-          ?.querySelector<HTMLInputElement>('[data-qty]');
-        const qty = qtyInput ? parseInt(qtyInput.value, 10) || 1 : 1;
+        // La caja de compra de la ficha publica la elección del cliente en
+        // sus propios data-*; las cards del catálogo no tienen ninguno y
+        // caen al default: una unidad, compra única.
+        const scope = addBtn.closest<HTMLElement>(
+          '.buybox, .buy, .info, [data-product], article'
+        );
+        const qtyInput = scope?.querySelector<HTMLInputElement>('[data-qty]');
+        const qty =
+          Number(addBtn.dataset.qty) ||
+          (qtyInput ? parseInt(qtyInput.value, 10) || 1 : 1);
+        const modalidad =
+          addBtn.dataset.modalidad === 'suscripcion' ? 'suscripcion' : 'unica';
         cart.add(
           {
             slug: addBtn.dataset.slug!,
@@ -720,6 +1063,10 @@
             precio: Number(addBtn.dataset.precio),
             linea: addBtn.dataset.linea ?? '',
             stock: Number(addBtn.dataset.stock) || 0,
+            modalidad,
+            ...(modalidad === 'suscripcion'
+              ? { frecuencia: (Number(addBtn.dataset.frecuencia) || 30) as 30 | 45 | 60 }
+              : {}),
           },
           qty
         );
@@ -741,19 +1088,19 @@
       }
       const inc = el.closest<HTMLElement>('[data-cart-inc]');
       if (inc) {
-        const it = cart.getItems().find((i) => i.slug === inc.dataset.slug);
-        if (it && it.qty < maxQty(it.stock)) cart.setQty(it.slug, it.qty + 1);
+        const it = cart.getItems().find((i) => cart.keyOf(i) === inc.dataset.key);
+        if (it && it.qty < maxQty(it.stock)) cart.setQty(inc.dataset.key!, it.qty + 1);
         return;
       }
       const dec = el.closest<HTMLElement>('[data-cart-dec]');
       if (dec) {
-        const it = cart.getItems().find((i) => i.slug === dec.dataset.slug);
-        if (it) cart.setQty(it.slug, it.qty - 1);
+        const it = cart.getItems().find((i) => cart.keyOf(i) === dec.dataset.key);
+        if (it) cart.setQty(dec.dataset.key!, it.qty - 1);
         return;
       }
       const rem = el.closest<HTMLElement>('[data-cart-remove]');
       if (rem) {
-        cart.remove(rem.dataset.slug!);
+        cart.remove(rem.dataset.key!);
         return;
       }
       const nextBtn = el.closest<HTMLButtonElement>('[data-next-step]');

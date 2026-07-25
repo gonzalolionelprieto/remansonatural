@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHeader from '../components/PageHeader.astro';
 import Accordion from '../components/Accordion.astro';
 import { site } from '../lib/site';
+import { ENVIO_GRATIS_UNIDADES, ZONA_GRATIS_LABEL } from '../lib/shipping';
 
 const waHref = `https://wa.me/${site.whatsapp}?text=${encodeURIComponent('Hola Remanso Natural 🌿 tengo una consulta')}`;
 
@@ -24,7 +25,9 @@ const secciones = [
   { id: 'envios', t: 'Envíos', items: [
     'Enviamos a todo el país.',
     'Despacho en 24–72 h hábiles, con embalaje a prueba de golpes.',
-    'Envío gratis en compras desde $85.000.',
+    `Envío gratis a ${ZONA_GRATIS_LABEL} llevando ${ENVIO_GRATIS_UNIDADES} productos o más.`,
+    `Si te suscribís, el envío a ${ZONA_GRATIS_LABEL} es siempre gratis, aunque lleves uno solo.`,
+    'Al interior del país el envío se cobra siempre, según zona.',
     'Seguimiento por WhatsApp una vez despachado.',
   ]},
   { id: 'cambios', t: 'Cambios y devoluciones', items: [

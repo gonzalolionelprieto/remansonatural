@@ -266,6 +266,8 @@
               <div><label>Graduación</label><input id="f-graduacion" /></div>
               <div><label>Orden</label><input id="f-orden" type="number" /></div>
               <div style="display:flex;align-items:flex-end;"><label style="margin:0;display:flex;gap:8px;align-items:center;cursor:pointer;"><input id="f-destacado" type="checkbox" style="width:auto;" /> Destacado</label></div>
+              <div><label>Etiqueta sobre la foto (opcional)</label><input id="f-badge" placeholder="Más vendido" /></div>
+              <div style="display:flex;align-items:flex-end;"><label style="margin:0;display:flex;gap:8px;align-items:center;cursor:pointer;"><input id="f-suscribible" type="checkbox" style="width:auto;" /> Se puede suscribir (20% off)</label></div>
             </div>
             <label>Objetivos</label>
             <div class="chips" id="f-objetivos">
@@ -274,7 +276,7 @@
             </div>
             <label>Imágenes</label><div class="imgw" id="w-prod"></div>
             <label>Descripción corta</label><input id="f-descCorta" />
-            <label>Beneficios (uno por línea, hasta 3 — se usan en la card)</label>
+            <label>Beneficios (uno por línea, hasta 6 — la card muestra los primeros 3, la ficha los muestra todos)</label>
             <textarea id="f-beneficios" placeholder="500mg de extracto por cápsula&#10;Hecho a mano en pequeños lotes&#10;Sin conservantes"></textarea>
             <label>Para qué momento</label><textarea id="f-momento"></textarea>
             <label>Descripción larga</label><textarea id="f-descLarga"></textarea>
@@ -286,6 +288,9 @@
             </div>
             <label>Advertencias</label><textarea id="f-advertencias"></textarea>
             <label>Combiná con (slugs, coma)</label><input id="f-combina" />
+            <label>Por qué funciona — qué lleva y qué aporta</label>
+            <p class="muted" style="margin:-4px 0 8px;">Son las tarjetas que explican el producto en la ficha. Es lo que más ayuda a que alguien que no conoce la marca se anime a comprar.</p>
+            <div id="w-destacados"></div>
             <div class="err" id="editorErr"></div>
             <div class="row" style="margin-top:14px;"><button class="btn" id="guardar">Guardar</button><button class="btn ghost" id="cancelar">Cancelar</button></div>
           </div>
@@ -408,6 +413,8 @@
       let pass = sessionStorage.getItem(KEY) || '';
       let editSlugOriginal = null;
       let prodImgs = [];
+      // Cards del bloque "Por qué funciona" de la ficha: [{nombre, texto, imagen}]
+      let prodDest = [];
       const objSel = new Set();
       let home = { hero: {}, bento: [{}, {}, {}, {}], estrella: {}, mega: {} };
       const BENTO_LABELS = ['Bloque 1 (grande, izquierda)', 'Bloque 2 (arriba)', 'Bloque 3', 'Bloque 4'];
@@ -533,6 +540,55 @@
         render();
       }
 
+      /**
+       * Editor repetible de "Por qué funciona". Cada tarjeta tiene nombre,
+       * texto y una foto opcional (reusa imgWidget). Se vuelve a dibujar
+       * entero al agregar/quitar, pero NO al tipear: si redibujáramos en cada
+       * tecla se perdería el foco del input a la primera letra.
+       */
+      function destWidget() {
+        const el = $('#w-destacados');
+        function render() {
+          el.innerHTML = prodDest.map((d, i) => `
+            <div class="destCard" data-i="${i}" style="border:1.5px solid #3a4c40;border-radius:9px;padding:12px;margin-bottom:10px;">
+              <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
+                <strong style="font-size:12.5px;opacity:.7;">Tarjeta ${i + 1}</strong>
+                <span style="flex:1;"></span>
+                ${i > 0 ? `<button type="button" data-up="${i}" title="Subir" style="background:transparent;color:#eef2ec;border:1.5px solid #3a4c40;border-radius:7px;padding:4px 9px;cursor:pointer;font-family:inherit;">▲</button>` : ''}
+                ${i < prodDest.length - 1 ? `<button type="button" data-down="${i}" title="Bajar" style="background:transparent;color:#eef2ec;border:1.5px solid #3a4c40;border-radius:7px;padding:4px 9px;cursor:pointer;font-family:inherit;">▼</button>` : ''}
+                <button type="button" data-rmd="${i}" title="Quitar" style="background:transparent;color:#c65b4e;border:1.5px solid #c65b4e;border-radius:7px;padding:4px 10px;cursor:pointer;font-family:inherit;">×</button>
+              </div>
+              <label>Nombre</label><input data-dn="${i}" value="${(d.nombre || '').replace(/"/g, '&quot;')}" placeholder="Reishi entero" />
+              <label>Qué aporta</label><textarea data-dt="${i}" placeholder="Usamos el hongo entero, no polvo de micelio.">${d.texto || ''}</textarea>
+              <label>Foto (opcional)</label><div class="imgw" data-di="${i}"></div>
+            </div>`).join('') +
+            `<button type="button" id="addDest" style="background:transparent;color:#eef2ec;border:1.5px dashed #3a4c40;border-radius:9px;padding:9px 14px;cursor:pointer;font-family:inherit;font-size:12.5px;">+ Agregar tarjeta</button>`;
+
+          el.querySelectorAll('[data-dn]').forEach((inp) =>
+            inp.addEventListener('input', () => { prodDest[+inp.dataset.dn].nombre = inp.value; }));
+          el.querySelectorAll('[data-dt]').forEach((ta) =>
+            ta.addEventListener('input', () => { prodDest[+ta.dataset.dt].texto = ta.value; }));
+          el.querySelectorAll('[data-rmd]').forEach((b) =>
+            b.addEventListener('click', () => { prodDest.splice(+b.dataset.rmd, 1); render(); }));
+          el.querySelectorAll('[data-up]').forEach((b) =>
+            b.addEventListener('click', () => { const i = +b.dataset.up; [prodDest[i - 1], prodDest[i]] = [prodDest[i], prodDest[i - 1]]; render(); }));
+          el.querySelectorAll('[data-down]').forEach((b) =>
+            b.addEventListener('click', () => { const i = +b.dataset.down; [prodDest[i + 1], prodDest[i]] = [prodDest[i], prodDest[i + 1]]; render(); }));
+          // La foto de cada tarjeta es una sola: imgWidget en modo simple,
+          // cuadrada porque se muestra chica y recortada en la ficha.
+          el.querySelectorAll('[data-di]').forEach((box) => {
+            const i = +box.dataset.di;
+            imgWidget(box,
+              () => (prodDest[i].imagen ? [prodDest[i].imagen] : []),
+              (a) => { prodDest[i].imagen = a[0] || ''; },
+              false, 1, 'Se recorta cuadrada');
+          });
+          const add = el.querySelector('#addDest');
+          if (add) add.addEventListener('click', () => { prodDest.push({ nombre: '', texto: '', imagen: '' }); render(); });
+        }
+        render();
+      }
+
       // ---- Login ----
       async function tryLogin(p) {
         const r = await fetch('/api/panel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: p, action: 'login' }) });
@@ -581,6 +637,9 @@
         $('#f-stock').value = p.stock ?? 0;
         $('#f-volumen').value = p.volumen || ''; $('#f-graduacion').value = p.graduacion || '';
         $('#f-orden').value = p.orden ?? ''; $('#f-destacado').checked = !!p.destacado;
+        $('#f-badge').value = p.badge || '';
+        // Default true: un producto nuevo se puede suscribir salvo que digas lo contrario.
+        $('#f-suscribible').checked = p.suscribible !== false;
         $('#f-descCorta').value = p.descripcion_corta || ''; $('#f-beneficios').value = (p.beneficios || []).join('\n');
         $('#f-momento').value = p.para_que_momento || '';
         $('#f-descLarga').value = p.descripcion_larga || ''; $('#f-ingredientes').value = p.ingredientes || '';
@@ -589,6 +648,8 @@
         $('#f-combina').value = (p.combina_con || []).join(', ');
         const asp = home.imagenAspecto || '1:1';
         prodImgs = [...(p.imagenes || [])]; imgWidget($('#w-prod'), () => prodImgs, (a) => (prodImgs = a), true, prodAspect(), `Formato ${asp} · se recorta y optimiza sola`);
+        prodDest = (p.ingredientes_destacados || []).map((d) => ({ nombre: d.nombre || '', texto: d.texto || '', imagen: d.imagen || '' }));
+        destWidget();
         objSel.clear(); (p.objetivos || []).forEach((o) => objSel.add(o)); setObj();
         $('#editorErr').textContent = ''; $('#editorP').classList.remove('hidden'); $('#editorP').scrollIntoView({ behavior: 'smooth' });
       }
@@ -622,7 +683,14 @@
           volumen: $('#f-volumen').value.trim() || null, graduacion: $('#f-graduacion').value.trim() || null,
           orden: $('#f-orden').value ? parseInt($('#f-orden').value, 10) : null, destacado: $('#f-destacado').checked,
           descripcion_corta: $('#f-descCorta').value.trim(),
-          beneficios: $('#f-beneficios').value.split('\n').map((s) => s.trim()).filter(Boolean).slice(0, 3),
+          beneficios: $('#f-beneficios').value.split('\n').map((s) => s.trim()).filter(Boolean).slice(0, 6),
+          badge: $('#f-badge').value.trim() || null,
+          suscribible: $('#f-suscribible').checked,
+          // Descartamos las tarjetas a medio llenar: una card sin nombre o sin
+          // texto se ve rota en la ficha.
+          ingredientes_destacados: prodDest
+            .map((d) => ({ nombre: (d.nombre || '').trim(), texto: (d.texto || '').trim(), imagen: (d.imagen || '').trim() || null }))
+            .filter((d) => d.nombre && d.texto),
           para_que_momento: $('#f-momento').value.trim(), descripcion_larga: $('#f-descLarga').value.trim(),
           ingredientes: $('#f-ingredientes').value.trim(), modo_de_uso: $('#f-modo').value.trim(), nuestro_proceso: $('#f-proceso').value.trim(),
           envio_y_cuidado: $('#f-envio').value.trim(), advertencias: $('#f-advertencias').value.trim(),

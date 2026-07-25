@@ -1,0 +1,186 @@
+---
+/**
+ * Cross-sell compacto: una fila por producto con miniatura, nombre, precio y
+ * un botón "+" que agrega directo al carrito.
+ *
+ * Va pegado al CTA a propósito. Como `ProductCard` completas al final de la
+ * página compiten con la compra que la persona ya estaba por hacer; así son
+ * un agregado de un click sobre una decisión ya tomada.
+ */
+import type { Product } from '../lib/types';
+import { formatPrice } from '../lib/format';
+import { lineaColor } from '../lib/types';
+
+interface Props {
+  productos: Product[];
+  title?: string;
+}
+const { productos, title = 'Completá tu ritual' } = Astro.props;
+
+// Los kits van primero: son la jugada de volumen. Un combo de productos
+// distintos es una compra de descubrimiento — hace probar toda la línea y su
+// precio no se compara fácil contra un competidor. Llevar tres frascos
+// iguales, en cambio, no lo quiere nadie.
+const ordenados = [...productos].sort(
+  (a, b) => Number(b.tipo === 'kit') - Number(a.tipo === 'kit')
+);
+---
+
+{productos.length > 0 && (
+  <section class="xsell" aria-labelledby="xsell-title">
+    <h2 class="xsell-title" id="xsell-title">{title}</h2>
+    <ul class="xsell-list" role="list">
+      {ordenados.map((p) => {
+        // `< 1` en vez de `<= 0`: el compilador de Astro lee el `<=` dentro
+        // de una expresión JSX como la apertura de un tag.
+        const agotado = (p.stock ?? 0) < 1;
+        return (
+          <li class="xs-item">
+            <a class="xs-thumb" href={`/producto/${p.slug}`} aria-hidden="true" tabindex="-1">
+              {p.imagenes && p.imagenes[0] ? (
+                <img src={p.imagenes[0]} alt="" width="120" height="120" loading="lazy" />
+              ) : (
+                <span class="xs-dot" style={`background:${lineaColor[p.linea]}`}></span>
+              )}
+            </a>
+            <div class="xs-info">
+              <a class="xs-name" href={`/producto/${p.slug}`}>{p.nombre}</a>
+              <p class="xs-meta">
+                {[p.volumen, p.descripcionCorta].filter(Boolean).join(' · ')}
+              </p>
+              <p class="xs-price">{formatPrice(p.precio)}</p>
+            </div>
+            {agotado ? (
+              <span class="xs-out">Agotado</span>
+            ) : (
+              <button
+                class="xs-add"
+                type="button"
+                data-add-to-cart
+                data-slug={p.slug}
+                data-nombre={p.nombre}
+                data-precio={p.precio}
+                data-linea={p.linea}
+                data-stock={p.stock ?? 0}
+                aria-label={`Agregar ${p.nombre} al carrito`}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+              </button>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  </section>
+)}
+
+<style>
+  .xsell {
+    margin-top: 1.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+  .xsell-title {
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    font-weight: 500;
+    color: var(--verde);
+    margin-bottom: 0.9rem;
+  }
+  .xsell-list {
+    display: grid;
+    gap: 0.6rem;
+  }
+  .xs-item {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    align-items: center;
+    gap: 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    padding: 0.65rem 0.75rem;
+    transition: border-color var(--dur) var(--ease-out);
+  }
+  .xs-item:hover {
+    border-color: var(--border-strong);
+  }
+  .xs-thumb {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    background: var(--crema-3);
+  }
+  .xs-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .xs-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: var(--r-full);
+  }
+  .xs-name {
+    font-family: var(--font-serif);
+    font-size: 0.98rem;
+    color: var(--verde);
+    line-height: 1.25;
+  }
+  .xs-name:hover {
+    color: var(--tierra);
+  }
+  .xs-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.1rem;
+  }
+  .xs-price {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--verde);
+    margin-top: 0.25rem;
+  }
+  .xs-add {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--verde);
+    border-radius: var(--r-btn);
+    background: transparent;
+    color: var(--verde);
+    cursor: pointer;
+    transition: background var(--dur) var(--ease-out),
+      color var(--dur) var(--ease-out);
+  }
+  .xs-add svg {
+    width: 18px;
+    height: 18px;
+  }
+  .xs-add:hover {
+    background: var(--verde);
+    color: var(--crema);
+  }
+  /* Feedback del carrito: la clase la agrega el CartDrawer al agregar. */
+  .xs-add.is-added {
+    background: var(--verde);
+    color: var(--crema);
+  }
+  .xs-out {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .xs-item,
+    .xs-add {
+      transition: none;
+    }
+  }
+</style>

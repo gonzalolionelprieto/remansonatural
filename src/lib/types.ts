@@ -15,7 +15,7 @@ export interface Product {
   volumen?: string;
   graduacion?: string;
   descripcionCorta: string;
-  /** Hasta 3 frases cortas de venta (solo en la card). */
+  /** Hasta 6 frases cortas de venta (card del catálogo + grilla de la ficha). */
   beneficios?: string[];
   paraQueMomento?: string;
   ingredientes?: string;
@@ -30,6 +30,19 @@ export interface Product {
   orden?: number;
   combinaCon?: string[];
   reseñas?: Resena[];
+  /** Cards del bloque "Por qué funciona" de la ficha. */
+  ingredientesDestacados?: IngredienteDestacado[];
+  /** Si es false, la ficha no ofrece suscripción (un cristal no se recompra). */
+  suscribible?: boolean;
+  /** Etiqueta sobre la galería: "Más vendido", "Nuevo". */
+  badge?: string;
+}
+
+/** Ingrediente o componente explicado en la ficha (bloque educativo). */
+export interface IngredienteDestacado {
+  nombre: string;
+  texto: string;
+  imagen?: string;
 }
 
 export interface Resena {

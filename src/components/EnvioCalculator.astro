@@ -1,10 +1,18 @@
 ---
 /**
- * Calculadora de envío por código postal (estimación).
- * No usa API real todavía: estima por rango de CP (CABA / GBA / Interior).
- * Cuando integres un correo (Andreani/OCA/Correo Argentino) se reemplaza la
- * función `estimar` por la llamada real.
+ * Calculadora de envío.
+ *
+ * Antes pedía el código postal y estimaba con una tabla propia — que decía
+ * números distintos a los que después cobraba el checkout. Ahora ofrece las
+ * MISMAS zonas que el checkout y lee los MISMOS precios: lo que se ve acá es
+ * exactamente lo que se va a pagar.
  */
+import {
+  ZONAS,
+  ZONA_DEFAULT,
+  ENVIO_GRATIS_UNIDADES,
+  ZONA_GRATIS_LABEL,
+} from '../lib/shipping';
 ---
 
 <div class="envio" data-envio>
@@ -12,13 +20,20 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v8H3zM14 10h4l3 3v2h-7z"></path><circle cx="7" cy="17" r="1.6"></circle><circle cx="17.5" cy="17" r="1.6"></circle></svg>
     <span>Calculá tu envío</span>
   </div>
-  <form class="envio-form" data-envio-form novalidate>
-    <label class="visually-hidden" for="cp">Código postal</label>
-    <input id="cp" type="text" inputmode="numeric" maxlength="4" placeholder="Código postal" data-cp autocomplete="postal-code" />
-    <button class="btn-cp" type="submit">Calcular</button>
-  </form>
+
+  <label class="visually-hidden" for="envio-zona">Zona de entrega</label>
+  <select id="envio-zona" data-envio-zona>
+    {ZONAS.map((z) => (
+      <option value={z.id} selected={z.id === ZONA_DEFAULT}>{z.label}</option>
+    ))}
+  </select>
+
   <p class="envio-result" data-envio-result role="status" aria-live="polite"></p>
-  <a class="envio-help" href="https://www.correoargentino.com.ar/formularios/cpa" target="_blank" rel="noopener noreferrer">No sé mi código postal</a>
+  <p class="envio-nota">
+    Gratis a {ZONA_GRATIS_LABEL} llevando {ENVIO_GRATIS_UNIDADES} productos o más,
+    y siempre gratis si te suscribís, aunque lleves uno solo. Al interior se
+    cobra siempre.
+  </p>
 </div>
 
 <style>
@@ -43,97 +58,55 @@
     height: 20px;
     color: var(--tierra);
   }
-  .envio-form {
-    display: flex;
-    gap: 0.6rem;
-  }
-  .envio-form input {
-    flex: 1;
-    min-width: 0;
+  .envio select {
+    width: 100%;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--text);
+    background: var(--crema);
     border: 1px solid var(--border-strong);
     border-radius: var(--r-btn);
-    padding: 0.7rem 0.9rem;
-    background: var(--surface);
-    font-size: 0.92rem;
-    transition: border-color var(--dur) var(--ease-out),
-      box-shadow var(--dur) var(--ease-out);
-  }
-  .envio-form input:focus {
-    outline: none;
-    border-color: var(--verde);
-    box-shadow: 0 0 0 3px rgba(47, 74, 58, 0.1);
-  }
-  .btn-cp {
-    border: 1px solid var(--verde);
-    background: transparent;
-    color: var(--verde);
-    border-radius: var(--r-btn);
-    padding: 0.7rem 1.1rem;
-    font-family: var(--font-sans);
-    font-size: 0.82rem;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    padding: 0.7rem 0.8rem;
     cursor: pointer;
-    transition: background var(--dur) var(--ease-out),
-      color var(--dur) var(--ease-out);
-  }
-  .btn-cp:hover {
-    background: var(--verde);
-    color: var(--crema);
   }
   .envio-result {
-    min-height: 1.2em;
-    margin-top: 0.85rem;
-    font-size: 0.88rem;
+    font-size: 0.9rem;
     color: var(--text-soft);
+    margin-top: 0.85rem;
   }
   .envio-result b {
     color: var(--verde);
+    font-weight: 600;
   }
-  .envio-result.free {
-    color: var(--salvia);
-    font-weight: 500;
-  }
-  .envio-help {
-    display: inline-block;
-    margin-top: 0.6rem;
-    font-size: 0.78rem;
-    color: var(--tierra);
-    text-decoration: underline;
-    text-underline-offset: 3px;
+  .envio-nota {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
   }
 </style>
 
 <script>
-  function estimar(cp: number) {
-    if (cp >= 1000 && cp <= 1499)
-      return { zona: 'CABA', costo: 2500, dias: '1 a 3 días hábiles' };
-    if (cp >= 1500 && cp <= 2000)
-      return { zona: 'GBA', costo: 3500, dias: '2 a 4 días hábiles' };
-    return { zona: 'Interior', costo: 5500, dias: '3 a 7 días hábiles' };
-  }
-  const fmt = (n: number) => `$${n.toLocaleString('es-AR')}`;
+  import { zonaPorId } from '../lib/shipping';
+  import { formatPrice } from '../lib/format';
 
   function initEnvio() {
-    document.querySelectorAll<HTMLFormElement>('[data-envio-form]').forEach((form) => {
-      if (form.dataset.bound) return;
-      form.dataset.bound = '1';
-      const input = form.querySelector<HTMLInputElement>('[data-cp]');
-      const out = form.parentElement?.querySelector<HTMLElement>('[data-envio-result]');
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        if (!input || !out) return;
-        const cp = parseInt(input.value.replace(/\D/g, ''), 10);
-        if (!cp || input.value.replace(/\D/g, '').length < 4) {
-          out.className = 'envio-result';
-          out.textContent = 'Ingresá un código postal válido (4 dígitos).';
-          return;
-        }
-        const r = estimar(cp);
-        out.className = 'envio-result';
-        out.innerHTML = `Envío a <b>${r.zona}</b>: ${fmt(r.costo)} · llega en ${r.dias}. <br><span style="color:var(--text-muted)">Gratis en compras desde ${fmt(85000)}.</span>`;
-      });
+    document.querySelectorAll<HTMLElement>('[data-envio]').forEach((box) => {
+      if (box.dataset.bound) return;
+      box.dataset.bound = '1';
+      const sel = box.querySelector<HTMLSelectElement>('[data-envio-zona]');
+      const out = box.querySelector<HTMLElement>('[data-envio-result]');
+      if (!sel || !out) return;
+
+      const render = () => {
+        const z = zonaPorId(sel.value);
+        out.innerHTML =
+          z.costo === 0
+            ? `<b>Sin costo</b> · ${z.demora}.`
+            : `<b>${formatPrice(z.costo)}</b> · llega en ${z.demora}.`;
+      };
+
+      sel.addEventListener('change', render);
+      render();
     });
   }
 

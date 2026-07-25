@@ -151,3 +151,18 @@ create table if not exists newsletter_subscribers (
 );
 alter table newsletter_subscribers enable row level security;
 -- Sólo service_role (usado por el endpoint /api/newsletter) puede leer/escribir.
+
+-- ============================================================
+-- Migración: ficha de producto optimizada para conversión.
+--   · ingredientes_destacados → cards de "Por qué funciona" en la ficha,
+--     [{nombre, texto, imagen}]. Es el bloque educativo que sostiene la
+--     credibilidad frente a un comprador nuevo.
+--   · suscribible → hay productos que no se recompran cada 30 días (un
+--     cristal, un kit de regalo). Ahí la caja de compra muestra sólo
+--     compra única en vez de ofrecer algo que no tiene sentido.
+--   · badge → "Más vendido" / "Nuevo" sobre la galería, editable.
+-- Idempotente: se puede correr de nuevo sin romper nada.
+-- ============================================================
+alter table productos add column if not exists ingredientes_destacados jsonb not null default '[]'::jsonb;
+alter table productos add column if not exists suscribible boolean not null default true;
+alter table productos add column if not exists badge text;

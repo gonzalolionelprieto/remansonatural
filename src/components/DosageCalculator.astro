@@ -58,6 +58,12 @@ const { tipo, nombre } = Astro.props;
     <div class="dc-result">
       <div class="dc-result-title">Tu dosis diaria estimada</div>
       <div class="dc-result-value"><span id="dc-drops-val">20</span> gotas</div>
+      <!-- Sin esta referencia, "20 gotas" no le dice nada a alguien que nunca
+           usó un gotero: no sabe si es un chorrito o media botella. -->
+      <p class="dc-result-eq">
+        Como referencia: <b>25 gotas ≈ 1 ml</b>, más o menos una pipeta llena
+        hasta la mitad. El frasco rinde entre 50 y 100 tomas.
+      </p>
       <p class="dc-result-desc" id="dc-desc-val">
         Tomar 10 gotas por la mañana y 10 gotas por la tarde diluidas en agua o infusión tibia.
       </p>
@@ -195,6 +201,16 @@ const { tipo, nombre } = Astro.props;
     color: var(--verde);
     font-weight: 600;
     margin: 0.25rem 0;
+  }
+  .dc-result-eq {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0 0 0.5rem;
+  }
+  .dc-result-eq b {
+    color: var(--verde);
+    font-weight: 600;
   }
   .dc-result-desc {
     font-size: 0.85rem;

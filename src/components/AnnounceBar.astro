@@ -3,10 +3,16 @@
  * Barra superior de anuncios. Los mensajes rotan suavemente (fade) y
  * respetan reduced-motion (se quedan quietos, mostrando el primero).
  */
+import { SUSCRIPCION_OFF, TRANSFERENCIA_OFF, porcentajeOff } from '../lib/pricing';
+import { ENVIO_GRATIS_UNIDADES, ZONA_GRATIS_LABEL } from '../lib/shipping';
+
+// Los números salen de pricing.ts y shipping.ts: si mañana cambia un
+// descuento, la barra no puede quedar prometiendo el viejo.
 const messages = [
   'Envíos a todo el país · 3 cuotas sin interés',
-  '10% off pagando por transferencia',
-  'Envío gratis en compras desde $85.000',
+  `Envío gratis a ${ZONA_GRATIS_LABEL} llevando ${ENVIO_GRATIS_UNIDADES} o más`,
+  `Suscribite: ${porcentajeOff(SUSCRIPCION_OFF)}% off + envío gratis siempre`,
+  `${porcentajeOff(TRANSFERENCIA_OFF)}% off pagando por transferencia`,
 ];
 ---
 

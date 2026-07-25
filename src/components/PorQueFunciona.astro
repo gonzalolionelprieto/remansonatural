@@ -1,0 +1,91 @@
+---
+/**
+ * Bloque educativo "Por qué funciona": qué lleva el producto y qué aporta
+ * cada cosa.
+ *
+ * Es el bloque que sostiene la credibilidad frente a alguien que no conoce la
+ * marca. No hace claims de salud (ANMAT): habla de materia prima y proceso,
+ * que es lo que efectivamente nos diferencia.
+ */
+import type { IngredienteDestacado } from '../lib/types';
+import Logo from './Logo.astro';
+
+interface Props {
+  items: IngredienteDestacado[];
+  title?: string;
+}
+const { items, title = 'Por qué funciona' } = Astro.props;
+---
+
+{items.length > 0 && (
+  <section class="pqf" aria-labelledby="pqf-title">
+    <h2 id="pqf-title" data-reveal="rise">{title}</h2>
+    <div class="pqf-grid" data-reveal-group data-reveal-step="80">
+      {items.map((it) => (
+        <article class="pqf-card">
+          <div class="pqf-media">
+            {it.imagen ? (
+              <img src={it.imagen} alt="" width="360" height="360" loading="lazy" />
+            ) : (
+              <span class="pqf-ph" aria-hidden="true">
+                <Logo size={54} stroke="var(--salvia)" accent="var(--tierra)" />
+              </span>
+            )}
+          </div>
+          <h3>{it.nombre}</h3>
+          <p>{it.texto}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+)}
+
+<style>
+  .pqf h2 {
+    font-family: var(--font-serif);
+    font-size: var(--fs-h2);
+    color: var(--verde);
+    margin-bottom: clamp(1.25rem, 3vw, 1.75rem);
+  }
+  .pqf-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.15rem;
+  }
+  .pqf-card {
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    overflow: hidden;
+    padding-bottom: 1.25rem;
+  }
+  .pqf-media {
+    aspect-ratio: 4 / 3;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(75% 75% at 50% 40%, color-mix(in srgb, var(--salvia) 14%, transparent), transparent),
+      var(--crema-2);
+  }
+  .pqf-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .pqf-ph {
+    opacity: 0.55;
+  }
+  .pqf-card h3 {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--verde);
+    margin: 1.1rem 1.25rem 0.45rem;
+  }
+  .pqf-card p {
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    line-height: 1.6;
+    margin: 0 1.25rem;
+  }
+</style>

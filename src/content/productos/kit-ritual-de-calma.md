@@ -9,6 +9,26 @@ beneficios:
   - Incluye extracto, esencia y sahumerio
   - Packaging pensado para regalar
   - Todo lo que necesitás en una sola caja
+  - Sale menos que comprarlo por separado
+  - Llega listo para entregar
+  - Ideal para empezar sin saber por dónde
+badge: Ideal para regalar
+# Un kit de regalo no se recompra cada 30 días: acá la ficha muestra sólo
+# compra única en vez de ofrecer algo que no le sirve a nadie.
+suscribible: false
+ingredientesDestacados:
+  - nombre: Doble Extracto de Reishi
+    texto: >-
+      El frasco de 50 ml completo, el mismo que vendemos suelto. Nada de
+      versiones reducidas para el kit.
+  - nombre: Esencia Serenidad
+    texto: >-
+      Flores de Bach en gotero de 30 ml, para los momentos de tensión del
+      día.
+  - nombre: Sahumerio artesanal
+    texto: >-
+      El que enciende el ritual. Armado a mano, para acompañar la pausa de la
+      noche.
 paraQueMomento: >-
   Para armar tu rincón de calma en casa. Pensado como regalo o como el primer
   paso para quien quiere empezar un ritual de bienestar de la noche.
@@ -38,22 +58,22 @@ reseñas:
     texto: Lo regalé para un cumple y fue un golazo. La presentación es hermosa, se nota el detalle.
     estrellas: 5
     fecha: Marzo 2026
-    verificada: true
+    verificada: false
   - autor: Martín G.
     texto: Ideal para arrancar. Tenés todo para tu ritual en una caja y el sahumerio dura un montón.
     estrellas: 5
     fecha: Febrero 2026
-    verificada: true
+    verificada: false
   - autor: Paula V.
     texto: Me lo compré para mí y no me arrepiento. Bajo las luces, prendo el humo y desconecto.
     estrellas: 5
     fecha: Febrero 2026
-    verificada: true
+    verificada: false
   - autor: Tomás E.
     texto: Muy buen combo relación precio-calidad. Llegó bien protegido a Mendoza.
     estrellas: 4
     fecha: Enero 2026
-    verificada: true
+    verificada: false
 ---
 
 El **Kit Ritual de Calma** reúne todo lo que necesitás para crear tu momento:

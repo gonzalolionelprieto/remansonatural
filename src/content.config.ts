@@ -21,8 +21,9 @@ const productos = defineCollection({
     volumen: z.string().optional(),
     graduacion: z.string().optional(),
     descripcionCorta: z.string(),
-    // Hasta 3 frases cortas de venta para la card de producto (ej. "500mg de
-    // extracto por cápsula"). Opcional: si está vacío no se muestra nada.
+    // Hasta 6 frases cortas de venta (ej. "500mg de extracto por cápsula").
+    // La card del catálogo muestra las primeras 3; la ficha las muestra todas
+    // en una grilla de dos columnas. Si está vacío no se muestra nada.
     beneficios: z.array(z.string()).default([]),
     // Lenguaje ANMAT-seguro: bienestar y momento, nunca claims médicos.
     paraQueMomento: z.string(),
@@ -38,6 +39,21 @@ const productos = defineCollection({
     orden: z.number().optional(),
     // Cross-sell: slugs de productos que combinan con este.
     combinaCon: z.array(z.string()).default([]),
+    // Bloque "Por qué funciona" de la ficha: qué lleva y qué aporta.
+    ingredientesDestacados: z
+      .array(
+        z.object({
+          nombre: z.string(),
+          texto: z.string(),
+          imagen: z.string().optional(),
+        })
+      )
+      .default([]),
+    // Un cristal o un kit de regalo no se recompran cada 30 días: ahí la
+    // ficha muestra sólo compra única.
+    suscribible: z.boolean().default(true),
+    // Etiqueta sobre la galería ("Más vendido", "Nuevo").
+    badge: z.string().optional(),
     reseñas: z
       .array(
         z.object({
@@ -45,7 +61,12 @@ const productos = defineCollection({
           texto: z.string(),
           estrellas: z.number().min(1).max(5).default(5),
           fecha: z.string().optional(),
-          verificada: z.boolean().default(true),
+          // Default FALSE a propósito. El sello "Compra verificada" sólo
+          // puede ir en una reseña que corresponda a un pedido real: si se
+          // pone por defecto termina apareciendo en reseñas de siembra, y
+          // eso es publicidad engañosa (Ley 24.240), no una licencia de
+          // marketing. Se marca a mano, reseña por reseña.
+          verificada: z.boolean().default(false),
         })
       )
       .default([]),

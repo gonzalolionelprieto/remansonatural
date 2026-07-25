@@ -26,6 +26,7 @@ const CAMPOS = [
   'para_que_momento', 'ingredientes', 'modo_de_uso', 'nuestro_proceso',
   'envio_y_cuidado', 'advertencias', 'descripcion_larga', 'imagenes',
   'destacado', 'stock', 'orden', 'combina_con', 'resenas', 'activo',
+  'ingredientes_destacados', 'suscribible', 'badge',
 ];
 
 function cleanProduct(input: Record<string, any>): Record<string, any> {

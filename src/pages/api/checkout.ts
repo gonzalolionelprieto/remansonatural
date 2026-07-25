@@ -4,11 +4,13 @@ import { MercadoPagoConfig, Preference } from 'mercadopago';
 // Endpoint on-demand (no estático): crea una preferencia de Checkout Pro.
 export const prerender = false;
 
+// El navegador manda QUÉ se quiere comprar, nunca cuánto sale: el precio y
+// el descuento se resuelven acá, contra la base.
 interface BodyItem {
   slug: string;
-  nombre: string;
-  precio: number;
   qty: number;
+  modalidad?: string;
+  frecuencia?: number;
 }
 
 function json(data: unknown, status = 200) {
@@ -19,13 +21,16 @@ function json(data: unknown, status = 200) {
 }
 
 import { supabaseAdmin } from '../../lib/supabase';
+import {
+  calcularPrecio,
+  parseModalidad,
+  parseFrecuencia,
+  FRECUENCIA_LABEL,
+  type Modalidad,
+  type Frecuencia,
+} from '../../lib/pricing';
 
-const SHIPPING_RATES: Record<string, number> = {
-  sur: 3500,
-  caba_gba: 5000,
-  norte: 8000,
-  retiro: 0,
-};
+import { costoEnvio, zonaPorId } from '../../lib/shipping';
 
 export const POST: APIRoute = async ({ request, url }) => {
   const token =
@@ -74,7 +79,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Sólo tomamos slug + cantidad; el precio, el nombre y el stock salen de la base.
   const { data: dbProductos, error: dbError } = await admin
     .from('productos')
-    .select('slug, nombre, precio, activo, stock')
+    .select('slug, nombre, precio, activo, stock, suscribible')
     .in('slug', pedido.map((i) => String(i.slug)));
 
   if (dbError) {
@@ -82,22 +87,47 @@ export const POST: APIRoute = async ({ request, url }) => {
     return json({ error: 'No se pudo validar el carrito.' }, 502);
   }
 
+  interface LineaPedido {
+    slug: string;
+    nombre: string;
+    /** Precio de lista, tal cual está en la base. */
+    lista: number;
+    /** Precio unitario ya con el descuento que corresponda. */
+    precio: number;
+    qty: number;
+    stock: number;
+    modalidad: Modalidad;
+    frecuencia?: Frecuencia;
+  }
+
   const items = pedido
-    .map((i) => {
+    .map((i): LineaPedido | null => {
       const p = (dbProductos ?? []).find((d) => d.slug === String(i.slug));
       if (!p || !p.activo) return null;
+
+      const qty = Math.min(99, Math.max(1, Math.floor(Number(i.qty)) || 1));
+      // Si el producto dejó de ser suscribible entre que lo agregó al carrito
+      // y llegó a pagar, la línea vuelve a compra única en vez de cobrarle un
+      // 20% de descuento que ya no ofrecemos.
+      const modalidad: Modalidad =
+        p.suscribible === false ? 'unica' : parseModalidad(i.modalidad);
+      const lista = Number(p.precio);
+      const { unitario } = calcularPrecio({ precio: lista, modalidad, qty });
+
       return {
         slug: p.slug,
         nombre: p.nombre,
-        precio: Number(p.precio),
-        qty: Math.min(99, Math.max(1, Math.floor(Number(i.qty)) || 1)),
+        lista,
+        precio: unitario,
+        qty,
         stock: Math.max(0, Math.floor(Number(p.stock) || 0)),
+        modalidad,
+        ...(modalidad === 'suscripcion'
+          ? { frecuencia: parseFrecuencia(i.frecuencia) }
+          : {}),
       };
     })
-    .filter(
-      (i): i is { slug: string; nombre: string; precio: number; qty: number; stock: number } =>
-        i !== null
-    );
+    .filter((i): i is LineaPedido => i !== null);
 
   if (items.length === 0) {
     return json({ error: 'Los productos del carrito ya no están disponibles.' }, 400);
@@ -106,9 +136,19 @@ export const POST: APIRoute = async ({ request, url }) => {
   // SEGURIDAD: nunca vender más de lo que hay. Si algún ítem no tiene stock
   // suficiente, no creamos la orden y devolvemos el detalle para que el
   // navegador pueda ajustar el carrito y explicarle al cliente qué pasó.
-  const sinStock = items
-    .filter((i) => i.qty > i.stock)
-    .map((i) => ({ slug: i.slug, nombre: i.nombre, disponible: i.stock }));
+  // Sumamos por slug antes de comparar: un mismo producto puede venir en dos
+  // líneas (compra única + suscripción) y por separado cada una pasaría el
+  // control mientras que juntas superan el stock.
+  const pedidoPorSlug = new Map<string, { nombre: string; qty: number; stock: number }>();
+  for (const i of items) {
+    const acc = pedidoPorSlug.get(i.slug);
+    if (acc) acc.qty += i.qty;
+    else pedidoPorSlug.set(i.slug, { nombre: i.nombre, qty: i.qty, stock: i.stock });
+  }
+
+  const sinStock = [...pedidoPorSlug.entries()]
+    .filter(([, v]) => v.qty > v.stock)
+    .map(([slug, v]) => ({ slug, nombre: v.nombre, disponible: v.stock }));
 
   if (sinStock.length > 0) {
     return json(
@@ -126,10 +166,15 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Subtotal calculado con los precios REALES de la base.
   const subtotal = items.reduce((sum, i) => sum + i.precio * i.qty, 0);
 
-  // Umbral de envío gratis: 80000
-  const shippingCost = (subtotal >= 80000 || cliente.metodoEnvio === 'retiro') 
-    ? 0 
-    : (SHIPPING_RATES[cliente.metodoEnvio] ?? 3500);
+  // El envío gratis se gana por cantidad o por suscribirse, no por monto.
+  // Se recalcula acá con los ítems ya validados contra la base.
+  const shippingCost = costoEnvio(
+    {
+      unidades: items.reduce((s, i) => s + i.qty, 0),
+      haySuscripcion: items.some((i) => i.modalidad === 'suscripcion'),
+    },
+    cliente.metodoEnvio
+  );
 
   const total = subtotal + shippingCost;
 
@@ -147,7 +192,15 @@ export const POST: APIRoute = async ({ request, url }) => {
       .insert({
         external_reference: externalReference,
         estado: 'pendiente',
-        items: items.map(i => ({ slug: i.slug, nombre: i.nombre, precio: i.precio, qty: i.qty })),
+        items: items.map((i) => ({
+          slug: i.slug,
+          nombre: i.nombre,
+          precio: i.precio,
+          lista: i.lista,
+          qty: i.qty,
+          modalidad: i.modalidad,
+          ...(i.frecuencia ? { frecuencia: i.frecuencia } : {}),
+        })),
         monto_productos: subtotal,
         costo_envio: shippingCost,
         monto_total: total,
@@ -170,9 +223,14 @@ export const POST: APIRoute = async ({ request, url }) => {
     const preference = new Preference(client);
 
     // Mapear items de la compra
+    // El título de MP es lo último que ve antes de pagar: si eligió
+    // suscripción tiene que decirlo ahí también, no sólo en nuestro carrito.
     const mpItems = items.map((i) => ({
       id: String(i.slug),
-      title: String(i.nombre).slice(0, 250),
+      title: (i.modalidad === 'suscripcion'
+        ? `${i.nombre} · Suscripción ${(FRECUENCIA_LABEL[i.frecuencia ?? 30] ?? 'Cada 30 días').toLowerCase()}`
+        : String(i.nombre)
+      ).slice(0, 250),
       quantity: Math.max(1, Math.floor(Number(i.qty)) || 1),
       unit_price: Number(i.precio),
       currency_id: 'ARS',
@@ -182,7 +240,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (shippingCost > 0) {
       mpItems.push({
         id: 'envio',
-        title: `Envío - ${cliente.metodoEnvio === 'sur' ? 'Zona Sur' : cliente.metodoEnvio === 'norte' ? 'Zona Norte' : 'CABA / GBA'}`,
+        title: `Envío · ${zonaPorId(cliente.metodoEnvio).label}`,
         quantity: 1,
         unit_price: shippingCost,
         currency_id: 'ARS',

@@ -28,7 +28,17 @@ function rowToProduct(r: Record<string, any>): Product {
     stock: r.stock ?? 0,
     orden: r.orden ?? undefined,
     combinaCon: r.combina_con ?? [],
-    reseñas: r.resenas ?? [],
+    // El sello "Compra verificada" nunca se asume: sólo aparece si la reseña
+    // lo trae explícitamente en true. Ver el comentario en content.config.ts.
+    reseñas: (r.resenas ?? []).map((x: Record<string, any>) => ({
+      ...x,
+      verificada: x.verificada === true,
+    })),
+    ingredientesDestacados: r.ingredientes_destacados ?? [],
+    // `?? true`: las filas creadas antes de la migración no traen la columna
+    // en el payload cacheado, y el default del negocio es que sí se suscribe.
+    suscribible: r.suscribible ?? true,
+    badge: r.badge ?? undefined,
   };
 }
 

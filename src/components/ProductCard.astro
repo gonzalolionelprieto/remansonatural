@@ -7,12 +7,10 @@ import { lineaColor, lineaLabel, type Product } from '../lib/types';
 
 interface Props {
   product: Product;
-  /** umbral de envío gratis */
-  envioGratisDesde?: number;
   /** animar al hacer scroll (Home). En el catálogo se desactiva. */
   reveal?: boolean;
 }
-const { product, envioGratisDesde = 85000, reveal = true } = Astro.props;
+const { product, reveal = true } = Astro.props;
 const {
   nombre,
   slug,
@@ -27,6 +25,7 @@ const {
   stock = 0,
   beneficios = [],
   reseñas = [],
+  badge,
 } = product;
 const avgRating =
   reseñas.length > 0
@@ -35,7 +34,6 @@ const avgRating =
 
 const href = `/producto/${slug}`;
 const img = imagenes[0];
-const envioGratis = precio >= envioGratisDesde;
 const sinStock = stock <= 0;
 const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
 ---
@@ -58,7 +56,7 @@ const sub = [volumen, descripcionCorta].filter(Boolean).join(' · ');
     {sinStock ? (
       <span class="badge-out">Agotado</span>
     ) : (
-      envioGratis && <span class="badge-free">Envío gratis</span>
+      badge && <span class="badge-free">{badge}</span>
     )}
     <span class="dot" style={`background:${lineaColor[linea]}`} aria-hidden="true"></span>
     {img ? (

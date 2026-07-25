@@ -1,0 +1,675 @@
+---
+/**
+ * Caja de compra de la ficha: suscripción vs. compra única, packs por
+ * cantidad y el CTA.
+ *
+ * El orden y la jerarquía están pensados para un comprador NUEVO: primero ve
+ * cuánto sale y qué se ahorra, después con qué compromiso, y recién al final
+ * el botón. Todo el precio se recalcula en el navegador con el mismo módulo
+ * que usa el servidor (lib/pricing), así el número del botón es exactamente
+ * el que va a pagar.
+ */
+import AddToCartButton from './AddToCartButton.astro';
+import type { Product } from '../lib/types';
+import { formatPrice, cuota } from '../lib/format';
+import {
+  calcularPrecio,
+  precioTransferencia,
+  FRECUENCIAS,
+  FRECUENCIA_LABEL,
+  SUSCRIPCION_OFF,
+  TRANSFERENCIA_OFF,
+  porcentajeOff,
+} from '../lib/pricing';
+import {
+  ENVIO_MIN,
+  ENVIO_MAX,
+  ENVIO_GRATIS_UNIDADES,
+  ZONA_GRATIS_LABEL,
+} from '../lib/shipping';
+
+interface Props {
+  product: Product;
+}
+const { product } = Astro.props;
+const { precio, stock = 0, suscribible = true } = product;
+
+// Tope del selector de cantidad: nunca más de lo que hay en stock.
+const maxUnidades = Math.min(99, Math.max(1, stock));
+
+const sub = calcularPrecio({ precio, modalidad: 'suscripcion', qty: 1 });
+const unica = calcularPrecio({ precio, modalidad: 'unica', qty: 1 });
+const transferencia = precioTransferencia(precio);
+---
+
+<div
+  class="buybox"
+  data-buybox
+  data-precio={precio}
+  data-stock={stock}
+  data-suscribible={String(suscribible)}
+>
+  <fieldset class="bb-options">
+    <legend class="visually-hidden">Cómo querés comprarlo</legend>
+
+    {suscribible && (
+      <label class:list={['bb-opt', 'is-sub', { 'is-on': suscribible }]} data-opt="suscripcion">
+        <input
+          type="radio"
+          name="modalidad"
+          value="suscripcion"
+          checked
+          data-modalidad
+        />
+        <span class="bb-mark" aria-hidden="true"></span>
+        <span class="bb-body">
+          <span class="bb-row">
+            <span class="bb-title">
+              Que no se te corte el ritual
+            </span>
+            <span class="bb-prices">
+              <s>{formatPrice(precio)}</s>
+              <b data-precio-sub>{formatPrice(sub.unitario)}</b>
+            </span>
+          </span>
+
+          <!-- El ahorro va acá, pegado al precio que lo produce. Arriba de la
+               foto era una promesa suelta que no se podía verificar. -->
+          <span class="bb-save">
+            {porcentajeOff(SUSCRIPCION_OFF)}% off en cada envío + envío gratis
+          </span>
+          <!-- El número que hay que comparar es el FINAL. Contra el precio de
+               transferencia ($22.000 + envío), la suscripción sale más barata
+               aunque el precio del frasco sea más alto: gana por el envío. Si
+               mostráramos sólo el precio del producto, se leería al revés. -->
+          <span class="bb-final">
+            Te llega por <b>{formatPrice(sub.unitario)}</b>, envío incluido
+          </span>
+
+          <span class="bb-fields">
+            <label class="visually-hidden" for="bb-frecuencia">Cada cuánto lo recibís</label>
+            <select id="bb-frecuencia" data-frecuencia>
+              {FRECUENCIAS.map((f) => (
+                <option value={f}>{FRECUENCIA_LABEL[f]}</option>
+              ))}
+            </select>
+          </span>
+
+          <ul class="bb-perks" role="list">
+            <li>Envío gratis a {ZONA_GRATIS_LABEL}, aunque lleves una sola</li>
+            <li>Salteás un envío o cancelás cuando quieras, sin permanencia</li>
+            <li>Te llega solo, sin que tengas que acordarte</li>
+            <li>Se cobra con tarjeta, en débito automático</li>
+          </ul>
+        </span>
+      </label>
+    )}
+
+    <label class:list={['bb-opt', { 'is-on': !suscribible }]} data-opt="unica">
+      <input
+        type="radio"
+        name="modalidad"
+        value="unica"
+        checked={!suscribible}
+        data-modalidad
+      />
+      <span class="bb-mark" aria-hidden="true"></span>
+      <span class="bb-body">
+        <span class="bb-row">
+          <span class="bb-title">Comprá una vez</span>
+          <span class="bb-prices">
+            <b data-precio-unica>{formatPrice(unica.unitario)}</b>
+          </span>
+        </span>
+
+        <!-- El precio de transferencia va acá y no en una nota al pie: la
+             brecha con la tarjeta es de 18 puntos, no es un detalle. Cubre lo
+             que cuestan la comisión de MP y las 3 cuotas sin interés. -->
+        <span class="bb-alt">
+          o <b data-precio-transferencia>{formatPrice(transferencia)}</b> pagando
+          por transferencia ({porcentajeOff(TRANSFERENCIA_OFF)}% off)
+        </span>
+
+        <!-- Selector de cantidad simple. No hay descuento por llevar varias
+             del mismo producto: la jugada de volumen son los combos. Lo que
+             sí se gana con 2 es el envío. -->
+        {maxUnidades > 1 && (
+          <span class="bb-qty" role="group" aria-label="Cantidad">
+            <button type="button" class="bb-qty-btn" data-qty-dec aria-label="Quitar uno">−</button>
+            <span class="bb-qty-val" data-qty-val>1</span>
+            <button type="button" class="bb-qty-btn" data-qty-inc aria-label="Agregar uno">+</button>
+          </span>
+        )}
+      </span>
+    </label>
+  </fieldset>
+
+  <div class="bb-cta">
+    <AddToCartButton
+      product={product}
+      variant="solid"
+      label="Agregar al carrito"
+      block
+    />
+  </div>
+
+  <!-- Debajo del CTA va sólo lo que resuelve una duda del momento de decidir:
+       en cuántas cuotas, cuánto falta para el envío gratis, con qué se paga. -->
+  <ul class="bb-notes" role="list" data-notes>
+    <!-- Las cuotas son de una compra única: una suscripción se cobra entera
+         en cada envío, así que ahí la nota se oculta. -->
+    <li data-note-cuotas hidden={suscribible}>
+      3 cuotas sin interés de {cuota(unica.unitario, 3)}
+    </li>
+    <li class="ok" data-note-envio hidden={!suscribible}>
+      Envío gratis a {ZONA_GRATIS_LABEL}, aunque lleves una sola
+    </li>
+    <!-- El costo del envío se dice acá, antes de agregar al carrito. Que
+         aparezca recién al pagar es la forma más rápida de perder a alguien
+         que compra por primera vez. -->
+    <li data-note-envio-falta hidden={suscribible}>
+      {!suscribible && (
+        <Fragment>
+          Envío de {formatPrice(ENVIO_MIN)} a {formatPrice(ENVIO_MAX)} según zona ·
+          gratis a {ZONA_GRATIS_LABEL} llevando {ENVIO_GRATIS_UNIDADES} o más
+        </Fragment>
+      )}
+    </li>
+  </ul>
+
+  <div class="bb-medios">
+    <span>Pagá con</span>
+    <ul role="list">
+      <li>Mercado Pago</li>
+      <li>Visa</li>
+      <li>Mastercard</li>
+      <li>Transferencia</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  import {
+    calcularPrecio,
+    precioTransferencia,
+    TRANSFERENCIA_OFF,
+    porcentajeOff,
+  } from '../lib/pricing';
+  import {
+    ENVIO_MIN,
+    ENVIO_MAX,
+    ENVIO_GRATIS_UNIDADES,
+    ZONA_GRATIS_LABEL,
+    tieneEnvioGratis,
+  } from '../lib/shipping';
+  import { formatPrice, cuota } from '../lib/format';
+
+  /**
+   * Sincroniza la caja de compra: la elección de modalidad y de pack cambia
+   * el precio del botón, las notas de abajo y los data-* que lee el carrito.
+   * Un solo lugar donde se decide qué se ve, para que el número del CTA y el
+   * que termina en el carrito no puedan divergir.
+   */
+  function initBuyBox() {
+    document.querySelectorAll<HTMLElement>('[data-buybox]').forEach((box) => {
+      if (box.dataset.bound) return;
+      box.dataset.bound = '1';
+
+      const precio = Number(box.dataset.precio) || 0;
+      const stock = Number(box.dataset.stock) || 0;
+      const maxQty = stock > 0 ? Math.min(99, stock) : 99;
+      const addBtn = box.querySelector<HTMLElement>('[data-add-to-cart]');
+      const selFrec = box.querySelector<HTMLSelectElement>('[data-frecuencia]');
+      const qtyVal = box.querySelector<HTMLElement>('[data-qty-val]');
+      const qtyDec = box.querySelector<HTMLButtonElement>('[data-qty-dec]');
+      const qtyInc = box.querySelector<HTMLButtonElement>('[data-qty-inc]');
+
+      const noteCuotas = box.querySelector<HTMLElement>('[data-note-cuotas]');
+      const noteEnvio = box.querySelector<HTMLElement>('[data-note-envio]');
+      const noteFalta = box.querySelector<HTMLElement>('[data-note-envio-falta]');
+      const noteTransf = box.querySelector<HTMLElement>('[data-note-transferencia]');
+
+      let qty = 1;
+
+      function modalidad(): 'unica' | 'suscripcion' {
+        const on = box.querySelector<HTMLInputElement>('[data-modalidad]:checked');
+        return on?.value === 'suscripcion' ? 'suscripcion' : 'unica';
+      }
+
+      function sync() {
+        const m = modalidad();
+        // La cantidad sólo cuenta en compra única: la suscripción es de a una
+        // por envío, y su 20% ya es mejor que cualquier escalón de cantidad.
+        const cantidad = m === 'suscripcion' ? 1 : qty;
+        const p = calcularPrecio({ precio, modalidad: m, qty: cantidad });
+
+        // Estado visual de la opción elegida.
+        box.querySelectorAll<HTMLElement>('.bb-opt').forEach((opt) => {
+          opt.classList.toggle('is-on', opt.dataset.opt === m);
+        });
+
+        // Precio de cada opción, con la cantidad puesta donde corresponde.
+        const subEl = box.querySelector<HTMLElement>('[data-precio-sub]');
+        if (subEl) {
+          subEl.textContent = formatPrice(
+            calcularPrecio({ precio, modalidad: 'suscripcion', qty: 1 }).unitario
+          );
+        }
+        const unicaEl = box.querySelector<HTMLElement>('[data-precio-unica]');
+        if (unicaEl) {
+          // Sin descuento por cantidad, el precio de "comprá una vez" es el
+          // total de lo que se lleva: así el número no contradice al del CTA.
+          unicaEl.textContent = formatPrice(precio * qty);
+        }
+        const transfEl = box.querySelector<HTMLElement>('[data-precio-transferencia]');
+        if (transfEl) transfEl.textContent = formatPrice(precioTransferencia(precio) * qty);
+
+        if (qtyVal) qtyVal.textContent = String(qty);
+        if (qtyDec) qtyDec.disabled = qty <= 1;
+        if (qtyInc) qtyInc.disabled = qty >= maxQty;
+
+        // Los data-* que lee el carrito al hacer click en Agregar.
+        if (addBtn) {
+          addBtn.dataset.modalidad = m;
+          addBtn.dataset.qty = String(cantidad);
+          if (m === 'suscripcion') {
+            addBtn.dataset.frecuencia = selFrec?.value ?? '30';
+          } else {
+            delete addBtn.dataset.frecuencia;
+          }
+          // El precio va en su propio elemento: en pantallas angostas el
+          // botón parte en dos líneas, y con un "·" separador quedaba
+          // colgando al final del renglón como si fuera un error.
+          const label = addBtn.querySelector<HTMLElement>('.ba-idle span');
+          if (label) {
+            label.innerHTML = `Agregar al carrito<b class="ba-price">${formatPrice(p.total)}</b>`;
+          }
+        }
+
+        // Notas: sólo las que aplican a esta combinación. Las cuotas son de
+        // una compra única — la suscripción se cobra entera en cada envío.
+        if (noteCuotas) {
+          noteCuotas.hidden = m === 'suscripcion';
+          noteCuotas.textContent = `3 cuotas sin interés de ${cuota(p.total, 3)}`;
+        }
+
+        // La suscripción tiene envío gratis desde una sola unidad; la compra
+        // única lo gana llevando 2 o más. Mientras no lo tenga, decimos
+        // cuánto sale y qué le falta para no pagarlo.
+        const gratis = tieneEnvioGratis({
+          unidades: cantidad,
+          haySuscripcion: m === 'suscripcion',
+        });
+        if (noteEnvio) {
+          noteEnvio.hidden = !gratis;
+          noteEnvio.textContent =
+            m === 'suscripcion'
+              ? `Envío gratis a ${ZONA_GRATIS_LABEL}, aunque lleves una sola`
+              : `Envío gratis a ${ZONA_GRATIS_LABEL} por llevar más de una`;
+        }
+        if (noteFalta) {
+          noteFalta.hidden = gratis;
+          if (!gratis) {
+            const falta = ENVIO_GRATIS_UNIDADES - cantidad;
+            noteFalta.innerHTML = `Envío de ${formatPrice(ENVIO_MIN)} a ${formatPrice(ENVIO_MAX)} según zona · sumá <b>${falta} más</b> y es gratis a ${ZONA_GRATIS_LABEL}`;
+          }
+        }
+
+        // Transferencia: sólo cuando no hay ningún otro descuento activo.
+        if (noteTransf) {
+          noteTransf.hidden = p.off > 0;
+          if (p.off === 0) {
+            noteTransf.innerHTML = `<b>${formatPrice(precioTransferencia(precio) * cantidad)}</b> pagando por transferencia (${porcentajeOff(TRANSFERENCIA_OFF)}% off)`;
+          }
+        }
+      }
+
+      box.querySelectorAll<HTMLInputElement>('[data-modalidad]').forEach((r) =>
+        r.addEventListener('change', sync)
+      );
+      selFrec?.addEventListener('change', sync);
+
+      // Tocar la cantidad es elegir compra única: si estaba en suscripción,
+      // el click cambia la modalidad solo en vez de no hacer nada.
+      const setQty = (n: number) => {
+        qty = Math.max(1, Math.min(maxQty, n));
+        const radioUnica = box.querySelector<HTMLInputElement>(
+          '[data-modalidad][value="unica"]'
+        );
+        if (radioUnica && !radioUnica.checked) radioUnica.checked = true;
+        sync();
+      };
+      qtyDec?.addEventListener('click', () => setQty(qty - 1));
+      qtyInc?.addEventListener('click', () => setQty(qty + 1));
+
+      sync();
+    });
+  }
+
+  /**
+   * CTA flotante: cuando el botón real sale de pantalla aparece una barra al
+   * pie con el mismo precio y la misma acción. En mobile la decisión se toma
+   * scrolleando, y volver a buscar el botón arriba es donde se pierde gente.
+   */
+  function initStickyCta() {
+    document.querySelectorAll<HTMLElement>('[data-sticky-cta]').forEach((bar) => {
+      if (bar.dataset.bound) return;
+      bar.dataset.bound = '1';
+      const target = document.querySelector('[data-buybox] [data-add-to-cart]');
+      if (!target) return;
+      const io = new IntersectionObserver(
+        ([entry]) => {
+          // Sólo cuando el botón quedó ARRIBA de la pantalla, es decir cuando
+          // ya scrolleó pasándolo. Con `!isIntersecting` a secas, la barra
+          // aparecía apenas cargaba la página, antes de que la persona
+          // hubiera visto siquiera el precio.
+          const pasoDeLargo =
+            !entry.isIntersecting && entry.boundingClientRect.top < 0;
+          bar.classList.toggle('is-on', pasoDeLargo);
+          document.body.classList.toggle('has-sticky-cta', pasoDeLargo);
+        },
+        { threshold: 0 }
+      );
+      io.observe(target);
+    });
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    initBuyBox();
+    initStickyCta();
+  });
+
+  // Al navegar a una página sin caja de compra, la clase del body quedaría
+  // pegada y el FAB de WhatsApp se quedaría flotando alto sin motivo.
+  document.addEventListener('astro:before-swap', () => {
+    document.body.classList.remove('has-sticky-cta');
+  });
+</script>
+
+<style>
+  .buybox {
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    padding: 0.35rem 0.35rem 1.15rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .bb-options {
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .bb-opt {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.75rem;
+    align-items: start;
+    padding: 1.05rem 1rem;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: background var(--dur) var(--ease-out);
+  }
+  .bb-opt + .bb-opt {
+    border-top: 1px solid var(--border);
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+  .bb-opt.is-on {
+    background: color-mix(in srgb, var(--salvia) 12%, transparent);
+  }
+  .bb-opt input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+
+  /* Radio dibujado a mano para poder darle el color de marca. */
+  .bb-mark {
+    width: 20px;
+    height: 20px;
+    margin-top: 0.15rem;
+    border-radius: var(--r-full);
+    border: 1.5px solid var(--border-strong);
+    background: var(--crema);
+    display: grid;
+    place-items: center;
+    transition: border-color var(--dur) var(--ease-out);
+  }
+  .bb-mark::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: var(--r-full);
+    background: var(--verde);
+    transform: scale(0);
+    transition: transform var(--dur) var(--ease-out);
+  }
+  .bb-opt.is-on .bb-mark {
+    border-color: var(--verde);
+  }
+  .bb-opt.is-on .bb-mark::after {
+    transform: scale(1);
+  }
+  .bb-opt input:focus-visible + .bb-mark {
+    outline: 2px solid var(--verde);
+    outline-offset: 3px;
+  }
+
+  .bb-body {
+    display: block;
+  }
+  .bb-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .bb-title {
+    font-family: var(--font-serif);
+    font-size: 1.02rem;
+    font-weight: 500;
+    color: var(--verde);
+    line-height: 1.3;
+  }
+  .bb-prices {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    white-space: nowrap;
+  }
+  .bb-prices s {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .bb-prices b {
+    font-family: var(--font-serif);
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--verde);
+    font-variation-settings: 'opsz' 40;
+  }
+
+  .bb-save {
+    display: block;
+    margin-top: 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--verde);
+  }
+  /* El precio final con envío incluido: es el número que hay que comparar
+     contra el de transferencia, así que va destacado. */
+  .bb-final {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.82rem;
+    color: var(--text-soft);
+  }
+  .bb-final b {
+    color: var(--verde);
+    font-weight: 600;
+  }
+  /* Precio por transferencia dentro de "comprá una vez". */
+  .bb-alt {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.82rem;
+    color: var(--text-soft);
+  }
+  .bb-alt b {
+    color: var(--verde);
+    font-weight: 600;
+  }
+
+  .bb-fields {
+    display: block;
+    margin-top: 0.75rem;
+  }
+  .bb-fields select {
+    width: 100%;
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    color: var(--text);
+    background: var(--crema);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-btn);
+    padding: 0.6rem 0.75rem;
+    cursor: pointer;
+  }
+
+  .bb-perks {
+    display: grid;
+    gap: 0.3rem;
+    margin-top: 0.75rem;
+  }
+  .bb-perks li {
+    position: relative;
+    padding-left: 1.1rem;
+    font-size: 0.82rem;
+    color: var(--text-soft);
+  }
+  .bb-perks li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 5px;
+    height: 5px;
+    border-radius: var(--r-full);
+    background: var(--salvia);
+  }
+
+  /* Selector de cantidad. Sin descuento por volumen del mismo producto: la
+     jugada de volumen son los combos. */
+  .bb-qty {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 0.85rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-btn);
+    overflow: hidden;
+    background: var(--crema);
+  }
+  .bb-qty-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    font-size: 1.1rem;
+    color: var(--verde);
+    cursor: pointer;
+    transition: background var(--dur) var(--ease-out);
+  }
+  .bb-qty-btn:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--verde) 10%, transparent);
+  }
+  .bb-qty-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+  .bb-qty-val {
+    min-width: 32px;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .bb-cta {
+    margin: 1rem 1rem 0;
+  }
+
+  .bb-notes {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0.85rem 1rem 0;
+    font-size: 0.85rem;
+    color: var(--text-soft);
+  }
+  .bb-notes li {
+    position: relative;
+    padding-left: 1.1rem;
+  }
+  .bb-notes li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.5em;
+    width: 5px;
+    height: 5px;
+    border-radius: var(--r-full);
+    background: var(--tierra);
+  }
+  .bb-notes b {
+    color: var(--verde);
+    font-weight: 600;
+  }
+  .bb-notes .ok {
+    color: var(--salvia);
+    font-weight: 500;
+  }
+  .bb-notes .ok::before {
+    background: var(--salvia);
+  }
+
+  .bb-medios {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin: 1rem 1rem 0;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+  }
+  .bb-medios > span {
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .bb-medios ul {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    list-style: none;
+  }
+  .bb-medios li {
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    padding: 0.22rem 0.55rem;
+    font-size: 0.7rem;
+    color: var(--text-soft);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bb-opt,
+    .bb-mark,
+    .bb-mark::after,
+    .bb-qty-btn {
+      transition: none;
+    }
+  }
+</style>

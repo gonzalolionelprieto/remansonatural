@@ -34,7 +34,16 @@ const href = `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(
     color: var(--crema);
     box-shadow: var(--shadow-md);
     transition: transform var(--dur) var(--ease-out),
-      background var(--dur) var(--ease-out);
+      background var(--dur) var(--ease-out),
+      bottom var(--dur) var(--ease-out);
+  }
+  /* La ficha muestra una barra de compra fija al pie: el FAB sube para no
+     taparle el botón, que es el punto entero de la barra. Sólo en mobile,
+     que es donde esa barra existe. */
+  @media (max-width: 899px) {
+    :global(body.has-sticky-cta) .wa-fab {
+      bottom: calc(clamp(1rem, 3vw, 1.5rem) + 72px);
+    }
   }
   .wa-fab svg {
     width: 27px;

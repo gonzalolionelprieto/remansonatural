@@ -10,6 +10,23 @@ beneficios:
   - Sistema tradicional de Flores de Bach
   - Gotero práctico para llevar a donde vayas
   - Elaborada de forma artesanal, por lote
+  - Frasco de 30 ml, dura semanas
+  - Agua de manantial, no de red
+  - Apta para acompañar el día entero
+suscribible: true
+ingredientesDestacados:
+  - nombre: Sistema del Dr. Bach
+    texto: >-
+      Preparado siguiendo el método tradicional, con las esencias que la
+      tradición asocia a los momentos de tensión.
+  - nombre: Agua de manantial
+    texto: >-
+      La base del preparado no es agua de red. Es el detalle que separa una
+      esencia artesanal de una industrial.
+  - nombre: Brandy como conservante
+    texto: >-
+      El conservante natural del sistema original. Sin agregados sintéticos
+      que estiren la vida útil.
 paraQueMomento: >-
   Para los momentos de tensión del día: antes de una reunión, en un viaje, o
   cuando necesitás un respiro. Cuatro gotas y una respiración profunda.
@@ -38,17 +55,17 @@ reseñas:
     texto: La llevo en la cartera para los días intensos. Me ayuda a frenar y respirar.
     estrellas: 5
     fecha: Marzo 2026
-    verificada: true
+    verificada: false
   - autor: Julieta B.
     texto: Me la recomendaron para antes de las reuniones y la verdad que suma. El gotero es súper práctico.
     estrellas: 5
     fecha: Febrero 2026
-    verificada: true
+    verificada: false
   - autor: Agustín R.
     texto: Buen precio y llegó en dos días a Rosario. Todo bien.
     estrellas: 4
     fecha: Enero 2026
-    verificada: true
+    verificada: false
 ---
 
 Una **esencia floral** pensada para acompañar los momentos de estrés cotidiano.

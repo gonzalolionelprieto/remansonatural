@@ -3,10 +3,8 @@ export function formatPrice(value: number): string {
   return `$${value.toLocaleString('es-AR')}`;
 }
 
-/** Precio con descuento por transferencia (10% off), redondeado. */
-export function precioTransferencia(value: number, off = 0.1): number {
-  return Math.round((value * (1 - off)) / 100) * 100;
-}
+/* El descuento por transferencia vive en lib/pricing.ts, junto al resto de
+   los descuentos, para que no haya dos verdades sobre el mismo número. */
 
 /** Cuota simple sin interés: 3 cuotas. */
 export function cuota(value: number, n = 3): string {
