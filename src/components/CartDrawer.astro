@@ -111,12 +111,21 @@ const sugerencias = catalogo
         </div>
 
         <h3 class="co-section-title" style="margin-top:1.5rem;">Entrega</h3>
+        <!-- El CP va primero y filtra las formas de entrega a las que
+             realmente llegan ahí. Antes se elegía de una lista completa y
+             equivocarse costaba plata: si elegía la barata que no cubre su
+             zona, había que pedirle la diferencia después. -->
         <div class="co-field">
-          <label for="co-envio">Zona de entrega / Envío</label>
+          <label for="co-cp">Código postal</label>
+          <input type="text" id="co-cp" inputmode="numeric" maxlength="4" placeholder="1832" autocomplete="postal-code" required />
+          <p class="co-hint" data-cp-zona hidden></p>
+        </div>
+        <div class="co-field">
+          <label for="co-envio">Forma de entrega</label>
           <select id="co-envio">
             {zonas().map((z) => (
               <option value={z.id} selected={z.id === zonaDefault()}>
-                {z.costo === 0 ? `${z.label} - Gratis` : `${z.label} - ${formatPrice(z.costo)}`}
+                {z.costo === 0 ? `${z.label} — Gratis` : `${z.label} — ${formatPrice(z.costo)}`}
               </option>
             ))}
           </select>
@@ -550,6 +559,12 @@ const sugerencias = catalogo
     color: var(--crema);
   }
 
+  .co-hint {
+    font-size: 0.78rem;
+    color: var(--salvia);
+    margin-top: 0.3rem;
+  }
+
   .cart-ahorro {
     font-size: 0.82rem;
     color: var(--salvia);
@@ -726,6 +741,9 @@ const sugerencias = catalogo
     envioGratisDesde,
     zonaGratisLabel,
     zonaDefault,
+    zonaPorCP,
+    opcionesPara,
+    ZONA_CP_LABEL,
   } from '../lib/shipping';
 
   const fmt = (n: number) => `$${n.toLocaleString('es-AR')}`;
@@ -837,13 +855,20 @@ const sugerencias = catalogo
     const tel = document.querySelector<HTMLInputElement>('#co-tel')?.value.trim();
     const direccion = document.querySelector<HTMLInputElement>('#co-direccion')?.value.trim();
     const localidad = document.querySelector<HTMLInputElement>('#co-localidad')?.value.trim();
+    const cp = document.querySelector<HTMLInputElement>('#co-cp')?.value.trim();
     const metodoEnvio = document.querySelector<HTMLSelectElement>('#co-envio')?.value ?? zonaDefault();
 
     const msg = document.querySelector<HTMLElement>('[data-checkout-msg]');
     if (msg) msg.textContent = '';
 
-    if (!email || !nombre || !tel || !direccion || !localidad) {
+    if (!email || !nombre || !tel || !direccion || !localidad || !cp) {
       if (msg) msg.textContent = 'Por favor, completá todos los campos obligatorios.';
+      return;
+    }
+    // Sin CP válido no podemos saber a qué zona va ni cobrar el envío que
+    // corresponde: mejor frenarlo acá que despachar cobrando de menos.
+    if (!zonaPorCP(cp)) {
+      if (msg) msg.textContent = 'Revisá el código postal: tiene que ser de 4 dígitos.';
       return;
     }
 
@@ -870,6 +895,7 @@ const sugerencias = catalogo
             whatsapp: tel,
             direccion,
             localidad,
+            cp,
             metodoEnvio,
           }
         }),
@@ -1265,6 +1291,43 @@ const sugerencias = catalogo
       if (el.id === 'co-envio') {
         updateCheckoutSummary();
       }
+    });
+
+    // El CP filtra las formas de entrega disponibles y preselecciona la más
+    // barata que llegue a esa zona.
+    document.addEventListener('input', (e) => {
+      const el = e.target as HTMLInputElement;
+      if (el.id !== 'co-cp') return;
+      const aviso = document.querySelector<HTMLElement>('[data-cp-zona]');
+      const sel = document.querySelector<HTMLSelectElement>('#co-envio');
+      if (!sel) return;
+
+      const zona = el.value.replace(/\D/g, '').length === 4 ? zonaPorCP(el.value) : null;
+      if (!zona) {
+        if (aviso) aviso.hidden = true;
+        return;
+      }
+
+      const disponibles = opcionesPara(zona);
+      if (aviso) {
+        aviso.hidden = false;
+        aviso.textContent =
+          disponibles.length > 0
+            ? `Envíos a ${ZONA_CP_LABEL[zona]}`
+            : `Todavía no llegamos a ${ZONA_CP_LABEL[zona]}. Escribinos por WhatsApp.`;
+      }
+      if (disponibles.length === 0) return;
+
+      sel.innerHTML = disponibles
+        .map(
+          (o) =>
+            `<option value="${o.id}">${o.label} — ${
+              o.costo === 0 ? 'Gratis' : fmt(o.costo)
+            }</option>`
+        )
+        .join('');
+      sel.value = disponibles[0].id;
+      updateCheckoutSummary();
     });
 
     document.addEventListener('keydown', (e) => {

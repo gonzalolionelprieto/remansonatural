@@ -333,8 +333,8 @@
             </div>
             <p class="muted" style="margin-top:6px;">El descuento por transferencia tiene que cubrir lo que te cuesta cobrar con tarjeta: la comisión de Mercado Pago más las 3 cuotas sin interés, que las financiás vos.</p>
 
-            <label style="margin-top:14px;">Zonas de envío</label>
-            <p class="muted" style="margin:-4px 0 8px;">Destildá "entra en el envío gratis" en las zonas donde despachar te sale caro: ahí el envío se cobra siempre, aun con suscripción.</p>
+            <label style="margin-top:14px;">Formas de entrega</label>
+            <p class="muted" style="margin:-4px 0 8px;">Cada fila es un servicio con su precio (Correo Clásico, Expreso, sucursal, envío propio). Marcá en qué zonas llega: el código postal del cliente filtra la lista a lo que le sirve. Destildá "entra en el envío gratis" donde despachar te salga caro.</p>
             <div id="w-zonas"></div>
 
             <div class="err" id="comercialErr"></div>
@@ -636,6 +636,13 @@
          Los porcentajes se editan en enteros (15) y se guardan en fracción
          (0.15), que es como los usa el motor de precios. */
       let comercial = null;
+      // Espejo de ZONAS_CP en lib/shipping. Si agregás una zona allá, va acá.
+      const ZONAS_CP = [
+        { id: 'caba', label: 'CABA' },
+        { id: 'sur', label: 'Zona Sur (GBA)' },
+        { id: 'gba', label: 'Resto de GBA' },
+        { id: 'interior', label: 'Interior' },
+      ];
 
       function renderZonas() {
         const el = $('#w-zonas');
@@ -652,7 +659,11 @@
               <div><label>Demora</label><input data-zd="${i}" value="${(z.demora || '').replace(/"/g, '&quot;')}" placeholder="1 a 3 días hábiles" /></div>
               <div style="display:flex;align-items:flex-end;"><label style="margin:0;display:flex;gap:8px;align-items:center;cursor:pointer;"><input type="checkbox" data-zg="${i}" style="width:auto;" ${z.gratisElegible ? 'checked' : ''} /> Entra en el envío gratis</label></div>
             </div>
-            <label>Identificador interno</label><input data-zi="${i}" value="${(z.id || '').replace(/"/g, '&quot;')}" placeholder="caba_gba" />
+            <label>Llega a estas zonas</label>
+            <div class="chips">
+              ${ZONAS_CP.map((zc) => `<span class="chip ${(z.zonasCP || []).includes(zc.id) ? 'on' : ''}" data-zz="${i}" data-zc="${zc.id}">${zc.label}</span>`).join('')}
+            </div>
+            <label>Identificador interno</label><input data-zi="${i}" value="${(z.id || '').replace(/"/g, '&quot;')}" placeholder="ca_clasico" />
           </div>`).join('') +
           `<button type="button" id="addZona" style="background:transparent;color:#eef2ec;border:1.5px dashed #3a4c40;border-radius:9px;padding:9px 14px;cursor:pointer;font-family:inherit;font-size:12.5px;">+ Agregar zona</button>`;
 
@@ -661,10 +672,17 @@
         el.querySelectorAll('[data-zd]').forEach((i) => i.addEventListener('input', () => { comercial.zonas[+i.dataset.zd].demora = i.value; }));
         el.querySelectorAll('[data-zi]').forEach((i) => i.addEventListener('input', () => { comercial.zonas[+i.dataset.zi].id = i.value.trim(); }));
         el.querySelectorAll('[data-zg]').forEach((i) => i.addEventListener('change', () => { comercial.zonas[+i.dataset.zg].gratisElegible = i.checked; }));
+        el.querySelectorAll('[data-zz]').forEach((c) => c.addEventListener('click', () => {
+          const z = comercial.zonas[+c.dataset.zz];
+          z.zonasCP = z.zonasCP || [];
+          const i = z.zonasCP.indexOf(c.dataset.zc);
+          if (i >= 0) z.zonasCP.splice(i, 1); else z.zonasCP.push(c.dataset.zc);
+          c.classList.toggle('on');
+        }));
         el.querySelectorAll('[data-rmz]').forEach((b) => b.addEventListener('click', () => { comercial.zonas.splice(+b.dataset.rmz, 1); renderZonas(); }));
         const add = el.querySelector('#addZona');
         if (add) add.addEventListener('click', () => {
-          comercial.zonas.push({ id: 'zona-' + (comercial.zonas.length + 1), label: '', costo: 0, demora: '', gratisElegible: false });
+          comercial.zonas.push({ id: 'opcion-' + (comercial.zonas.length + 1), label: '', costo: 0, demora: '', zonasCP: [], gratisElegible: false });
           renderZonas();
         });
       }
@@ -689,9 +707,9 @@
           transferenciaOff: (parseFloat($('#c-transferencia').value) || 0) / 100,
           envioGratisDesde: parseInt($('#c-unidades').value, 10) || 0,
           zonaGratisLabel: $('#c-zonalabel').value.trim(),
-          zonas: comercial.zonas.filter((z) => z.id && z.label),
+          zonas: comercial.zonas.filter((z) => z.id && z.label && (z.zonasCP || []).length),
         };
-        if (!payload.zonas.length) { err.textContent = 'Cada zona necesita nombre e identificador.'; return; }
+        if (!payload.zonas.length) { err.textContent = 'Cada forma de entrega necesita nombre, identificador y al menos una zona.'; return; }
         const { ok, data } = await api({ action: 'saveComercial', data: payload });
         if (ok) { toast('Descuentos y envíos guardados'); reloadPreview(); }
         else err.textContent = data.error || 'Error';

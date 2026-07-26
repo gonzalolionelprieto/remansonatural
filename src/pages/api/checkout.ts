@@ -56,6 +56,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       whatsapp: string;
       direccion: string;
       localidad: string;
+      cp?: string;
       metodoEnvio: string;
     }
   };
@@ -208,7 +209,9 @@ export const POST: APIRoute = async ({ request, url }) => {
         email_cliente: cliente.email,
         whatsapp_cliente: cliente.whatsapp,
         direccion: cliente.direccion,
-        localidad: cliente.localidad,
+        localidad: [cliente.localidad, cliente.cp && `CP ${cliente.cp}`]
+          .filter(Boolean)
+          .join(' · '),
         metodo_envio: cliente.metodoEnvio,
       });
 

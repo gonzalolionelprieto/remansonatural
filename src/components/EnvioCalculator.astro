@@ -36,7 +36,10 @@ import { formatPrice } from '../lib/format';
     data-envio-cp
   />
 
-  <label class="visually-hidden" for="envio-zona">Zona de entrega</label>
+  <!-- El desplegable arranca con todo y el CP lo filtra a lo que realmente
+       llega a esa zona. Mostrar opciones que no le sirven es peor que no
+       mostrar ninguna. -->
+  <label class="visually-hidden" for="envio-zona">Forma de entrega</label>
   <select id="envio-zona" data-envio-zona>
     {zonas().map((z) => (
       <option value={z.id} selected={z.id === zonaDefault()}>{z.label}</option>
@@ -100,7 +103,12 @@ import { formatPrice } from '../lib/format';
 </style>
 
 <script>
-  import { zonaPorId, zonaPorCP } from '../lib/shipping';
+  import {
+    zonaPorId,
+    zonaPorCP,
+    opcionesPara,
+    ZONA_CP_LABEL,
+  } from '../lib/shipping';
   import { formatPrice } from '../lib/format';
 
   function initEnvio() {
@@ -112,24 +120,38 @@ import { formatPrice } from '../lib/format';
       const cp = box.querySelector<HTMLInputElement>('[data-envio-cp]');
       if (!sel || !out) return;
 
-      const render = (porCP = false) => {
+      const render = (porCP = false, zonaLabel = '') => {
         const z = zonaPorId(sel.value);
         const precio =
           z.costo === 0
             ? `<b>Sin costo</b> · ${z.demora}.`
-            : `<b>${formatPrice(z.costo)}</b> · llega en ${z.demora}.`;
-        // Cuando la zona la dedujo el CP hay que decirlo: si la persona ve un
-        // precio sin entender de dónde salió, no le cree.
-        out.innerHTML = porCP ? `Envío a <b>${z.label}</b>: ${precio}` : precio;
+            : `<b>${formatPrice(z.costo)}</b> · ${z.demora}.`;
+        // Cuando la zona la dedujo el CP hay que nombrarla: si la persona ve
+        // un precio sin entender de dónde salió, no le cree.
+        out.innerHTML = porCP ? `Envíos a <b>${zonaLabel}</b> · ${precio}` : precio;
       };
 
-      // El CP manda sobre el desplegable, pero sólo cuando resuelve a algo:
-      // con 2 dígitos escritos todavía no sabemos nada y no hay que moverlo.
+      // El CP filtra el desplegable a lo que realmente llega a esa zona, y
+      // preselecciona la opción más barata. Sólo actúa con los 4 dígitos:
+      // con dos escritos todavía no sabemos nada y no hay que mover nada.
       cp?.addEventListener('input', () => {
         const zona = cp.value.replace(/\D/g, '').length === 4 ? zonaPorCP(cp.value) : null;
         if (!zona) return;
-        sel.value = zona;
-        render(true);
+        const disponibles = opcionesPara(zona);
+        if (disponibles.length === 0) {
+          out.innerHTML = `No llegamos a ${ZONA_CP_LABEL[zona]} todavía. Escribinos y lo vemos.`;
+          return;
+        }
+        sel.innerHTML = disponibles
+          .map(
+            (o) =>
+              `<option value="${o.id}">${o.label} — ${
+                o.costo === 0 ? 'sin costo' : formatPrice(o.costo)
+              }</option>`
+          )
+          .join('');
+        sel.value = disponibles[0].id;
+        render(true, ZONA_CP_LABEL[zona]);
       });
 
       sel.addEventListener('change', () => render());
