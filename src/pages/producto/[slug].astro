@@ -4,6 +4,7 @@ import Accordion from '../../components/Accordion.astro';
 import BuyBox from '../../components/BuyBox.astro';
 import CrossSellRow from '../../components/CrossSellRow.astro';
 import PorQueFunciona from '../../components/PorQueFunciona.astro';
+import Garantia from '../../components/Garantia.astro';
 import EnvioCalculator from '../../components/EnvioCalculator.astro';
 import Stars from '../../components/Stars.astro';
 import Logo from '../../components/Logo.astro';
@@ -235,6 +236,11 @@ const jsonLd = {
           <p class="stock-hint">Quedan {stock} unidades de este lote</p>
         )}
 
+        <!-- La garantía va pegada al botón: es lo que responde "¿y si no me
+             gusta?", que es la objeción real de alguien que compra por
+             primera vez y no tiene reseñas de otros para apoyarse. -->
+        <Garantia variante="compacta" />
+
         <!-- Confianza: lo que una persona que no nos conoce necesita saber
              antes de dejar la tarjeta. -->
         <ul class="trust" role="list">
@@ -290,6 +296,15 @@ const jsonLd = {
       </div>
     </section>
   )}
+
+  <!-- Credibilidad: la garantía y los tres respaldos verificables. Va antes
+       de las reseñas a propósito — mientras no haya opiniones reales, esto
+       es lo que sostiene la confianza de alguien que llega por primera vez. -->
+  <section class="section garantia-sec">
+    <div class="wrap">
+      <Garantia />
+    </div>
+  </section>
 
   <!-- Descripción larga -->
   {descripcionParrafos.length > 0 && (
@@ -754,6 +769,13 @@ const jsonLd = {
 
   .pqf-section {
     background: var(--bg-alt);
+  }
+  /* Fondo normal a propósito: la sección de "por qué funciona" que puede ir
+     justo arriba ya usa bg-alt, y dos bloques con el mismo fondo pegados se
+     leen como uno solo. La tarjeta de la garantía tiene borde y sombra
+     propios, así que se despega igual. */
+  .garantia-sec {
+    background: var(--bg);
   }
 
   .acordeones {

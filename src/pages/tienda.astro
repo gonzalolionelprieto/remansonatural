@@ -5,6 +5,7 @@ import { getCatalog } from '../lib/catalog';
 import { suscripcionOff, transferenciaOff, porcentajeOff } from '../lib/pricing';
 import { envioGratisDesde, zonaGratisLabel } from '../lib/shipping';
 import { formatPrice } from '../lib/format';
+import { GARANTIA_DIAS } from '../components/Garantia.astro';
 
 // SSR: el catálogo lee de Supabase (con fallback local), así los productos
 // que cargás/editás en el panel aparecen sin reconstruir.
@@ -23,7 +24,7 @@ const reassurance = [
   },
   { t: `${porcentajeOff(transferenciaOff())}% off`, s: 'Pagando por transferencia' },
   { t: '3 cuotas sin interés', s: 'Con tarjeta' },
-  { t: 'Cambios simples', s: 'Y botón de arrepentimiento' },
+  { t: `${GARANTIA_DIAS} días de garantía`, s: 'Si no te convence, te devolvemos' },
 ];
 ---
 

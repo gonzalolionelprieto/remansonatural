@@ -5,6 +5,7 @@ import Accordion from '../components/Accordion.astro';
 import { site } from '../lib/site';
 import { envioGratisDesde, zonaGratisLabel } from '../lib/shipping';
 import { formatPrice } from '../lib/format';
+import { GARANTIA_DIAS } from '../components/Garantia.astro';
 
 const waHref = `https://wa.me/${site.whatsapp}?text=${encodeURIComponent('Hola Remanso Natural 🌿 tengo una consulta')}`;
 
@@ -32,9 +33,10 @@ const secciones = [
     'Seguimiento por WhatsApp una vez despachado.',
   ]},
   { id: 'cambios', t: 'Cambios y devoluciones', items: [
-    'Tenés botón de arrepentimiento según la ley argentina.',
+    `Garantía de satisfacción de ${GARANTIA_DIAS} días: si no te convence, nos escribís por WhatsApp y te devolvemos el dinero.`,
+    'Es un compromiso nuestro y se suma al botón de arrepentimiento de 10 días que te da la ley argentina.',
     'Si algo llega dañado, escribinos y lo resolvemos.',
-    'Política clara y sin vueltas: queremos que estés tranquilo con tu compra.',
+    'Sin formularios ni letra chica: preferimos perder una venta antes que dejarte con algo que no te sirve.',
   ]},
 ];
 ---

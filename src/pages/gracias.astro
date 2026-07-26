@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProductCard from '../components/ProductCard.astro';
 import Logo from '../components/Logo.astro';
+import Garantia from '../components/Garantia.astro';
 import { getCatalogFeatured } from '../lib/catalog';
 import { site } from '../lib/site';
 
@@ -42,6 +43,13 @@ const pasos = [
         <a class="btn btn-ghost" href={waHref} target="_blank" rel="noopener noreferrer">Escribinos por WhatsApp</a>
       </div>
     </div>
+  </section>
+
+  <!-- La garantía se repite acá a propósito: el momento de más ansiedad de
+       una primera compra no es antes de pagar, es justo después. Recordarle
+       que puede volverse atrás baja el arrepentimiento y las cancelaciones. -->
+  <section class="wrap gracias-gar">
+    <Garantia variante="compacta" />
   </section>
 
   <section class="section pasos-sec">
@@ -164,6 +172,11 @@ const pasos = [
   .paso p {
     color: var(--text-soft);
     font-size: 0.92rem;
+  }
+
+  .gracias-gar {
+    max-width: 560px;
+    margin-inline: auto;
   }
 
   .section-head.is-center {

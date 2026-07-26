@@ -1,0 +1,199 @@
+---
+/**
+ * Garantía de satisfacción + bloque de credibilidad.
+ *
+ * Está pensado para el problema concreto de una marca que todavía no tiene
+ * reseñas reales: un comprador nuevo no tiene a nadie que le confirme que
+ * esto funciona. Lo único que sí puede verificar es qué pasa si sale mal.
+ *
+ * Por eso la garantía va adelante y en primera persona. Es la única promesa
+ * de esta página que no depende de que le creas a un desconocido: o te
+ * devuelven la plata o no. Vale más que veinte testimonios anónimos, y es
+ * verdad.
+ *
+ * Dos variantes:
+ *  - `compacta`: una línea, para poner al lado del botón de compra.
+ *  - `full`: la sección completa, con los tres respaldos.
+ */
+import { site } from '../lib/site';
+
+/**
+ * Días de la garantía de satisfacción. Es un compromiso COMERCIAL y
+ * voluntario: se suma al botón de arrepentimiento de 10 días que da la ley
+ * 24.240 para compras online, no lo reemplaza.
+ */
+export const GARANTIA_DIAS = 30;
+
+interface Props {
+  variante?: 'full' | 'compacta';
+}
+const { variante = 'full' } = Astro.props;
+
+const waHref = `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(
+  'Hola 🌿 quería consultar antes de comprar'
+)}`;
+
+const respaldos = [
+  {
+    t: 'Cada lote, rotulado',
+    d: 'Sabés qué hongo, de qué lote y de qué fecha es lo que tenés en la mano. Elaboramos de a poco y anotamos todo.',
+  },
+  {
+    t: 'Hecho a mano acá',
+    d: 'Producción propia en pequeños lotes, en Argentina. No revendemos ni fraccionamos productos de terceros.',
+  },
+  {
+    t: 'Del otro lado hay alguien',
+    d: 'El WhatsApp lo contestamos nosotros, no un bot. Antes de comprar y después también.',
+  },
+];
+---
+
+{variante === 'compacta' ? (
+  <p class="gar-min">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 4v6c0 4-3 6.5-7 8-4-1.5-7-4-7-8V7z"></path><path d="M9 12l2 2 4-4"></path></svg>
+    <span>
+      <b>{GARANTIA_DIAS} días de garantía.</b> Si no te convence, te devolvemos
+      el dinero.
+    </span>
+  </p>
+) : (
+  <section class="gar" aria-labelledby="gar-title">
+    <div class="gar-card" data-reveal="rise">
+      <span class="gar-eyebrow">Nuestra garantía</span>
+      <h2 id="gar-title">
+        Probalo {GARANTIA_DIAS} días. Si no te convence, te devolvemos el dinero.
+      </h2>
+      <p class="gar-lead">
+        Sin formularios ni letra chica: nos escribís por WhatsApp, nos contás qué
+        pasó y te devolvemos lo que pagaste. Preferimos perder una venta antes
+        que dejarte con algo que no te sirve.
+      </p>
+      <p class="gar-legal">
+        Es un compromiso nuestro y se suma al botón de arrepentimiento de 10 días
+        que te da la ley para cualquier compra online.
+      </p>
+      <a class="gar-wa" href={waHref} target="_blank" rel="noopener noreferrer">
+        Consultanos antes de comprar
+      </a>
+    </div>
+
+    <ul class="gar-grid" role="list" data-reveal-group data-reveal-step="80">
+      {respaldos.map((r) => (
+        <li class="gar-item">
+          <h3>{r.t}</h3>
+          <p>{r.d}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<style>
+  /* ---- Variante compacta (al lado del botón de compra) ---- */
+  .gar-min {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    margin-top: 1.1rem;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-sm);
+    background: color-mix(in srgb, var(--salvia) 10%, transparent);
+    font-size: 0.85rem;
+    color: var(--text-soft);
+    line-height: 1.45;
+  }
+  .gar-min svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: var(--verde);
+    margin-top: 0.05em;
+  }
+  .gar-min b {
+    color: var(--verde);
+    font-weight: 600;
+  }
+
+  /* ---- Variante completa ---- */
+  .gar-card {
+    border: 1px solid var(--verde);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    max-width: 720px;
+    margin-inline: auto;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+  .gar-eyebrow {
+    display: inline-block;
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--crema);
+    background: var(--verde);
+    border-radius: var(--r-pill);
+    padding: 0.24rem 0.75rem;
+    margin-bottom: 0.9rem;
+  }
+  .gar-card h2 {
+    font-family: var(--font-serif);
+    font-size: clamp(1.4rem, 1rem + 1.8vw, 2rem);
+    font-weight: 500;
+    color: var(--verde);
+    line-height: 1.25;
+    max-width: 20ch;
+    margin-inline: auto;
+  }
+  .gar-lead {
+    font-size: var(--fs-lead);
+    color: var(--text-soft);
+    margin: 1rem auto 0;
+    max-width: 52ch;
+  }
+  .gar-legal {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin: 0.85rem auto 0;
+    max-width: 52ch;
+  }
+  .gar-wa {
+    display: inline-block;
+    margin-top: 1.25rem;
+    font-size: 0.88rem;
+    color: var(--verde);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    text-decoration-color: var(--border-strong);
+  }
+  .gar-wa:hover {
+    color: var(--tierra);
+  }
+
+  .gar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1.15rem;
+    max-width: 940px;
+    margin: clamp(1.5rem, 4vw, 2.25rem) auto 0;
+  }
+  .gar-item {
+    border-top: 2px solid var(--border-strong);
+    padding-top: 1rem;
+  }
+  .gar-item h3 {
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: var(--verde);
+    margin-bottom: 0.4rem;
+  }
+  .gar-item p {
+    font-size: 0.88rem;
+    color: var(--text-soft);
+    line-height: 1.6;
+  }
+</style>
