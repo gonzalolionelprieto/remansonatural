@@ -105,6 +105,31 @@ export const zonaGratisLabel = (): string => leerConfig().zonaGratisLabel;
 export const zonaDefault = (): string =>
   zonas().find((z) => z.costo > 0)?.id ?? zonas()[0].id;
 
+/**
+ * Deduce la zona a partir del código postal.
+ *
+ * Los CP argentinos de 4 dígitos están asignados por región, así que se puede
+ * mapear sin consultar a nadie. Es una aproximación deliberada: alcanza para
+ * que la persona no tenga que elegir su zona de una lista donde se puede
+ * equivocar, que es el error más caro (elige la barata y después hay que
+ * pedirle la diferencia).
+ *
+ *   1000–1499  CABA
+ *   1500–1999  GBA (Lomas 1832, Quilmes 1878, San Isidro 1642, La Plata 1900)
+ *   resto      Interior
+ *
+ * Devuelve null si el CP no es válido: ahí la UI deja elegir a mano.
+ */
+export function zonaPorCP(cp: string): string | null {
+  const n = parseInt(String(cp).replace(/\D/g, '').slice(0, 4), 10);
+  if (!n || n < 1000 || n > 9999) return null;
+  const esAmba = n >= 1000 && n <= 1999;
+  // Si la zona del AMBA no existe en la config (la editan desde el panel),
+  // caemos a la primera con costo en vez de romper.
+  const destino = esAmba ? 'caba_gba' : 'interior';
+  return zonas().some((z) => z.id === destino) ? destino : null;
+}
+
 export interface ContextoEnvio {
   /** Total del pedido, con los descuentos ya aplicados. */
   subtotal: number;

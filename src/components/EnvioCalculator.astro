@@ -22,6 +22,20 @@ import { formatPrice } from '../lib/format';
     <span>Calculá tu envío</span>
   </div>
 
+  <!-- El código postal resuelve la zona solo. Elegirla de una lista es donde
+       la gente se equivoca, y equivocarse para abajo obliga después a pedirle
+       la diferencia por WhatsApp. El desplegable queda igual, como ajuste. -->
+  <label class="visually-hidden" for="envio-cp">Tu código postal</label>
+  <input
+    id="envio-cp"
+    type="text"
+    inputmode="numeric"
+    maxlength="4"
+    placeholder="Tu código postal"
+    autocomplete="postal-code"
+    data-envio-cp
+  />
+
   <label class="visually-hidden" for="envio-zona">Zona de entrega</label>
   <select id="envio-zona" data-envio-zona>
     {zonas().map((z) => (
@@ -86,7 +100,7 @@ import { formatPrice } from '../lib/format';
 </style>
 
 <script>
-  import { zonaPorId } from '../lib/shipping';
+  import { zonaPorId, zonaPorCP } from '../lib/shipping';
   import { formatPrice } from '../lib/format';
 
   function initEnvio() {
@@ -95,17 +109,30 @@ import { formatPrice } from '../lib/format';
       box.dataset.bound = '1';
       const sel = box.querySelector<HTMLSelectElement>('[data-envio-zona]');
       const out = box.querySelector<HTMLElement>('[data-envio-result]');
+      const cp = box.querySelector<HTMLInputElement>('[data-envio-cp]');
       if (!sel || !out) return;
 
-      const render = () => {
+      const render = (porCP = false) => {
         const z = zonaPorId(sel.value);
-        out.innerHTML =
+        const precio =
           z.costo === 0
             ? `<b>Sin costo</b> · ${z.demora}.`
             : `<b>${formatPrice(z.costo)}</b> · llega en ${z.demora}.`;
+        // Cuando la zona la dedujo el CP hay que decirlo: si la persona ve un
+        // precio sin entender de dónde salió, no le cree.
+        out.innerHTML = porCP ? `Envío a <b>${z.label}</b>: ${precio}` : precio;
       };
 
-      sel.addEventListener('change', render);
+      // El CP manda sobre el desplegable, pero sólo cuando resuelve a algo:
+      // con 2 dígitos escritos todavía no sabemos nada y no hay que moverlo.
+      cp?.addEventListener('input', () => {
+        const zona = cp.value.replace(/\D/g, '').length === 4 ? zonaPorCP(cp.value) : null;
+        if (!zona) return;
+        sel.value = zona;
+        render(true);
+      });
+
+      sel.addEventListener('change', () => render());
       render();
     });
   }
