@@ -85,25 +85,44 @@ export interface ConfigEnvios {
  * depende de cuántos productos distintos tenga el pedido.
  */
 /**
- * Precios de referencia tomados de una cotización real de Correo Argentino
- * (Lomas de Zamora → Lomas de Zamora, 1 kg, 20×10×15 cm): Clásico $8.046 y
- * Expreso $8.853. Ese es el piso: si el envío local ya cuesta eso, no hay
- * tarifa por debajo de los $8.000 que sea real.
+ * Precios de cotizaciones reales de Correo Argentino desde Lomas de Zamora
+ * (paquete de 1 kg, 20×10×15 cm, valor declarado $5.000):
  *
- * PENDIENTE de cotizar: el retiro en sucursal y el interior. Los valores de
- * abajo son estimados y están marcados como tales.
+ *                        sucursal    domicilio
+ *   Lomas, Clásico        $5.121      $8.046
+ *   Lomas, Expreso        $5.631      $8.853
+ *   San Juan, Clásico     $6.995     $10.509
+ *   San Juan, Expreso    $12.821     $19.262
+ *
+ * Dos cosas que salen de ahí y definen el diseño:
+ *
+ * 1. La entrega en SUCURSAL cuesta un tercio menos que a domicilio, en todos
+ *    los destinos. Por eso va primera y es la que queda preseleccionada.
+ * 2. El envío gratis se limita a las opciones de sucursal en AMBA. Regalar
+ *    un domicilio de $8.100 sobre un pedido de $50.000 son 16 puntos; sobre
+ *    la sucursal de $5.100 son 10, y encima empuja hacia la opción que menos
+ *    cuesta despachar.
+ *
+ * El interior está cargado con los precios de San Juan, que es de los
+ * destinos más caros: mejor cobrar de más a Córdoba que perder plata en
+ * cada envío a Cuyo o la Patagonia. Si el volumen al interior crece, conviene
+ * separarlo en cercano y lejano.
  */
 export const DEFAULTS_ENVIOS: ConfigEnvios = {
   zonas: [
     { id: 'retiro', label: 'Retiro en persona (Zona Sur)', costo: 0, demora: 'coordinamos por WhatsApp', zonasCP: ['sur'], gratisElegible: true },
+    { id: 'amba_suc_clasico', label: 'Correo Argentino · a sucursal', costo: 5200, demora: '2 a 5 días hábiles', zonasCP: ['caba', 'sur', 'gba'], gratisElegible: true },
+    { id: 'amba_suc_expreso', label: 'Correo Argentino Expreso · a sucursal', costo: 5700, demora: '1 a 3 días hábiles', zonasCP: ['caba', 'sur', 'gba'], gratisElegible: true },
+    { id: 'amba_dom_clasico', label: 'Correo Argentino · a domicilio', costo: 8100, demora: '2 a 5 días hábiles', zonasCP: ['caba', 'sur', 'gba'], gratisElegible: false },
+    { id: 'amba_dom_expreso', label: 'Correo Argentino Expreso · a domicilio', costo: 8900, demora: '1 a 3 días hábiles', zonasCP: ['caba', 'sur', 'gba'], gratisElegible: false },
     { id: 'propio_24', label: 'Envío propio en menos de 24 h', costo: 15000, demora: 'menos de 24 h', zonasCP: ['caba', 'sur'], gratisElegible: false },
-    { id: 'ca_sucursal', label: 'Correo Argentino · retiro en sucursal', costo: 7000, demora: '2 a 5 días hábiles', zonasCP: ['caba', 'sur', 'gba'], gratisElegible: true },
-    { id: 'ca_clasico', label: 'Correo Argentino Clásico · a domicilio', costo: 8100, demora: '2 a 5 días hábiles', zonasCP: ['caba', 'sur', 'gba'], gratisElegible: true },
-    { id: 'ca_expreso', label: 'Correo Argentino Expreso · a domicilio', costo: 8900, demora: '1 a 3 días hábiles', zonasCP: ['caba', 'sur', 'gba'], gratisElegible: false },
-    { id: 'ca_interior', label: 'Correo Argentino · interior del país', costo: 12000, demora: '3 a 7 días hábiles', zonasCP: ['interior'], gratisElegible: false },
+    { id: 'int_suc_clasico', label: 'Correo Argentino · a sucursal', costo: 7000, demora: '3 a 7 días hábiles', zonasCP: ['interior'], gratisElegible: false },
+    { id: 'int_dom_clasico', label: 'Correo Argentino · a domicilio', costo: 10600, demora: '3 a 7 días hábiles', zonasCP: ['interior'], gratisElegible: false },
+    { id: 'int_suc_expreso', label: 'Correo Argentino Expreso · a sucursal', costo: 12900, demora: '2 a 4 días hábiles', zonasCP: ['interior'], gratisElegible: false },
+    { id: 'int_dom_expreso', label: 'Correo Argentino Expreso · a domicilio', costo: 19300, demora: '2 a 4 días hábiles', zonasCP: ['interior'], gratisElegible: false },
   ],
   envioGratisDesde: 50000,
-  zonaGratisLabel: 'CABA y GBA',
+  zonaGratisLabel: 'sucursal en CABA y GBA',
 };
 
 let cfg: ConfigEnvios | null = null;
